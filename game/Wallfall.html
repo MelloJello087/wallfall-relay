@@ -1282,7 +1282,12 @@ function worldSnap() {
 function myState() {
   const s = {v:1, r:NET.role, n:NET.name.slice(0, 14), rk:room.key, x:Math.round(p.x), y:Math.round(p.y), vx:r1(p.vx), vy:r1(p.vy), f:p.face, g:p.onGround ? 1 : 0,
     at:p.atkT, dt:p.dashT, rn:p.run, wk:Math.round(p.walk || 0), sp:p.spin, lh:p.lash ? 1 : 0, dv:p.dive ? 1 : 0, lu:p.lunge ? 1 : 0, hk:p.hook ? [Math.round(p.hook.x), Math.round(p.hook.y)] : 0,
-    iv:p.inv > 0 ? 1 : 0, au:p.up ? 1 : 0, c:clsKey(), lk:look(), hp:p.hp, mx:p.max, md:mode, hs:NET.hits.slice(-14)};
+    iv:p.inv > 0 ? 1 : 0, au:p.up ? 1 : 0, c:clsKey(), lk:look(), hp:p.hp, mx:p.max, md:mode, hs:NET.hits.slice(-14),
+    // what this player has out in the world: thralls, bolts and bombs, chain lightning, explosions
+    th:thralls.slice(0, 3).map(t => [Math.round(t.x), Math.round(t.y), t.face, t.atk, t.rise, t.life < 60 ? 1 : 0, t.inv > 0 ? 1 : 0, t.vx ? 1 : 0, t.onGround ? 1 : 0]),
+    sh:shots.slice(0, 8).map(q => [Math.round(q.x), Math.round(q.y), r1(q.vx), r1(q.vy || 0), q.kind || '', q.up ? 1 : 0]),
+    zp:zaps.slice(0, 3).map(z => [z.life, z.pts.map(q => [Math.round(q.x), Math.round(q.y)])]),
+    bl:blasts.slice(0, 4).map(b => [Math.round(b.x), Math.round(b.y), b.r, b.life])};
   if (NET.role === 'host' && room.key !== 'X' && NET.peers.some(q => q.s.rk === room.key)) s.w = worldSnap();
   return s;
 }
@@ -1290,7 +1295,7 @@ function netTick() {
   if (!NET.on) return;
   NET.peers = Transport.others().filter(q => q.s && q.s.v === 1).slice(0, 3);
   NET.host = NET.role === 'guest' ? NET.peers.find(q => q.s.r === 'host') || null : null;
-  NET.bodies = NET.peers.filter(q => q.s.rk === room.key && q.s.md !== 'dead').map(q => ({x:q.s.x, y:q.s.y, w:12, h:22, remote:true}));
+  NET.bodies = NET.peers.filter(q => q.s.rk === room.key && q.s.md !== 'dead').flatMap(q => [{x:q.s.x, y:q.s.y, w:12, h:22, remote:true}, ...(q.s.th || []).filter(a => !a[4]).map(a => ({x:a[0], y:a[1], w:10, h:16, remote:true}))]);
   // the host takes the hits its guests landed on its enemies
   if (NET.role === 'host') for (const q of NET.peers) {
     if (q.s.rk !== room.key || !Array.isArray(q.s.hs)) continue;
@@ -1379,6 +1384,15 @@ function drawPeers() {
     Object.assign(p, {up:!!s.au, x:d.x, y:d.y, vx:s.vx, vy:s.vy, face:s.f, onGround:!!s.g, atkT:s.at, dashT:s.dt, run:s.rn, walk:s.wk, spin:s.sp, lash:!!s.lh, dive:!!s.dv, lunge:!!s.lu, hook:s.hk ? {x:s.hk[0], y:s.hk[1]} : null, inv:0, launches:0, launchCd:0});
     clsOverride = CLASSES[s.c] ? s.c : 'warden'; save.look = s.lk || {}; mode = 'note';
     try { drawPlayer(); } finally { Object.assign(p, keep); save.look = keepLook; clsOverride = keepCls; mode = keepMode; }
+    // their thralls, shots, lightning and explosions, drawn with the same code as your own
+    const mine = [thralls, shots, zaps, blasts];
+    try {
+      thralls = (s.th || []).map(a => ({x:a[0], y:a[1], w:10, h:16, face:a[2], atk:a[3], rise:a[4], life:a[5] ? 30 : 600, inv:a[6] ? 4 : 0, vx:a[7], onGround:!!a[8]}));
+      shots = (s.sh || []).map(a => ({x:a[0], y:a[1], vx:a[2], vy:a[3], kind:a[4] || undefined, up:!!a[5], life:30, hit:[]}));
+      zaps = (s.zp || []).map(([life, pts]) => ({life, pts:pts.map(([x, y]) => ({x, y}))}));
+      blasts = (s.bl || []).map(([x, y, r, life]) => ({x, y, r, life}));
+      drawThralls(); drawShots(); drawBlasts(); drawZaps();
+    } finally { [thralls, shots, zaps, blasts] = mine; }
     // name tag and hearts
     const col = PEERCOL[i % PEERCOL.length], cx = Math.round(d.x + 6), ty = Math.round(d.y) - 22;
     ctx.font = '8px Silkscreen, ui-monospace, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
