@@ -235,7 +235,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.14';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.15';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1286,7 +1286,7 @@ function closeWardrobe() {
 }
 
 /* ---------- State ---------- */
-const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0});
+const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0});
 const SAVE_KEY = 'wallfall-save';
 let save = fresh();
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), {seenIntro:true}, s); } catch (e) {}
@@ -3656,10 +3656,50 @@ function drawDrops() {
 }
 
 /* ---------- Rooms ---------- */
+/* ---------- Districts ----------
+   The city is split into districts. Crossing into a new one shows its name across the screen (with a line of story
+   the first time), plays a short sting, and tints everything in that district's light. */
+const DISTRICTS = {
+  low:{name:'The Low City', sub:'Where you grew up. Where they spat on your mother’s name.', rooms:'TAHCEL', grade:'rgba(255,140,70,.3)', col:'#ffb47a'},
+  under:{name:'The Undercity', sub:'Everyone who ran from the giants ran down here first.', rooms:'BJKIVYD', grade:'rgba(70,130,170,.45)', col:'#9ac4dc'},
+  wall:{name:'The Wallwalk', sub:'The Ash-King swore they would stop at the inner wall.', rooms:'F', grade:'rgba(190,180,170,.3)', col:'#d8ccc0'},
+  gate:{name:'The Last Gate', sub:'It is waiting on the other side. It said it always keeps its word.', rooms:'GX', grade:'rgba(210,40,30,.42)', col:'#ff7a5a'},
+  foundry:{name:'The Foundry', sub:'The city forged its chains here. The Colossi remembered.', rooms:'OUZ', grade:'rgba(255,110,30,.4)', col:'#ffa060'},
+  drowned:{name:'The Drowned Quarter', sub:'They broke the dams. You had told them where the dams were.', rooms:'WSN', grade:'rgba(40,150,140,.45)', col:'#8ad8c8'},
+  garden:{name:'The Queen’s Garden', sub:'The Council’s garden. You wanted it ash. It grew teeth instead.', rooms:'QMR', grade:'rgba(110,180,70,.4)', col:'#b8e08a'},
+};
+const districtOf = key => Object.keys(DISTRICTS).find(d => DISTRICTS[d].rooms.includes(key)) || 'low';
+let curDistrict = null, dcard = null;
+function districtEnter(key) {
+  const d = districtOf(key); if (d === curDistrict) return false;
+  const first = !(save.districts || {})[d]; curDistrict = d;
+  save.districts = save.districts || {}; save.districts[d] = true; persist();
+  dcard = {d, t:0, len:first ? 330 : 170, first};
+  try { districtSting(); } catch (e) {}
+  return true;
+}
+function districtSting() {
+  if (!ac || !soundOn) return;
+  tone(55, 1.6, 'sine', .08, 40); tone(110, 1.2, 'triangle', .03, 82, .05); tone(220, 1.4, 'sine', .015, 165, .3);
+}
+function drawDistrictCard() {
+  if (!dcard || mode === 'title' || mode === 'cut') return;
+  const D = DISTRICTS[dcard.d], t = ++dcard.t, a = Math.max(0, Math.min(1, t / 30, (dcard.len - t) / 40));
+  if (t >= dcard.len) { dcard = null; return; }
+  const y = 96, w = Math.min(VW - 40, 60 + t * 6);
+  ctx.save(); ctx.globalAlpha = a;
+  const band = ctx.createLinearGradient(0, y - 30, 0, y + 34); band.addColorStop(0, 'rgba(8,4,4,0)'); band.addColorStop(.3, 'rgba(8,4,4,.55)'); band.addColorStop(.7, 'rgba(8,4,4,.55)'); band.addColorStop(1, 'rgba(8,4,4,0)');
+  ctx.fillStyle = band; ctx.fillRect(0, y - 30, VW, 64);
+  ctx.fillStyle = D.col; ctx.fillRect(VW / 2 - w / 2, y + 14, w, 1);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '30px "IM Fell English SC", "IM Fell English", Georgia, serif';
+  ctx.fillStyle = '#000'; ctx.fillText(D.name, VW / 2 + 1, y - 5); ctx.fillStyle = '#f2e2c4'; ctx.fillText(D.name, VW / 2, y - 6);
+  if (dcard.first) { ctx.globalAlpha = a * Math.min(1, Math.max(0, (t - 40) / 30)); ctx.font = 'italic 13px "IM Fell English", Georgia, serif'; ctx.fillStyle = '#000'; ctx.fillText(D.sub, VW / 2 + 1, y + 27); ctx.fillStyle = D.col; ctx.fillText(D.sub, VW / 2, y + 26); }
+  ctx.restore();
+}
 function enterRoom(key) {
   room = ROOMS[key];
   if (!save.visited[key]) { save.visited[key] = true; persist(); }
-  toast = {text:room.name, t:150};
+  if (!districtEnter(key)) toast = {text:room.name, t:150}; else toast = null;
   enemies = room.ents.filter(e => 'gjukOerwlcby'.includes(e.t)).map(e => makeEnemy(e.t, e.x, e.y));
   eshots = []; ebombs = []; pwaves = []; bfx = []; setBars(null); thralls = []; zaps = []; blasts = []; crumbles = {}; drops = [];
   vents = room.ents.filter(e => e.t === 'F').map(e => ({x:e.x, y:e.y, ph:(e.x * 37) % 160}));
@@ -6182,6 +6222,7 @@ function render() {
   ctx.globalAlpha = 1; drawRegionFront();
   ctx.globalAlpha = 1;
   ctx.restore();
+  { const D = DISTRICTS[curDistrict || 'low']; ctx.globalCompositeOperation = 'soft-light'; ctx.fillStyle = D.grade; ctx.fillRect(0, 0, VW, VH); ctx.globalCompositeOperation = 'source-over'; }
   for (const m of motes) {
     m.y -= m.s; m.ph += .03; if (m.y < -4) { m.y = VH + 4; m.x = Math.random() * VW; }
     ctx.fillStyle = room.indoor ? '#a8968a30' : '#ff9a4a90'; ctx.fillRect(m.x + Math.sin(m.ph) * 4, m.y, m.r, m.r);
@@ -6207,7 +6248,7 @@ function render() {
   if (target && !p.hook) keycap(keyOf('hook'), target.x + 8 - cx, target.y - 18 - cy);
   ctx.restore();
 
-  drawHUD();
+  drawHUD(); drawDistrictCard();
   if (mode === 'respawn') { ctx.fillStyle = `rgba(10,6,5,${modeT / 24})`; ctx.fillRect(0, 0, VW, VH); }
   if (mode === 'dead' && p.downed) {
     ctx.fillStyle = 'rgba(40,8,4,.45)'; ctx.fillRect(0, 0, VW, VH);
