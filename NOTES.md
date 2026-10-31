@@ -9,7 +9,10 @@ Who is working on what right now. Add a line before you start and remove it when
 
 Format: `- who: what, in which part of the game (date)`
 
-- (nothing claimed)
+- MelloJello087's agent: more character customization (any color, one-tone skin), in the look/wardrobe code (2026-10-31)
+- MelloJello087's agent: parrying, a new key, in player combat and hurt() (2026-10-31)
+- MelloJello087's agent: a second attack (skill) for every class, in CLASSES and player combat (2026-10-31)
+- MelloJello087's agent: start with only dash; double jump and wall jump become pickups, map adjusted so it still progresses, in rooms, items and movement (2026-10-31)
 
 ## Handoff
 Newest first. Keep each entry to a few lines: what changed, what is unfinished, what the other person should know. Delete entries once they stop being useful.
