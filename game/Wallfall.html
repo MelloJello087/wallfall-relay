@@ -205,7 +205,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.4';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.5';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -253,7 +253,7 @@ makeRoom('A', 'The Breach', 0, 3, 4, 1, {dark:.45}, B => {
   B.clear(20, 16, 22, 17); B.clear(60, 16, 62, 17); B.clear(100, 16, 102, 17);
   B.solid(8, 12, 13, 15); B.ledge(17, 23, 8); B.ledge(26, 31, 11); B.solid(34, 10, 38, 15); B.ledge(40, 43, 7); B.ledge(46, 51, 4);
   B.stakes(54, 58, 15);
-  B.solid(66, 11, 71, 15); B.crumble(73, 77, 9); B.solid(80, 8, 84, 15); B.ledge(86, 92, 11); B.ledge(94, 99, 7); B.ledge(96, 101, 3);
+  B.solid(66, 11, 71, 15); B.ledge(63, 65, 12); B.crumble(73, 77, 9); B.solid(80, 8, 84, 15); B.ledge(86, 92, 11); B.ledge(94, 99, 7); B.ledge(96, 101, 3);
   B.put('F', 105, 15); B.put('F', 109, 15); B.ledge(110, 116, 10); B.stakes(118, 121, 15);
   B.put('f', 5, 15); B.put('N', 41, 6); B.put('O', 124, 15); B.put('O', 125, 15); B.put('O', 64, 15);
   B.put('g', 28, 15); B.put('g', 50, 15); B.put('g', 68, 10); B.put('u', 90, 15); B.put('k', 97, 6); B.put('g', 113, 9);
@@ -277,7 +277,7 @@ makeRoom('L', 'The Belfry', 1, 1, 2, 1, {indoor:true, dark:.8}, B => {
   B.solid(0, 16, 63, 17); B.clear(1, 16, 6, 17);
   B.ledge(3, 9, 13); B.ledge(11, 15, 10); B.ledge(18, 23, 7); B.ledge(25, 30, 11);
   B.ledge(34, 40, 9); B.ledge(44, 50, 12); B.ledge(52, 58, 8); B.ledge(36, 42, 4);
-  B.put('C', 48, 15);
+  B.put('C', 48, 15); B.put('H', 55, 7);
 });
 makeRoom('C', 'Market Ruin', 4, 2, 2, 2, {dark:.48}, B => {
   B.solid(0, 34, 63, 35); B.clear(0, 13, 0, 15); B.clear(0, 31, 0, 33); B.clear(63, 31, 63, 33); B.clear(7, 34, 9, 35);
@@ -307,7 +307,7 @@ makeRoom('F', 'The Wallwalk', 5, 0, 4, 1, {dark:.42}, B => {
   B.clear(70, 16, 78, 16); B.stakes(70, 78, 17); B.crumble(71, 77, 12);
   B.solid(86, 8, 90, 15); B.put('a', 83, 11); B.put('R', 88, 7);
   B.put('F', 96, 15); B.put('F', 100, 15); B.ledge(104, 110, 11); B.ledge(114, 120, 8);
-  B.put('o', 26, 15); B.put('O', 124, 15); B.put('O', 64, 15);
+  B.put('o', 26, 15); B.put('O', 124, 15); B.put('O', 64, 15); B.put('Y', 28, 15);
   B.put('g', 38, 15); B.put('g', 55, 15); B.put('k', 31, 10); B.put('u', 10, 15); B.put('g', 66, 15); B.put('u', 94, 15); B.put('k', 107, 10);
   B.put('j', 20, 6); B.put('j', 52, 4); B.put('j', 80, 5); B.put('j', 116, 4);
 });
@@ -364,7 +364,7 @@ makeRoom('J', 'The Old Bakery', 4, 4, 2, 1, {indoor:true, dark:.78}, B => {
 });
 makeRoom('K', 'The Undercroft', 6, 4, 2, 1, {indoor:true, dark:.8}, B => {
   B.clear(10, 0, 12, 0); B.solid(0, 16, 63, 17); B.clear(14, 16, 16, 17); B.clear(0, 13, 0, 15); B.clear(63, 7, 63, 9);
-  B.ledge(8, 14, 4); B.ledge(5, 9, 8); B.ledge(14, 19, 11); B.solid(24, 10, 30, 15); B.ledge(20, 24, 7);
+  B.ledge(8, 14, 4); B.ledge(5, 9, 8); B.ledge(2, 5, 12); B.ledge(14, 19, 11); B.solid(24, 10, 30, 15); B.ledge(20, 24, 7);
   B.ledge(34, 40, 12); B.ledge(42, 48, 8); B.ledge(50, 55, 11); B.crumble(36, 40, 5); B.solid(56, 10, 62, 15);
   B.put('R', 27, 9); B.put('g', 21, 15); B.put('j', 18, 3); B.put('k', 22, 6);
   B.put('u', 44, 15); B.put('j', 46, 4); B.put('O', 33, 15); B.put('F', 52, 15);
@@ -609,6 +609,8 @@ const ITEMS = {
   R:{title:'Iron Ration', sub:'You can take one more hit.', color:'#ff9a6a'},
   C:{title:'Gate Cog', sub:'One of the cogs stripped from the Last Gate winch.', color:'#e8c48a'},
   Q:{title:'Whetstone', sub:'Every weapon hits one point harder.', color:'#c9d4dc'},
+  Y:{title:'Wingbone', sub:'Jump again in the air.', color:'#ffd6a0'},
+  H:{title:'Iron Claws', sub:'Hold toward a wall to cling. Jump to leap off it.', color:'#d8a070'},
 };
 
 /* ---------- Classes ---------- */
@@ -643,6 +645,8 @@ const CLASSES = {
 let clsOverride = null;
 const clsKey = () => clsOverride || (CLASSES[save.cls] ? save.cls : 'warden');
 const cls = () => CLASSES[clsKey()];
+// air jumps only once the Wingbone is found; before that it's one jump and a dash
+const airJ = () => save.dbl ? (cls().airJumps || 1) : 0;
 const WBMP = {
   blade:["........#", ".......#.", "......#..", ".....#...", "..#.#....", "...#.....", "..#.#....", ".#.......", "#........"],
   staff:["......##.", ".....####", "......##.", ".....#...", "....#....", "...#.....", "..#......", ".#.......", "#........"],
@@ -1111,7 +1115,7 @@ function closeWardrobe() {
 }
 
 /* ---------- State ---------- */
-const fresh = () => ({worldV:2, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0});
+const fresh = () => ({worldV:3, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0});
 const SAVE_KEY = 'wallfall-save';
 let save = fresh();
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), s); } catch (e) {}
@@ -2653,7 +2657,7 @@ function swimStroke() {
   if (!pInWater()) return false;
   if (p.y + 8 < R.water.y + 2) { p.vy = -7.2; sfx.splash(); }   // at the surface: leap out
   else { p.vy = -3.6; sfx.swim(); for (let i = 0; i < 3; i++) R.bubbles.push({x:p.x + p.w / 2 + (Math.random() - .5) * 8, y:p.y + 6, vy:-.6 - Math.random() * .5, life:60}); }
-  p.jbuf = 0; p.air = cls().airJumps || 1;
+  p.jbuf = 0; p.air = airJ();
   return true;
 }
 function crateAt(x, y) { return R && R.crates.find(c => c.x === x && c.y === y); }
@@ -2755,7 +2759,7 @@ function regionUpdate(ax, atkBox) {
     if (f.sq > 0) f.sq--;
     const fx = f.x * T, top = (f.y + 1) * T - 10;
     if (p.vy >= 0 && p.x + p.w > fx + 2 && p.x < fx + 14 && p.y + p.h >= top && p.y + p.h <= (f.y + 1) * T + 1) {
-      p.vy = -11.2; p.onGround = false; p.noCut = 34; p.air = cls().airJumps || 1; p.dashLeft = cls().dashes; p.coyote = 0; f.sq = 14;
+      p.vy = -11.2; p.onGround = false; p.noCut = 34; p.air = airJ(); p.dashLeft = cls().dashes; p.coyote = 0; f.sq = 14;
       sfx.boing(); burst(fx + 8, top + 4, '#ffd0f0', 10, 1.8);
     }
   }
@@ -3465,6 +3469,19 @@ function transition() {
 }
 
 /* ---------- Physics ---------- */
+// Iron Claws: hold toward a wall in the air to slide down it; jumping kicks you off
+function wallSide() {
+  const top = Math.floor((p.y + 2) / T), bot = Math.floor((p.y + p.h - 3) / T), l = Math.floor((p.x - 1) / T), r = Math.floor((p.x + p.w) / T);
+  for (let cy = top; cy <= bot; cy++) { if (solid(l, cy)) return -1; if (solid(r, cy)) return 1; }
+  return 0;
+}
+function wallCling(ax) {
+  const ws = save.wall && !p.onGround && !p.hook && p.dashT === 0 && !p.dive && !pInWater() ? wallSide() : 0;
+  if (ws && ax === ws && p.vy > -1) {
+    p.wallT = 6; p.wallS = ws; if (p.vy > 1.6) p.vy = 1.6;
+    if (tick % 5 === 0) parts.push({x:p.x + (ws > 0 ? p.w : 0), y:p.y + p.h - 4, vx:-ws * .3, vy:-.2, life:14, color:'#8c7d6a', size:1});
+  } else if (p.wallT > 0) p.wallT--;
+}
 function moveX(o) {
   o.x += o.vx;
   const top = Math.floor(o.y / T), bot = Math.floor((o.y + o.h - .01) / T);
@@ -3725,7 +3742,7 @@ function update() {
     p.hook.t++;
     if (d < 10 || p.hook.t > 45 || p.jbuf > 0) {
       const jumped = p.jbuf > 0;
-      p.hook = null; p.vy = jumped ? -7.8 : -7; p.noCut = 24; p.vx *= .5; p.air = cls().airJumps || 1; p.dashLeft = cls().dashes; p.jbuf = 0; sfx.jump();
+      p.hook = null; p.vy = jumped ? -8.3 : -7; p.noCut = 24; p.vx *= .5; p.air = airJ(); p.dashLeft = cls().dashes; p.jbuf = 0; sfx.jump();
     } else { p.vx = dx / d * 8; p.vy = dy / d * 8; if (dx) p.face = Math.sign(dx); }
   } else if (p.dashT > 0) {
     p.dashT--; p.vx = p.face * 7; p.vy = 0;
@@ -3739,10 +3756,12 @@ function update() {
   }
 
   if (held.down && p.onGround && !p.hook && p.dashT === 0 && standingOnLedge()) { save.dropped = (save.dropped || 0) + 1; p.drop = 12; p.onGround = false; p.vy = Math.max(p.vy, 1); }
+  wallCling(ax);
   if (!p.hook && p.jbuf > 0 && p.dashT === 0) {
     if (held.down && p.onGround && standingOnLedge()) { p.drop = 10; p.jbuf = 0; p.onGround = false; }
     else if (!p.onGround && swimStroke()) {}
-    else if (p.onGround || p.coyote > 0) { p.vy = -7.8; p.jbuf = 0; p.coyote = 0; sfx.jump(); }
+    else if (p.onGround || p.coyote > 0) { p.vy = -8.3; p.jbuf = 0; p.coyote = 0; sfx.jump(); }
+    else if (p.wallT > 0) { p.vy = -7.6; p.vx = -p.wallS * 3.8; p.face = -p.wallS; p.lock = 8; p.wallT = 0; p.jbuf = 0; p.air = airJ(); p.dashLeft = cls().dashes; sfx.jump(); burst(p.x + (p.wallS > 0 ? p.w : 0), p.y + p.h/2, '#b8a890', 6, 1.2); }
     else if (p.air > 0) { p.air--; p.vy = -7.2; p.jbuf = 0; sfx.air(); burst(p.x + p.w/2, p.y + p.h, '#ffd6a0', 10, 1.5); }
   }
 
@@ -3750,13 +3769,13 @@ function update() {
   moveX(p);
   const was = p.onGround;
   moveY(p, p.drop > 0);
-  if (p.hook && p.hook.t > 3 && Math.abs(p.x - ox) + Math.abs(p.y - oy) < .5) { p.hook = null; p.vy = -4; p.air = cls().airJumps || 1; }
+  if (p.hook && p.hook.t > 3 && Math.abs(p.x - ox) + Math.abs(p.y - oy) < .5) { p.hook = null; p.vy = -4; p.air = airJ(); }
   if (p.spin > 0) p.spin--;
   if (p.launchCd > 0 && --p.launchCd === 0) p.launches = 0;
   if (p.onGround && p.launches > 0 && !p.launchCd) p.launchCd = 120;
   crumbleUpdate();
   if (p.dive && p.onGround) { p.dive = false; p.atkT = 0; shake = Math.max(shake, 4); burst(p.x + p.w/2, p.y + p.h, '#8c7d6a', 12, 2); sfx.slam(); }
-  if (p.onGround) { p.coyote = 6; p.air = cls().airJumps || 1; if (p.atkT < 12) p.spin = 0; if (p.dashT === 0) p.dashLeft = cls().dashes; if (!was) burst(p.x + p.w/2, p.y + p.h, '#6b5d52', 4, 1); }
+  if (p.onGround) { p.coyote = 6; p.air = airJ(); if (p.atkT < 12) p.spin = 0; if (p.dashT === 0) p.dashLeft = cls().dashes; if (!was) burst(p.x + p.w/2, p.y + p.h, '#6b5d52', 4, 1); }
   p.run = p.onGround && Math.abs(p.vx) > .4 ? p.run + 1 : 0;
   p.walk = p.run ? (p.walk || 0) + Math.abs(p.vx) : 0;
   if (p.atkT > 0) p.atkT--;
@@ -3825,6 +3844,8 @@ function update() {
       if (!save.items[id] && overlap(p, {x:it.x*T + 2, y:it.y*T + 2, w:12, h:12})) {
         const I = ITEMS[it.t]; save.items[id] = true;
         if (it.t === 'G') save.hook = true;
+        if (it.t === 'Y') { save.dbl = true; p.air = airJ(); }
+        if (it.t === 'H') save.wall = true;
         if (it.t === 'Q') save.whet = true;
         if (it.t === 'C') save.cogs = (save.cogs || 0) + 1;
         if (it.t === 'R') { save.rations++; p.max = maxHp(); p.hp = p.max; }
@@ -5006,6 +5027,14 @@ function drawItem(it) {
     ctx.fillStyle = '#b8863a'; ctx.beginPath(); ctx.arc(x, y, 5.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#e8c48a'; ctx.beginPath(); ctx.arc(x - 1, y - 1, 3.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#3a2412'; ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2); ctx.fill();
+  } else if (it.t === 'Y') {
+    // a pair of bone wings
+    ctx.fillStyle = I.color; for (const s of [-1, 1]) for (let i = 0; i < 5; i++) ctx.fillRect(x + s * (2 + i) - (s < 0 ? 1 : 0), y - 4 + i - (i > 2 ? i - 2 : 0), 1, 6 - i);
+    ctx.fillStyle = '#fff2dc'; ctx.fillRect(x - 1, y - 3, 2, 6);
+  } else if (it.t === 'H') {
+    // three hooked claws
+    ctx.fillStyle = '#5a5e64'; ctx.fillRect(x - 5, y + 1, 10, 3);
+    ctx.fillStyle = I.color; for (const c of [-4, 0, 4]) { ctx.fillRect(x + c - 1, y - 5, 2, 6); ctx.fillRect(x + c + 1, y - 5, 1, 1); }
   } else if (it.t === 'Q') {
     ctx.fillStyle = '#2a2a2e'; ctx.fillRect(x - 6, y - 2, 12, 6); ctx.fillStyle = '#7a8088'; ctx.fillRect(x - 5, y - 2, 10, 4);
     ctx.fillStyle = '#c9d4dc'; ctx.fillRect(x - 4, y - 2, 7, 1); ctx.fillStyle = '#5a6068'; ctx.fillRect(x - 5, y + 1, 10, 1);
@@ -5061,6 +5090,7 @@ function promptBubble(label, verb, x, y, accent) {
 }
 const GLYPH = {
   dbl:(x, y) => { for (const cy of [y + 3, y + 7]) for (let i = 0; i < 4; i++) { ctx.fillRect(x + 7 - i, cy + i, 1, 1); ctx.fillRect(x + 7 + i, cy + i, 1, 1); } },
+  wall:(x, y) => { ctx.fillRect(x + 3, y + 2, 2, 11); for (const cy of [y + 4, y + 8]) { ctx.fillRect(x + 6, cy, 4, 1); ctx.fillRect(x + 10, cy + 1, 1, 1); ctx.fillRect(x + 11, cy + 2, 1, 1); } },
   dash:(x, y) => { ctx.fillRect(x + 3, y + 7, 7, 1); ctx.fillRect(x + 10, y + 7, 1, 1); ctx.fillRect(x + 9, y + 6, 1, 3); ctx.fillRect(x + 8, y + 5, 1, 5); ctx.fillRect(x + 2, y + 4, 3, 1); ctx.fillRect(x + 2, y + 10, 3, 1); },
   weapon:(x, y) => { const rows = WBMP[cls().weapon]; rows.forEach((row, j) => { for (let i = 0; i < 9; i++) if (row[i] === '#') ctx.fillRect(x + 3 + i, y + 3 + j, 1, 1); }); },
   hook:(x, y) => { ctx.fillRect(x + 8, y + 2, 3, 1); ctx.fillRect(x + 9, y + 3, 1, 7); ctx.fillRect(x + 5, y + 10, 4, 1); ctx.fillRect(x + 4, y + 8, 1, 2); ctx.fillRect(x + 5, y + 7, 1, 1); },
@@ -5099,7 +5129,7 @@ function drawArenaHint() {
 function drawHUD() {
   drawLowHp(); drawArenaHint(); drawSkillHud();
   // left plate: health, gear
-  const lw = Math.max(p.max * 9 + 10, 4 * 18 + 8 + 38);
+  const lw = Math.max(p.max * 9 + 10, 5 * 18 + 8 + 38);
   panel(6, 6, lw, 40);
   for (let i = 0; i < p.max; i++) heart(11 + i * 9, 11 - (lowHp() && i === p.hp - 1 && beatK() > .5 ? 1 : 0), i < p.hp);
   if (p.regen > 0 && p.hp < p.max) {
@@ -5107,10 +5137,10 @@ function drawHUD() {
     const k = p.regen / 420, hx = 11 + p.hp * 9, top = 11 + 6 - Math.ceil(6 * k);
     ctx.save(); ctx.beginPath(); ctx.rect(hx, top, 7, 11 + 6 - top); ctx.clip(); ctx.globalAlpha = .55 + .2 * Math.sin(tick * .12); heart(hx, 11, true); ctx.restore();
   }
-  badge(11, 22, true, 'dbl'); badge(29, 22, true, 'dash'); badge(47, 22, save.hook, 'hook'); badge(65, 22, true, 'weapon');
-  for (let i = 1; i < (save.str || 1); i++) { ctx.fillStyle = '#ff6a3a'; ctx.fillRect(66 + (i - 1) * 4, 39, 3, 2); }
+  badge(11, 22, true, 'dash'); badge(29, 22, save.dbl, 'dbl'); badge(47, 22, save.wall, 'wall'); badge(65, 22, save.hook, 'hook'); badge(83, 22, true, 'weapon');
+  for (let i = 1; i < (save.str || 1); i++) { ctx.fillStyle = '#ff6a3a'; ctx.fillRect(84 + (i - 1) * 4, 39, 3, 2); }
   { // gate cogs collected
-    const gx = 90, gy = 29, have = save.cogs || 0;
+    const gx = 108, gy = 29, have = save.cogs || 0;
     ctx.fillStyle = have ? '#b8863a' : '#3e332b';
     for (let i = 0; i < 8; i++) { const an = i * Math.PI / 4; ctx.fillRect(Math.round(gx + Math.cos(an) * 5) - 1, Math.round(gy + Math.sin(an) * 5) - 1, 3, 3); }
     ctx.beginPath(); ctx.arc(gx, gy, 4, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#160f0c'; ctx.fillRect(gx - 1, gy - 1, 2, 2);
@@ -6074,7 +6104,7 @@ function start(data) {
     if (save.won) { save = fresh(); persist(); }
     startAt('T');
   }
-  if (save.worldV !== 2) {
+  if (save.worldV !== 2 && save.worldV !== 3) {
     // the city was rebuilt bigger: carry over what this save already collected
     save.items = {}; let r = save.rations || 0, c = save.cogs || 0;
     for (const rm of RLIST) for (const e of rm.ents) {
@@ -6085,6 +6115,12 @@ function start(data) {
       if (e.t === 'C' && save.arenas[rm.key] && c > 0) { save.items[id] = true; c--; }
     }
     save.worldV = 2; persist();
+  }
+  if (save.worldV === 2) {
+    // before v0.1.5 everyone started with the double jump: keep it, and mark the Wingbone found
+    save.dbl = true;
+    for (const rm of RLIST) for (const e of rm.ents) if (e.t === 'Y') save.items[rm.key + e.t + e.x] = true;
+    save.worldV = 3; persist();
   }
   applyGateOpen(); if (save.gateOpen) gateLiftT = 999;
   if (!save.lookV2) { if (save.look && save.look.hood === 'crimson') save.look.hood = 'class'; save.lookV2 = true; persist(); }
