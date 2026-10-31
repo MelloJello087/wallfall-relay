@@ -64,6 +64,19 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 @media (pointer:coarse){ .touch{display:flex} .keys{display:none} }
 @media (max-width:420px){ .tpad,.tact{gap:5px} .tpad{grid-template-columns:repeat(2,44px)} .tact{grid-template-columns:repeat(4,44px)} .touch button{height:44px;font-size:.55rem} }
 .dlg[hidden]{display:none}
+.dlg.talking{align-items:flex-end;background:linear-gradient(#0a060500 30%,#0a0605d0)}
+.card.convo{max-width:640px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;padding:12px 16px 10px;color:#eadfd2;background:radial-gradient(60% 80% at 0% 0%,#ff7a2e18,transparent 70%),#140d0bf2;border:1px solid #a07a4666}
+.cvp canvas{width:104px;height:112px;image-rendering:pixelated;border:1px solid #ffffff14;border-radius:2px;background:radial-gradient(60% 50% at 50% 70%,#5a2a1a,#1a0e0b 80%)}
+.cvname{font-family:var(--display);font-size:1.35rem;line-height:1.1;margin:0 0 6px;color:#f2e2c4}
+.cvname span{display:block;font-family:var(--ui);font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:#a0907e;margin-top:3px}
+.card.convo p.body{color:#e6d8c2;font-style:normal;font-size:1rem;margin:0 0 6px}
+.card.convo .opts{border-top:1px solid #ffffff18;margin-top:8px}
+.card.convo button.opt{color:#eadfd2;border-bottom-color:#ffffff12;align-items:center}
+.card.convo button.opt:hover,.card.convo button.opt:focus-visible{background:#ffffff0c;box-shadow:inset 3px 0 0 #ff9a5a}
+.card.convo .n{color:#a0907e}
+.tone{margin-left:auto;font-family:var(--ui);font-size:.48rem;letter-spacing:.1em;text-transform:uppercase;padding:2px 5px;border-radius:2px;white-space:nowrap}
+.tone.heal{color:#ffd08a;border:1px solid #ffd08a55}.tone.cut{color:#ff7a5a;border:1px solid #ff7a5a55}
+@media (max-width:520px){ .card.convo{grid-template-columns:1fr} .cvp canvas{width:78px;height:84px} }
 .dlg.ontitle{background:transparent;align-items:flex-end;padding-bottom:9%}
 .titlemenu{display:flex;flex-direction:column;align-items:center;gap:6px}
 .titlemenu .opts{display:flex;flex-direction:column;gap:4px;margin:0;border:0;min-width:220px}
@@ -235,7 +248,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.16';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.17';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -6248,7 +6261,7 @@ function render() {
     if (sg) { const i = room.ents.filter(e => e.t === 'S').indexOf(sg); signBubble((SIGNS[room.key] || TIPS())[i] || '', sg.x*T + 8 - cx, sg.y*T - 26 - cy); }
   }
   const nn = mode === 'play' && nearNpc();
-  if (nn) promptBubble(keyOf('attack'), save.talked[nn.t] ? 'Talk' : 'Talk', nn.x*T + 8 - cx, nn.y*T + 16 - ({f:24, t:19, s:21, v:23, o:save.flags.forgive ? 24 : 7}[nn.t] || 20) - 22 - cy, save.talked[nn.t] ? null : '#ff8a3d');
+  if (nn) promptBubble(keyOf('attack'), save.talked[nn.t] ? 'Talk' : 'Talk', nn.x*T + 8 - cx, nn.y*T + 16 - ({f:24, t:19, s:21, v:23, i:21, n:20, p:19, o:save.flags.forgive ? 24 : 7}[nn.t] || 20) - 22 - cy, save.talked[nn.t] ? null : '#ff8a3d');
   if (target && !p.hook) keycap(keyOf('hook'), target.x + 8 - cx, target.y - 18 - cy);
   ctx.restore();
 
@@ -6520,7 +6533,8 @@ const VOICE_COG = ['One cog. The gate wants to open for you, warden.', 'Two. You
 function introBanner() { banner = {title:'Six notes lie in the ruins', sub:'Find them. They remember what you did.', color:'#e3d6bd', t:330}; }
 // NPCs talk in little voice blips while their words type out
 const VOICES = {v:{f:150, type:'square', vol:.02, var:.3, rate:2}, f:{f:104, type:'sawtooth', vol:.018, var:.22, rate:2},
-  t:{f:440, type:'triangle', vol:.034, var:.35, rate:2}, o:{f:86, type:'square', vol:.018, var:.14, rate:3}, s:{f:124, type:'triangle', vol:.04, var:.45, rate:3}};
+  t:{f:440, type:'triangle', vol:.034, var:.35, rate:2}, o:{f:86, type:'square', vol:.018, var:.14, rate:3}, s:{f:124, type:'triangle', vol:.04, var:.45, rate:3},
+  i:{f:180, type:'square', vol:.018, var:.25, rate:2}, n:{f:210, type:'triangle', vol:.03, var:.3, rate:3}, p:{f:96, type:'sine', vol:.05, var:.2, rate:3}};
 let typer = null;
 function blip(V, ch) {
   const k = (ch.toLowerCase().charCodeAt(0) * 7) % 6, vow = /[aeiou]/i.test(ch);
@@ -6553,7 +6567,7 @@ function startTyper(V) {
   }, 30)};
 }
 function openDlg({kicker, title, body, opts, html, voice}) {
-  stopTyper(false); dlgEl.classList.remove('ontitle');
+  stopTyper(false); dlgEl.classList.remove('ontitle'); dlgEl.classList.remove('talking');
   if (mode === 'play') mode = 'note';
   for (const k in held) held[k] = false;
   document.querySelectorAll('#touch button.on').forEach(b => b.classList.remove('on'));
@@ -6772,6 +6786,44 @@ const NPCS = {
       opts:[{text:"I'll remember.", flag:'taught', after:'You will know how to drop the Last Gate, if your hand is willing.'}]},
     again:f => f.taught ? '"Third link from the top," Mott reminds you.' : 'Mott keeps braiding rope and ignores you.'},
 };
+// three more people, in the districts the Colossi took last
+Object.assign(NPCS, {
+  i:{name:'Ilse, chained at the Foundry anvils', title:'Ilse', start:{
+      text:['The Forgemaster kept us working after the giants came. Chains, he said. Chains for them.', 'Then he made them for us. You\'re the warden. The one who made the deal.'],
+      opts:[
+        {text:'What do you know about the deal?', next:'deal'},
+        {text:'Break her chain.', ember:1, flag:'ilseFree', gone:true, after:'The chain parts on the third blow. Ilse rubs her wrist. "Don\'t think this makes us even."'},
+        {text:'Keep working.', tide:1, after:'She turns back to the anvil. The hammer falls, and falls.'}]},
+    deal:{text:['Everyone knows. It tells the story to everyone it eats. "The warden gave us the gate."', 'It laughs when it says your name.'],
+      opts:[
+        {text:'Let it laugh.', tide:1, after:'Ilse spits on the floor. "It\'s laughing at you, warden. Not with you."'},
+        {text:'It lied to me.', ember:1, flag:'lied', after:'"It lies to everyone. It lied to the Forgemaster too. Look where that got him."'}]},
+    again:f => 'Ilse keeps hammering. She does not look up.'},
+  n:{name:'Nessa, a ferrywoman in the flooded streets', title:'Nessa', start:{
+      text:['Mind the water, warden. Things down there remember faces.', 'My husband kept the dams. The Ash-King knew exactly which ones to break. Somebody drew it a map.'],
+      opts:[
+        {text:'I drew it.', ember:1, flag:'confess', next:'map'},
+        {text:'Who would do that?', tide:1, after:'"Someone with a gate key and a grudge," she says, and looks at your belt.'},
+        {text:'Take me across.', after:'"Nobody crosses anymore," Nessa says. "There\'s nothing on the other side."'}]},
+    map:{text:['"I know. He watched you do it, the night before. He thought you were mending the ledgers."', '"Why the dams, warden? The Council never lived down here."'],
+      opts:[
+        {text:'The deal was only the Council. The rest was its idea.', ember:1, after:'"Then it was never your deal," she says. "It was always its."'},
+        {text:'Everyone pays for the Council.', tide:2, flag:'nessaCruel', gone:true, after:'Nessa pushes off the wall with her pole and drifts away into the dark water.'}]},
+    again:f => '"Things in the water remember faces," Nessa says again.'},
+  p:{name:'Brother Orrin, the Queen\'s gardener', title:'Orrin', start:{
+      text:['The Queen planted this garden for the people the Council sent over the wall.', 'Your mother has a rose here. Third row. It\'s the only one still white.'],
+      opts:[
+        {text:'Show me.', ember:1, flag:'rose', after:'It is small and white and covered in ash. "It never needed tending," Orrin says. "It just kept growing."'},
+        {text:'The Queen sat on the Council too.', next:'queen'},
+        {text:'Burn it with the rest.', tide:2, after:'Orrin does not move to stop you. That is somehow worse.'}]},
+    queen:{text:['"She did. She voted against your mother\'s exile, and lost."', '"Then she made her own bargain with the Ash-King, to save this garden. It kept the garden. Not her."'],
+      opts:[
+        {text:'Everyone bargains with it.', ember:1, after:'"And it wins every time," says Orrin. "Remember that at the gate."'},
+        {text:'She should have known better.', tide:1, after:'"So should you," says Orrin, and goes back to his thorns.'}]},
+    again:f => f.rose ? '"The white one, third row," Orrin says.' : 'Orrin keeps cutting back the thorns.'},
+});
+// the rest of the people the Colossi left alive
+for (const [k, t, x, y] of [['O', 'i', 7, 15], ['W', 'n', 29, 7], ['Q', 'p', 6, 15]]) if (ROOMS[k] && !ROOMS[k].ents.some(e => e.t === t)) ROOMS[k].ents.push({t, x, y});
 function nearNpc() {
   for (const it of room.ents) if (NPCS[it.t] && !save.gone[it.t]) {
     const nx = it.x*T + 8, ny = it.y*T + 8;
@@ -6781,10 +6833,10 @@ function nearNpc() {
 }
 function talk(it, key) {
   const N = NPCS[it.t];
-  if (!key && save.talked[it.t]) { openDlg({kicker:N.name, title:N.title, body:[N.again(save.flags)], opts:[{text:'Leave.'}], voice:it.t}); return; }
+  if (!key && save.talked[it.t]) { convo(it, [N.again(save.flags)], [{text:'Leave.'}]); return; }
   const node = N[key || 'start'];
-  openDlg({kicker:N.name, title:N.title, voice:it.t, body:typeof node.text === 'function' ? node.text() : node.text, opts:node.opts.map(o => ({
-    text:o.text, tag:o.ember ? 'Remorse' : o.tide ? 'Cruelty' : '',
+  convo(it, typeof node.text === 'function' ? node.text() : node.text, node.opts.map(o => ({
+    text:o.text, tag:o.ember ? 'Remorse' : o.tide ? 'Cruelty' : '', tone:o.ember ? 'heal' : o.tide ? 'cut' : '',
     run:() => {
       save.talked[it.t] = true;
       save.tide += o.tide || 0; save.ember += o.ember || 0;
@@ -6792,8 +6844,21 @@ function talk(it, key) {
       if (o.gone) { save.gone[it.t] = true; }
       persist();
       if (o.next) talk(it, o.next);
-      else if (o.after) openDlg({kicker:N.name, title:N.title, body:[o.after], opts:[{text:'Leave.'}], voice:it.t});
-    }}))});
+      else if (o.after) convo(it, [o.after], [{text:'Leave.'}]);
+    }})));
+}
+// a conversation: their portrait, name and words typed out in their voice, and what you can say back
+let convoAnim = 0;
+function convo(it, lines, opts) {
+  const N = NPCS[it.t], [, role] = N.name.split(/, (.+)/);
+  const btns = opts.map((o, i) => `<button class="opt" id="opt${i}" data-i="${i}"><span class="n">${i + 1}</span><span class="t">${esc(o.text)}</span>${o.tag ? `<span class="tone ${o.tone}">${esc(o.tag)}</span>` : ''}</button>`).join('');
+  openDlg({opts, voice:it.t, html:`<div class="card convo"><div class="cvp"><canvas id="cvp" width="26" height="28" aria-hidden="true"></canvas></div><div class="cvm"><p class="cvname">${esc(N.title)}<span>${esc(role || '')}</span></p>${lines.filter(Boolean).map(t => `<p class="body">${esc(t)}</p>`).join('')}<div class="opts">${btns}</div></div></div>`});
+  dlgEl.classList.add('talking');
+  const cv2 = document.getElementById('cvp'); if (!cv2 || !cv2.getContext) return;
+  const pc = cv2.getContext('2d'), sp = SPR[it.t] || SPR.f, h = sp.rows.length, w = Math.max(...sp.rows.map(r => r.length));
+  let t0 = 0; cancelAnimationFrame(convoAnim);
+  const loop = () => { if (!document.body.contains(cv2)) return; t0++; pc.clearRect(0, 0, 26, 28); const main = ctx; ctx = pc; try { drawSprite(sp, Math.round((26 - w) / 2), 27, false, t0, 1); } finally { ctx = main; } convoAnim = requestAnimationFrame(loop); };
+  loop();
 }
 const SPR = {
   v:{pal:{k:'#1a1210', s:'#c99a74', S:'#9a6e4c', e:'#1a1210', m:'#7a3a2e', i:'#aab2ba', I:'#6e767e', a:'#8a9098', A:'#5e646c', T:'#2e3e6a', Y:'#d0a848', w:'#e6dccb', p:'#4a3a30', b:'#3a2c22'}, cut:9, rows:[
@@ -6921,6 +6986,70 @@ const SPR = {
     ".....kbb.bbk....",
     "....kkkk.kkkk..."]},
 };
+// the people met in the new districts
+SPR.i = {pal:{k:'#1a1210', s:'#b8835a', S:'#8a5a3a', e:'#1a1210', h:'#9a4a2a', H:'#6a2e1a', x:'#3a3030', L:'#5a3a22', l:'#7a5232', w:'#8a8e96', W:'#5e646c', b:'#2e2420'}, cut:8, rows:[
+    ".....kkkkk......",
+    "....khhhhhk.....",
+    "...khhhhhhHk....",
+    "...kHsssssHk....",
+    "...ksexssesk....",
+    "...ksssxsssk....",
+    "....kssssSk.....",
+    ".....kSSSk......",
+    "...kssLLLssk....",
+    "..kssLLlLLssk...",
+    "..ksSLLLLLSskww.",
+    "..kkkLLlLLkk.Ww.",
+    ".....LLLLL...W..",
+    ".....LLlLL......",
+    ".....LLLLL......",
+    "....kLLLLLk.....",
+    "....kbbkbbk.....",
+    "....kbbkbbk.....",
+    "....kbbkbbk.....",
+    "....kbbkbbk.....",
+    "...kkkkkkkkk...."]};
+SPR.n = {pal:{k:'#1a1210', s:'#d1a07a', S:'#a8764e', e:'#1a1210', h:'#4a6a6a', H:'#2e4646', c:'#3a4e52', C:'#26363a', w:'#c8c0b0', b:'#2a2420'}, cut:9, rows:[
+    ".....kkkkk......",
+    "....khhhhhk.....",
+    "...khhhhhhhk....",
+    "...khHsssshk....",
+    "...kHsesseHk....",
+    "...kHssssshk....",
+    "...khHsssHhk....",
+    "....khhhhhk.....",
+    "...kccwwwcck....",
+    "..kcccwwwccck...",
+    "..kccccwccccsk..",
+    "..ksccccccccsk..",
+    "...kccccccCck...",
+    "...kccccccCck...",
+    "...kccccccCck...",
+    "...kcCccccCck...",
+    "...kcCccccCck...",
+    "....kbb..bbk....",
+    "....kbb..bbk....",
+    "...kkkk..kkkk..."]};
+SPR.p = {pal:{k:'#1a1210', s:'#d1a07a', S:'#a8764e', e:'#1a1210', g:'#4e6a3a', G:'#34492a', y:'#c9a060', m:'#c8ccd0', r:'#e8e4dc', b:'#2a2420'}, cut:8, rows:[
+    ".....kkkkk......",
+    "....kssssSk.....",
+    "...kssssssSk....",
+    "...ksesssesk....",
+    "...kssssssSk....",
+    "....ksSSSsk.....",
+    ".....kSSSk......",
+    "...kggggggggk...",
+    "..kggggggggggk..",
+    "..ksggGggggGgsk.",
+    "..kssgggggggssmm",
+    "...kkyyyyyyykkm.",
+    "....kgggggGgk...",
+    "....kgggggGgk...",
+    "....kggGgggGk...",
+    "....kggGgggGk...",
+    "...kgggGgggGgk..",
+    "...kkbbkkkbbkk..",
+    "....kkk...kkk..."]};
 function drawSprite(sp, x, base, flip, t, seed) {
   const rows = sp.rows, w = Math.max(...rows.map(r => r.length)), h = rows.length, top = base - h;
   const breath = sp.cut && ((t + seed * 37) >> 5) % 2 ? 1 : 0;
@@ -6963,6 +7092,20 @@ function drawNpc(it) {
       ctx.fillStyle = '#5c4f45'; ctx.fillRect(cxNpc + 8, base - 4, 5, 4); ctx.fillStyle = '#4b3f37'; ctx.fillRect(cxNpc + 2, base - 3, 4, 3); ctx.fillRect(cxNpc + 16, base - 3, 6, 3);
       if ((tick >> 4) % 6 === 0) { ctx.fillStyle = '#d1a07a'; ctx.fillRect(cxNpc - 18, base - 5, 2, 1); }
     }
+  } else if (it.t === 'i') {
+    // chained to an anvil
+    const ax = flip ? cxNpc + 9 : cxNpc - 21;
+    ctx.fillStyle = '#3a3a40'; ctx.fillRect(ax + 2, base - 4, 8, 4); ctx.fillStyle = '#5e646c'; ctx.fillRect(ax, base - 8, 12, 4); ctx.fillStyle = '#8a8e96'; ctx.fillRect(ax, base - 8, 12, 1);
+    if (!save.flags.ilseFree) { ctx.fillStyle = '#6e7478'; for (let i = 0; i < 6; i++) ctx.fillRect(Math.round(ax + 6 + (cxNpc - ax - 6) * i / 6), base - 2 - (i % 2), 2, 1); }
+    drawSprite(SPR.i, cxNpc - 8, base, flip, tick, 6);
+  } else if (it.t === 'n') {
+    // a ferry pole
+    const px = flip ? cxNpc - 9 : cxNpc + 7; ctx.fillStyle = '#5a3a1e'; ctx.fillRect(px, base - 30, 2, 30); ctx.fillStyle = '#7a5230'; ctx.fillRect(px, base - 30, 2, 1);
+    drawSprite(SPR.n, cxNpc - 8, base, flip, tick, 7);
+  } else if (it.t === 'p') {
+    // a white rose at his feet
+    const rx = flip ? cxNpc - 14 : cxNpc + 10; ctx.fillStyle = '#4e6a3a'; ctx.fillRect(rx, base - 6, 1, 6); ctx.fillStyle = '#e8e4dc'; ctx.fillRect(rx - 1, base - 8, 3, 2);
+    drawSprite(SPR.p, cxNpc - 8, base, flip, tick, 8);
   } else if (it.t === 'v') {
     drawSprite(SPR.v, cxNpc - 8, base, flip, tick, 5);
   } else if (it.t === 's') {
