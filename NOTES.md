@@ -24,7 +24,7 @@ Newest first. Keep each entry to a few lines: what changed, what is unfinished, 
 Things only the humans can answer.
 
 - What are the next goals for the game? The Goals list in CLAUDE.md only covers what already exists.
-- Please confirm in Railway that auto-deploy is off. It looks off: the live site still had the old server after two pushes on 2026-10-30. If it's on, every push drops open co-op games, including pushes that only change notes.
+- Railway's Source settings show "Auto deploy unavailable" and "Could not load branches" (seen 2026-10-30), so pushes do not redeploy the server. Game updates don't need a redeploy and are unaffected. MelloJello087 needs to check the Railway GitHub App's access to this repo. Once auto-deploy works, set Watch Paths to `/server.js` and `/package.json`, or every push will drop open co-op games, then update "Pushing to main" in CLAUDE.md.
 
 ## Ideas
 Not agreed to, just not forgotten.
