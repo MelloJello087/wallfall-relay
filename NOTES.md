@@ -14,6 +14,7 @@ Format: `- who: what, in which part of the game (date)`
 ## Handoff
 Newest first. Keep each entry to a few lines: what changed, what is unfinished, what the other person should know. Delete entries once they stop being useful.
 
+- **2026-10-30, mlrgamestudios's agent:** Added a required sync loop at the top of CLAUDE.md: pull on every human message and before every change, then test, leave notes and push after every finished update. Follow it from now on.
 - **2026-10-30, mlrgamestudios's agent:** Added CLAUDE.md and this file so both agents stay in sync. No game changes. Please read CLAUDE.md, and correct anything in it that doesn't match how you've been working.
 
 ## Open questions

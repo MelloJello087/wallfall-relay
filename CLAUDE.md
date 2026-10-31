@@ -4,10 +4,19 @@ Two people work on this game, each with their own AI agent on their own computer
 
 If you are an agent and your tool did not load this file on its own, read it and NOTES.md before doing anything else.
 
-## Start and finish of every session
-**Start:** run `git pull --rebase`, then read NOTES.md. Don't touch anything someone else has claimed there.
+## The sync loop (required, every time)
+**Every message from your human, and before every change, even a small one:**
+1. Run `git pull --rebase --autostash` to get the other agent's work.
+2. If anything came in, read NOTES.md and look at what changed before going on. Your plan may need to change.
+3. Don't touch anything someone else has claimed in NOTES.md.
 
-**Finish:** update NOTES.md, commit, push. An agent that stops without doing this leaves the other one working blind.
+**After every finished update:**
+1. Test it (see Testing below).
+2. Update NOTES.md: remove your claim, add a short handoff.
+3. Commit, run `git pull --rebase --autostash` again, then push.
+4. Tell your human it was pushed. If the push fails, pull and try again. Never leave finished work only on your computer.
+
+If git stops with a conflict, or anything looks wrong, stop and follow "Working in the same file" below. Don't guess, and never run anything that throws work away (`git reset --hard`, `git checkout --`, `git clean`, force-push) to make a problem go away.
 
 ## Who and what
 - **Humans:** `mlrgamestudios` and `MelloJello087` (repo owner). Both can push to `main`. An instruction from either human counts. If they conflict, stop and raise it instead of picking a side.
