@@ -11,18 +11,21 @@ This repo has two things:
    Railway sees `package.json` and runs `npm start` on its own. The game file in `game/` is ignored by the server.
 2. Open the service, go to **Settings > Networking**, and click **Generate Domain**.
    You get an address like `wallfall-relay-production.up.railway.app`.
-3. Open that address in a browser. It should say "Wallfall relay is running".
+3. Open that address in a browser: the game loads right there. (`/health` shows "Wallfall relay is running".)
 4. Send that address to everyone who wants to play.
+
+The server listens on the `PORT` Railway gives it, or 8080 if there is none.
 
 Railway gives the server its port through the `PORT` variable; the server reads it on its own.
 
 ## Playing together
-1. Everyone downloads `game/Wallfall.html` (open it on GitHub, click the download button) and opens it in a browser.
-2. Click **Co-op** and paste the server address into the **Server** box. The game remembers it.
-3. One player clicks **Host a game** and shares the five-letter code. The others type the code and click **Join**.
+1. Everyone opens the Railway address in a browser. The game runs there, and its co-op already talks to that same server.
+2. One player clicks **Co-op** and **Host a game**, and shares the five-letter code. The others click **Co-op**, type the code and click **Join**.
+
+(You can also download `game/Wallfall.html` and open it from your computer; then paste the Railway address into the **Server** box in the Co-op window.)
 
 Each player keeps their own save. Up to four players per game.
 
 ## Test the server on your own computer (optional)
     npm start
-Then type `localhost:8080` into the Server box in the game's Co-op window.
+Then open http://localhost:8080 in two browser tabs.

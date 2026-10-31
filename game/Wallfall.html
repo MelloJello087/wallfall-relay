@@ -1181,7 +1181,11 @@ const PeerTransport = {
 };
 // your own relay server (for example on Railway). Paste its address here, or into the Co-op window.
 const DEFAULT_SERVER = '';
-const serverUrl = () => { let u = ''; try { u = localStorage.getItem('wallfall-server') || ''; } catch (e) {} u = (u || DEFAULT_SERVER).trim(); if (!u) return '';
+// served by the relay itself (e.g. on Railway): the game talks to the same address it was loaded from
+const servedByRelay = () => /^https?:$/.test(location.protocol) && !(window.claude && typeof window.claude.use === 'function') && !!document.querySelector('meta[name="wallfall-relay"]');
+const serverUrl = () => { let u = ''; try { u = localStorage.getItem('wallfall-server') || ''; } catch (e) {} u = (u || DEFAULT_SERVER).trim();
+  if (!u && servedByRelay()) return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+  if (!u) return '';
   if (!/^wss?:\/\//.test(u)) u = u.replace(/^https?:\/\//, m => m === 'http://' ? 'ws://' : 'wss://'); if (!/^wss?:\/\//.test(u)) u = (/^(localhost|127\.)/.test(u) ? 'ws://' : 'wss://') + u; return u.replace(/\/+$/, ''); };
 const WsTransport = {
   // a relay server: everyone connects to it and it passes states between players with the same code
@@ -1394,7 +1398,7 @@ function openCoop() {
   let html = `<div class="card coop"><p class="kicker">Co-op · ${esc(Transport === WsTransport ? 'online, your server' : Transport.name)}</p><h2>${inS ? 'Code ' + esc(NET.code) : 'Play together'}</h2>`;
   if (!inS) {
     html += `<label class="cf">Your name<input id="cName" maxlength="14" value="${esc(NET.name)}" autocomplete="off"></label>`;
-    if (!onClaude()) html += `<label class="cf">Server <span style="text-transform:none;letter-spacing:0;font-weight:400">(your Railway address; leave empty to connect directly)</span><input id="cServer" placeholder="wallfall-relay.up.railway.app" autocomplete="off" spellcheck="false" value="${esc((() => { try { return localStorage.getItem('wallfall-server') || DEFAULT_SERVER; } catch (e) { return DEFAULT_SERVER; } })())}"></label>`;
+    if (!onClaude() && !servedByRelay()) html += `<label class="cf">Server <span style="text-transform:none;letter-spacing:0;font-weight:400">(your Railway address; leave empty to connect directly)</span><input id="cServer" placeholder="wallfall-relay.up.railway.app" autocomplete="off" spellcheck="false" value="${esc((() => { try { return localStorage.getItem('wallfall-server') || DEFAULT_SERVER; } catch (e) { return DEFAULT_SERVER; } })())}"></label>`;
     html += `<div class="opts">${btn('Host a game', () => { saveName(); netStart('host'); })}</div>`;
     html += `<label class="cf">Friend's code<input id="cCode" maxlength="5" placeholder="ABCDE" autocomplete="off" spellcheck="false"></label>`;
     html += `<div class="opts">${btn('Join', () => { saveName(); const c = (NET.draftCode || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (c.length === 5) netStart('guest', c); else { NET.err = 'Codes are five letters.'; openCoop(); } })}`;

@@ -1,6 +1,8 @@
 // Wallfall relay: a tiny WebSocket server that lets players find each other by a five-letter code
 // and passes each player's state to everyone else in the same game. No packages needed.
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 
 const PORT = process.env.PORT || 8080;
@@ -8,9 +10,27 @@ const MAX_PLAYERS = 4;          // per game
 const MAX_MESSAGE = 16 * 1024;  // bytes; a player's state is about 4 KB at most
 const games = new Map();        // code -> Set of clients
 
+// the game itself is served from the same address, so players just open the site and play
+const GAME_FILE = path.join(__dirname, 'game', 'Wallfall.html');
+function gamePage() {
+  try {
+    // a marker tells the game it was loaded from this server, so co-op connects back here on its own
+    return fs.readFileSync(GAME_FILE, 'utf8').replace('<head>', '<head><meta name="wallfall-relay" content="1">');
+  } catch (e) { return null; }
+}
 const server = http.createServer((req, res) => {
-  res.writeHead(200, {'Content-Type': 'text/plain'});
-  res.end(`Wallfall relay is running. Games open: ${games.size}\n`);
+  const url = (req.url || '/').split('?')[0];
+  if (url === '/health' || url === '/status') {
+    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.end(`Wallfall relay is running. Games open: ${games.size}\n`);
+    return;
+  }
+  if (url === '/' || url === '/index.html' || url === '/Wallfall.html') {
+    const page = gamePage();
+    if (page) { res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache'}); res.end(page); return; }
+    res.writeHead(500, {'Content-Type': 'text/plain'}); res.end('The game file (game/Wallfall.html) is missing from the server.\n'); return;
+  }
+  res.writeHead(404, {'Content-Type': 'text/plain'}); res.end('Not found\n');
 });
 
 server.on('upgrade', (req, socket) => {
@@ -91,4 +111,4 @@ setInterval(() => {
   for (const game of games.values()) for (const c of game) { if (!c.alive) c.socket.destroy(); c.alive = false; }
 }, 20000);
 
-server.listen(PORT, () => console.log('Wallfall relay listening on port ' + PORT));
+server.listen(PORT, '0.0.0.0', () => console.log('Wallfall listening on port ' + PORT + ' (game at /, status at /health)'));
