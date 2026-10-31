@@ -235,7 +235,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.13';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.14';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -6264,19 +6264,31 @@ function cutColossus(x, base, sc, ph, lean, up) {
   for (const d of [-4, 4]) { const ex = hx + d * sc, ey = hy - 3 * sc, r = 7 * sc, g = ctx.createRadialGradient(ex, ey, 0, ex, ey, r); g.addColorStop(0, `rgba(255,190,110,${.9 * up})`); g.addColorStop(1, 'rgba(255,120,40,0)'); ctx.fillStyle = g; ctx.fillRect(ex - r, ey - r, r * 2, r * 2); }
   ctx.globalCompositeOperation = 'source-over';
 }
-function cutFigure(x, y, f, walk) {
+function cutFigure(x, y, f, walk, lit) {
   const keep = {onGround:p.onGround, run:p.run, walk:p.walk, hook:p.hook, vy:p.vy, vx:p.vx, atkT:p.atkT, dashT:p.dashT, dive:p.dive};
   Object.assign(p, {onGround:true, run:walk ? 1 : 0, walk:walk || 0, hook:null, vy:0, vx:0, atkT:0, dashT:0, dive:false});
-  try { heroSprite(Math.round(x), Math.round(y), f, '#050303'); } finally { Object.assign(p, keep); }
+  try { heroSprite(Math.round(x), Math.round(y), f, lit ? null : '#050303'); } finally { Object.assign(p, keep); }
 }
 // the burning city and the last gate up on its hill: the cutscene's last shot, and the title screen
 function cutCity(t, fig) {
     // the burning city, and the last gate far up the hill
     const hx = VW * .72, hy = VH * .3;
-    ctx.fillStyle = '#1a0c0a'; ctx.beginPath(); ctx.moveTo(VW * .3, VH); ctx.quadraticCurveTo(hx - 50, hy + 14, hx, hy + 6); ctx.quadraticCurveTo(hx + 60, hy + 14, VW + 20, VH * .62); ctx.lineTo(VW + 20, VH); ctx.fill();
-    ctx.fillStyle = '#0b0607'; ctx.fillRect(hx - 22, hy - 24, 44, 30); for (let x = hx - 22; x < hx + 22; x += 9) ctx.fillRect(x, hy - 29, 5, 5);
-    const lg = ctx.createRadialGradient(hx, hy - 6, 0, hx, hy - 6, 18); lg.addColorStop(0, `rgba(255,214,140,${.35 + .1 * Math.sin(t * .08)})`); lg.addColorStop(1, 'rgba(255,214,140,0)'); ctx.fillStyle = lg; ctx.fillRect(hx - 18, hy - 24, 36, 36);
-    ctx.fillStyle = '#ffd68c'; ctx.fillRect(hx - 1, hy - 8, 2, 3);
+    // the hill: a flat crest the fortress stands on, falling away on both sides
+    const ridge = x => hy + 8 + Math.pow(Math.max(0, Math.abs(x - hx) - 34), 2) * (x < hx ? .0042 : .0058);
+    ctx.fillStyle = '#1a0c0a'; ctx.beginPath(); ctx.moveTo(-20, VH);
+    for (let x = -20; x <= VW + 20; x += 4) ctx.lineTo(x, ridge(x)); ctx.lineTo(VW + 20, VH); ctx.fill();
+    // curtain walls running down the slopes from the gatehouse, built into the ground
+    ctx.fillStyle = '#0b0607';
+    for (let x = hx - 130; x <= hx + 130; x += 2) { if (Math.abs(x - hx) < 20) continue; const y = ridge(x); ctx.fillRect(x, y - 10, 2, 13); if (Math.round((x - hx) / 2) % 4 === 0) ctx.fillRect(x, y - 13, 2, 3); }
+    // the gatehouse: two towers and the gate between, footed in the hill
+    ctx.fillRect(hx - 22, hy - 18, 44, 30); ctx.fillRect(hx - 28, hy - 30, 12, 42); ctx.fillRect(hx + 16, hy - 30, 12, 42);
+    for (const tx of [hx - 28, hx + 16]) for (let x = tx; x < tx + 12; x += 4) ctx.fillRect(x, hy - 33, 2, 3);
+    ctx.fillStyle = '#1e1210'; ctx.beginPath(); ctx.moveTo(hx - 8, hy + 9); ctx.lineTo(hx - 8, hy - 4); ctx.arc(hx, hy - 4, 8, Math.PI, 0); ctx.lineTo(hx + 8, hy + 9); ctx.fill();
+    ctx.fillStyle = '#0b0607'; for (let x = hx - 6; x < hx + 8; x += 4) ctx.fillRect(x, hy - 10, 1, 19);
+    const lg = ctx.createRadialGradient(hx - 22, hy - 22, 0, hx - 22, hy - 22, 16); lg.addColorStop(0, `rgba(255,214,140,${.35 + .1 * Math.sin(t * .08)})`); lg.addColorStop(1, 'rgba(255,214,140,0)'); ctx.fillStyle = lg; ctx.fillRect(hx - 38, hy - 38, 32, 32);
+    ctx.fillStyle = '#ffd68c'; ctx.fillRect(hx - 23, hy - 23, 2, 3);
+    // a road winding up to it
+    ctx.strokeStyle = '#2a1612'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx, hy + 10); for (let k = 1; k <= 12; k++) { const x = hx + Math.sin(k * 1.3) * (6 + k * 5), y = hy + 10 + k * 11; ctx.lineTo(x, Math.max(y, ridge(x) + 2)); } ctx.stroke();
     cutColossus(VW * .12, VH + 70, 1.6, t * .012, .2, 1); cutColossus(VW * .45, VH + 90, 1.1, t * .012 + 3, -.1, .8);
     const glow = ctx.createLinearGradient(0, VH * .5, 0, VH); glow.addColorStop(0, 'rgba(255,110,40,0)'); glow.addColorStop(1, 'rgba(255,110,40,.35)');
     ctx.fillStyle = glow; ctx.fillRect(-20, VH * .5, VW + 40, VH * .5);
@@ -6345,7 +6357,7 @@ function drawCut() {
     ctx.beginPath(); ctx.moveTo(wx + Math.cos(ang) * 9, gy - 14 + Math.sin(ang) * 9); ctx.lineTo(wx - Math.cos(ang) * 9, gy - 14 - Math.sin(ang) * 9); ctx.stroke();
     const walkT = Math.min(1, t / 230), fx = wx - 150 + walkT * 128;
     { const lg2 = ctx.createRadialGradient(fx + 7, gy - 8, 0, fx + 7, gy - 8, 22); lg2.addColorStop(0, 'rgba(255,200,120,.35)'); lg2.addColorStop(1, 'rgba(255,160,80,0)'); ctx.fillStyle = lg2; ctx.fillRect(fx - 15, gy - 30, 44, 44); }
-    cutFigure(fx, gy - 26, 1, walkT < 1 ? t * 1.2 : 0);
+    cutFigure(fx, gy - 26, 1, walkT < 1 ? t * 1.2 : 0, t < 480);
     ctx.fillStyle = '#ffcf70'; ctx.fillRect(Math.round(fx) + 6, gy - 9, 2, 2);
     // fog along the ground
     for (let n = 0; n < 5; n++) { const fx2 = ((n * 140 + t * .25) % (VW + 200)) - 100, fg = ctx.createRadialGradient(fx2, gy, 0, fx2, gy, 90); fg.addColorStop(0, `rgba(${mix([60, 56, 70], [120, 50, 30])},.25)`); fg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = fg; ctx.fillRect(fx2 - 90, gy - 40, 180, 80); }
