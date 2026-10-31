@@ -136,17 +136,34 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 .choices .fx.heal{color:#ffcf70}
 .choices .fx.cut{color:#ff6a3a}
 @media (max-width:480px){ .choices button.opt{flex-wrap:wrap} .choices .fx{width:100%;padding-left:28px} .doc{font-size:1.4rem;padding:18px 20px} .doc-journal .sketch{width:90px} }
-.classpick{max-width:680px;text-align:center;padding:22px 20px 18px}
-.classpick h2{margin-bottom:14px}
-.classpick{max-width:760px}
-.classpick .ctiles{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
-.card.classpick button.opt.cls{padding:7px 3px 6px;gap:3px}
-.classpick .cspr{width:42px;height:48px}
-.classpick .cname{font-size:.95rem}
-.cgroup{margin:0 0 12px}
-.cglabel{font-family:var(--ui);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;text-align:left;margin:0 0 6px;padding-bottom:3px;border-bottom:1px solid #2a1d1630}
-.cglabel span{color:var(--faded);letter-spacing:.06em;margin-left:6px;text-transform:none;font-size:.6rem}
-.cg-attack .cglabel{color:#a8321e}.cg-defense .cglabel{color:#3e5a78}.cg-support .cglabel{color:#4e7a3a}
+.card.classpick{max-width:860px;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;padding:16px 18px;color:#eadfd2;
+  background:radial-gradient(70% 50% at 85% 0%,#ff7a2e22,transparent 70%),radial-gradient(60% 40% at 0% 100%,#8e2f2222,transparent 70%),#140d0b;border:1px solid #a07a4655}
+.classpick .kicker{color:#ff9a5a}.classpick h2{color:#f2e2c4;font-size:1.35rem;margin:0 0 10px}
+.cgroup{margin:0 0 9px}
+.cglabel{font-family:var(--ui);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;text-align:left;margin:0 0 5px;padding-bottom:3px;border-bottom:1px solid #ffffff14}
+.cglabel span{color:#a0907e;letter-spacing:.04em;margin-left:6px;text-transform:none}
+.cg-attack .cglabel{color:#e8603a}.cg-defense .cglabel{color:#7aa0d8}.cg-support .cglabel{color:#8ad06a}
+.classpick .ctiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:5px}
+.card.classpick button.opt.cls{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 2px 4px;border:1px solid #ffffff12;border-radius:3px;background:#ffffff08;color:#d8c8b0;text-align:center}
+.card.classpick button.opt.cls:hover,.card.classpick button.opt.cls:focus-visible,.card.classpick button.opt.cls.sel{background:#ffffff14;border-color:#ff9a5a88;box-shadow:inset 0 -2px 0 #ff9a5a;outline:none}
+.classpick .cspr{width:42px;height:48px;image-rendering:pixelated}
+.classpick .cname{font-family:var(--ui);font-size:.5rem;letter-spacing:.04em;line-height:1.1}
+.cpr{--rc:#e8603a;display:flex;flex-direction:column;align-items:stretch;text-align:left;min-width:0}
+.cstage{position:relative;height:150px;border:1px solid #ffffff12;border-radius:3px;overflow:hidden;background:radial-gradient(50% 60% at 50% 100%,color-mix(in srgb,var(--rc) 35%,transparent),transparent 75%),linear-gradient(#1d0d0b,#3a1810);display:flex;align-items:flex-end;justify-content:center}
+.cstage::after{content:"";position:absolute;left:0;right:0;bottom:0;height:16px;background:#170b09;border-top:1px solid #3a1c14}
+#cbig{width:200px;height:170px;image-rendering:pixelated;position:relative;z-index:1;margin-bottom:-6px;background:transparent}
+.crole{font-family:var(--ui);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--rc);margin:10px 0 2px}
+.cpr h3{font-family:var(--display);font-weight:400;font-size:1.6rem;margin:0;color:#f2e2c4}
+.cdesc{font-style:italic;font-size:.95rem;line-height:1.35;margin:4px 0 8px;color:#d8c8b0}
+.cstats{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-bottom:8px}
+.cstats div{display:flex;justify-content:space-between;align-items:center;font-family:var(--ui);font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;color:#a0907e}
+.cstats b{display:flex;gap:2px}.cstats i{width:9px;height:5px;background:#ffffff18}.cstats i.on{background:var(--rc)}
+.cmoves{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-direction:column;gap:5px;font-size:.85rem;line-height:1.3;color:#d8c8b0}
+.cmoves kbd{font-family:var(--ui);font-size:.5rem;background:#e3d6bd;color:#2a1d16;border-radius:2px;padding:1px 4px;margin-right:6px;white-space:nowrap}
+.cmoves b{color:#f2e2c4;font-weight:400;margin-right:4px}
+.cgo{margin-top:auto;font-family:var(--ui);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:9px;border:1px solid var(--rc);background:color-mix(in srgb,var(--rc) 25%,#140d0b);color:#f2e2c4;border-radius:3px;cursor:pointer}
+.cgo:hover{background:color-mix(in srgb,var(--rc) 45%,#140d0b)}
+@media (max-width:640px){ .card.classpick{grid-template-columns:1fr} .cstage{height:110px} #cbig{width:140px;height:119px} }
 .ctiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
 .card button.opt.cls{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px 10px;border:1px solid #2a1d1626;border-radius:3px;background:#ffffff40;text-align:center}
 .card button.opt.cls:hover,.card button.opt.cls:focus-visible{background:#fff8;box-shadow:inset 0 -3px 0 var(--seal);outline:none}
@@ -211,7 +228,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.11';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.12';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1071,16 +1088,70 @@ function drawWeapon(kind, H, dir, put, attacking) {
     if (attacking && p.atkT > 9) { const mx = Math.round(bx + dir.x * 11), my = Math.round(by + dir.y * 11 - 1); put(mx, my, 'O'); put(mx + 1, my, 'o'); put(mx + 1, my - 1, 'o'); put(mx + 2, my, 'o'); }
   }
 }
+// what each class's skills do, shown on the class picker: [Q skill, R skill]
+const SKDESC = {
+  warden:['Spin and cut everything around you.', 'Raise your guard: nothing gets through for a second.'],
+  mage:['A ring of fire bursts out in every direction.', 'Call a burning rock down on the nearest foe.'],
+  breaker:['Slam the ground and send shockwaves both ways.', 'Leap high and crash down in a quake.'],
+  hunter:['Three piercing bolts at once.', 'Set a snare that holds whatever steps in it.'],
+  knife:['Vanish and strike from behind the nearest foe.', 'Smoke: untouchable for two seconds, and foes reel.'],
+  necro:['Bone spikes burst from the ground ahead.', 'Your thralls explode where they stand.'],
+  bulwark:['Charge shield-first through everything.', 'Slam your shield down and stun all in front.'],
+  lancer:['Vault upward, spear first.', 'Hurl a javelin that pierces the whole line.'],
+  sapper:['Three bombs at once.', 'Bury a mine that waits for them.'],
+  storm:['Lightning strikes the three nearest foes.', 'A crackling field zaps anything that comes close.'],
+  reaver:['A whirlwind of axes.', 'Bloodrage: swing faster, and win back a heart.'],
+  pilgrim:['A palm strike that hurls foes away.', 'A storm of blows in front of you.'],
+  gunner:['A blast of buckshot.', 'Shoot the ground and fly.'],
+  duelist:['Five thrusts in a heartbeat.', 'Fleche: lunge through them all.'],
+  flayer:['Hook the nearest foe and drag it to you.', 'Spin the whip and pull everything in.'],
+  ironclad:['Iron Will: untouchable for a while, plate restored.', 'Swing the flail in a wide orbit.'],
+  thornguard:['Raise a wall of thorns that stops shots.', 'Thorns burst out all around you.'],
+  chaplain:['Heal yourself and nearby allies; raise the fallen.', 'Bless the ground: allies heal, foes burn.'],
+  lightbearer:['Shield yourself and nearby allies; raise the fallen.', 'A blinding flare stuns everything near.'],
+};
+const ROLECOL = {attack:'#e8603a', defense:'#7aa0d8', support:'#8ad06a'};
+let pickAnim = 0;
+function classStats(C) {
+  const A = C.atk, ranged = A.type !== 'melee';
+  return [['Health', Math.round((C.hp - 2) / 5 * 5)], ['Speed', Math.max(1, Math.round((C.speed - 1.8) / .85 * 5))],
+    ['Reach', ranged ? 5 : Math.max(1, Math.min(5, Math.round(A.reach / 9)))], ['Power', Math.max(1, Math.min(5, Math.round((A.dmg + (A.radius ? 1 : 0)) * 1.4)))]];
+}
 function openClassPick() {
   const keys = GROUPS.flatMap(([g]) => Object.keys(CLASSES).filter(k => CLASSES[k].group === g));
-  const bars = (n) => Array.from({length:5}, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('');
-  const icon = (k) => { const rows = WBMP[CLASSES[k].weapon]; let r = ''; rows.forEach((row, y) => [...row].forEach((c, x) => { if (c === '#') r += `<rect x="${x}" y="${y}" width="1" height="1"/>`; })); return `<svg class="cicon" viewBox="0 0 9 9" aria-hidden="true">${r}</svg>`; };
-  const opts = keys.map(k => ({run:() => chooseClass(k)}));
+  const opts = keys.map(k => ({run:() => { cancelAnimationFrame(pickAnim); chooseClass(k); }}));
   const tile = k => { const C = CLASSES[k], i = keys.indexOf(k);
-    return `<button class="opt cls" id="opt${i}" data-i="${i}"><canvas class="cspr" id="cspr-${k}" width="28" height="32" aria-hidden="true"></canvas><span class="cname">${esc(C.name)}</span><span class="cshort">${esc(C.short)}</span></button>`; };
-  const buttons = GROUPS.map(([g, label, sub]) => `<div class="cgroup cg-${g}"><p class="cglabel">${label} <span>${sub}</span></p><div class="ctiles">${keys.filter(k => CLASSES[k].group === g).map(tile).join('')}</div></div>`).join('');
-  setTimeout(() => keys.forEach(k => drawStill(document.getElementById('cspr-' + k), k, 4, 5)), 0);
-  openDlg({opts, html:`<div class="card classpick"><h2>Who were you, before the gate?</h2>${buttons}<p class="chint">Choose a class to begin</p></div>`});
+    return `<button class="opt cls" id="opt${i}" data-i="${i}" data-k="${k}" aria-label="${esc(C.name)}, ${esc(C.short)}"><canvas class="cspr" id="cspr-${k}" width="28" height="32" aria-hidden="true"></canvas><span class="cname">${esc(C.name)}</span></button>`; };
+  const groups = GROUPS.map(([g, label, sub]) => `<div class="cgroup cg-${g}"><p class="cglabel">${label} <span>${sub}</span></p><div class="ctiles">${keys.filter(k => CLASSES[k].group === g).map(tile).join('')}</div></div>`).join('');
+  const html = `<div class="card classpick"><div class="cpl"><p class="kicker">A villain's metroidvania</p><h2>Who were you, before the gate?</h2>${groups}</div>
+    <div class="cpr" id="cpr"><div class="cstage"><canvas id="cbig" width="40" height="34" aria-hidden="true"></canvas></div><p class="crole" id="crole"></p><h3 id="cnm"></h3><p class="cdesc" id="cdesc"></p>
+    <div class="cstats" id="cstats"></div><ul class="cmoves" id="cmoves"></ul><button class="cgo" id="cgo">Choose</button></div></div>`;
+  openDlg({opts, html});
+  keys.forEach(k => drawStill(document.getElementById('cspr-' + k), k, 4, 5));
+  let cur = keys[Math.max(0, keys.indexOf(save.cls))], touchArm = null, lastPtr = 'mouse';
+  const show = k => {
+    cur = k; const C = CLASSES[k], g = GROUPS.find(q => q[0] === C.group), S1 = SKILLS[k], S2 = SKILLS2[k], D = SKDESC[k] || ['', ''];
+    document.getElementById('cpr').style.setProperty('--rc', ROLECOL[C.group]);
+    document.getElementById('crole').textContent = g[1] + ' · ' + C.short;
+    document.getElementById('cnm').textContent = C.name;
+    document.getElementById('cdesc').textContent = C.desc;
+    document.getElementById('cstats').innerHTML = classStats(C).map(([n, v]) => `<div><span>${n}</span><b>${Array.from({length:5}, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}</b></div>`).join('');
+    const kc = a => esc(keyName((binds[a] || []).find(Boolean)) || '');
+    document.getElementById('cmoves').innerHTML = `<li><kbd>${kc('skill')}</kbd><b>${esc(S1.name)}</b> ${esc(D[0])}</li><li><kbd>${kc('skill2')}</kbd><b>${esc(S2.name)}</b> ${esc(D[1])}</li><li><kbd>hold ${kc('attack')}</kbd><b>Heavy strike</b> Charge it up and let go.</li>`;
+    document.getElementById('cgo').textContent = 'Become the ' + C.name;
+    dlgEl.querySelectorAll('.opt.cls').forEach(b => b.classList.toggle('sel', b.dataset.k === k));
+  };
+  dlgEl.querySelectorAll('.opt.cls').forEach(b => {
+    b.addEventListener('mouseenter', () => show(b.dataset.k)); b.addEventListener('focus', () => show(b.dataset.k));
+    b.addEventListener('pointerdown', e => { lastPtr = e.pointerType; });
+    // on a touch screen the first tap shows the class, the second picks it
+    b.addEventListener('click', e => { if (lastPtr === 'touch' && touchArm !== b.dataset.k) { e.stopImmediatePropagation(); touchArm = b.dataset.k; show(b.dataset.k); } }, true);
+  });
+  document.getElementById('cgo').addEventListener('click', () => pick(keys.indexOf(cur)));
+  show(cur);
+  const big = document.getElementById('cbig'); let t0 = 0;
+  const loop = () => { if (!document.body.contains(big)) return; t0++; drawStill(big, cur, 10, 4, t0); pickAnim = requestAnimationFrame(loop); };
+  cancelAnimationFrame(pickAnim); loop();
 }
 function chooseClass(k) {
   save.cls = k; save.clsChosen = true; persist();
@@ -1187,14 +1258,14 @@ function renderWardrobe(focusId) {
   drawPreview();
 }
 function drawPreview() { drawStill(document.getElementById('pv'), null, 10, 4); }
-function drawStill(pc, k, x0, y0) {
+function drawStill(pc, k, x0, y0, at) {
   if (!pc || !pc.getContext) return;
   const pctx = pc.getContext('2d'); pctx.clearRect(0, 0, pc.width, pc.height);
   const keepCls = clsOverride; clsOverride = k || null;
   const keep = {onGround:p.onGround, run:p.run, walk:p.walk, hook:p.hook, vy:p.vy, vx:p.vx, atkT:p.atkT}, keepTick = tick;
   // a still, standing pose
   Object.assign(p, {onGround:true, run:0, walk:0, hook:null, vy:0, vx:0, atkT:0});
-  tick = 0;
+  tick = at || 0;
   const main = ctx; ctx = pctx;
   try { heroSprite(x0, y0, 1, null); } finally { ctx = main; Object.assign(p, keep); tick = keepTick; clsOverride = keepCls; }
 }
@@ -1208,10 +1279,10 @@ function closeWardrobe() {
 }
 
 /* ---------- State ---------- */
-const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0});
+const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0});
 const SAVE_KEY = 'wallfall-save';
 let save = fresh();
-try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), s); } catch (e) {}
+try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), {seenIntro:true}, s); } catch (e) {}
 const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
 const maxHp = () => cls().hp + (save.rations || 0) + (save.hearts || 0);
 
@@ -2104,7 +2175,7 @@ document.querySelectorAll('#touch button').forEach(b => {
   b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('lostpointercapture', off);
   b.addEventListener('contextmenu', e => e.preventDefault());
 });
-cv.addEventListener('pointerdown', () => { audio(); cv.focus(); });
+cv.addEventListener('pointerdown', () => { audio(); cv.focus(); if (mode === 'cut' && cutT > 20 && !cutSkip) cutSkip = 1; });
 const musBtn = document.getElementById('mus');
 musBtn.querySelector('span').textContent = 'Music: ' + (musicOn ? 'on' : 'off');
 musBtn.addEventListener('click', () => { musicOn = !musicOn; musBtn.querySelector('span').textContent = 'Music: ' + (musicOn ? 'on' : 'off'); try { localStorage.setItem('wallfall-music', musicOn ? 'on' : 'off'); } catch (e) {} audio(); });
@@ -3563,7 +3634,7 @@ function startAt(key) {
 function newGame() {
   save = fresh(); persist(); mode = 'play'; ringT = 0; banner = null; showMap = false; ending = null;
   dlg.open = false; dlgEl.hidden = true;
-  startAt('T'); openClassPick();
+  startAt('T'); parts = []; startCut();
 }
 function transition() {
   const cx = p.x + p.w/2, cy = p.y + p.h/2;
@@ -4001,6 +4072,7 @@ function update() {
   if (hit.map) showMap = !showMap;
   if (showMap && mode === 'play') { clearHits(); return; }
   if (mode === 'note') { clearHits(); return; }
+  if (mode === 'cut') { cutUpdate(); clearHits(); return; }
   if (mode === 'won') { ringT++; if (hit.restart) newGame(); clearHits(); updateParts(); return; }
   if (mode === 'dead') { if (--modeT <= 0) { mode = 'play'; p.downed = false; if (!respawnAtCheckpoint()) startAt(save.gateOpen && !save.bossDead ? 'G' : 'T'); } clearHits(); updateParts(); return; }
   if (mode === 'respawn') { if (--modeT <= 0) mode = 'play'; clearHits(); return; }
@@ -5986,6 +6058,7 @@ function drawDropHint() {
 }
 const WORLD_DIM = .3;   // how far the background and walls are darkened behind the player and enemies
 function render() {
+  if (mode === 'cut') { drawCut(); return; }
   if (!room.cache) buildCache(room);
   const cx = Math.round(cam.x), cy = Math.round(cam.y);
   ctx.save();
@@ -6087,6 +6160,124 @@ function render() {
 const dlgEl = document.getElementById('dlg');
 let dlg = {open:false, opts:[], idx:0};
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* ---------- Opening cutscene ----------
+   Plays once at the start of a new game, before the class picker. Any key, click or tap skips it. */
+const CUT_LINES = [[30, 220, 'They trusted you with the Outer Gate.'], [260, 440, 'You opened it.'], [520, 730, 'You let them in.'], [790, 960, 'One gate still stands.'], [985, 1110, 'Climb.']];
+const CUT_END = 1170;
+let cutT = 0, cutSkip = 0;
+function startCut() { mode = 'cut'; cutT = 0; cutSkip = 0; for (const k in held) held[k] = false; }
+function endCut() {
+  mode = 'play'; save.seenIntro = true; persist();
+  if (!save.clsChosen) openClassPick();
+}
+function cutUpdate() {
+  cutT++; updateParts();
+  if (cutT === 300) { sfx.clang(); }
+  if (cutT > 300 && cutT < 420 && cutT % 14 === 0) tone(70 + (cutT % 28), .09, 'square', .03);
+  if (cutT === 430) { sfx.slam(); }
+  if (cutT === 540 || cutT === 620) { tone(46, .9, 'sawtooth', .07, 30); }
+  if (cutT === 600) sfx.boom();
+  if (cutT > 20 && Object.keys(hit).some(k => hit[k])) cutSkip = 1;
+  if (cutSkip) cutSkip++;
+  if (cutT >= CUT_END || cutSkip > 20) endCut();
+}
+function cutWall(gy, lift, glow) {
+  // the Outer Gate: a long wall with a gatehouse in the middle, seen from inside the city
+  ctx.fillStyle = '#140a08'; ctx.fillRect(0, gy, VW, VH - gy);
+  for (let x = 0; x < VW; x += 20) ctx.fillRect(x, gy - 8, 11, 8);
+  const gx = VW / 2 - 50;
+  ctx.fillRect(gx, gy - 70, 100, 70); for (let x = gx; x < gx + 100; x += 20) ctx.fillRect(x, gy - 80, 12, 10);
+  const ax = VW / 2, aw = 30, top = gy - 40;
+  // what's beyond the arch
+  ctx.save(); ctx.beginPath(); ctx.rect(ax - aw, top, aw * 2, VH - top); ctx.arc(ax, top, aw, Math.PI, 0); ctx.clip();
+  const g = ctx.createLinearGradient(0, top - aw, 0, VH); g.addColorStop(0, glow ? '#ff7a3a' : '#3a1c18'); g.addColorStop(1, glow ? '#5a1a0c' : '#1a0c0a');
+  ctx.fillStyle = g; ctx.fillRect(ax - aw, top - aw, aw * 2, VH);
+  // the portcullis, rising
+  ctx.fillStyle = '#4a4440'; const ph = gy - (top - aw), py = top - aw - lift;
+  for (let x = ax - aw + 3; x < ax + aw; x += 7) { ctx.fillRect(x, py, 3, ph); ctx.fillRect(x, py + ph, 3, 4); }
+  for (let y = py + 8; y < py + ph; y += 12) ctx.fillRect(ax - aw, y, aw * 2, 2);
+  ctx.restore();
+  ctx.fillStyle = '#2a1410'; ctx.fillRect(0, gy, VW, 2);
+}
+function cutFigure(x, y, f, silhouette) {
+  const keep = {onGround:p.onGround, run:p.run, walk:p.walk, hook:p.hook, vy:p.vy, vx:p.vx, atkT:p.atkT, dashT:p.dashT, dive:p.dive};
+  Object.assign(p, {onGround:true, run:0, walk:0, hook:null, vy:0, vx:0, atkT:0, dashT:0, dive:false});
+  try { heroSprite(Math.round(x), Math.round(y), f, silhouette || null); } finally { Object.assign(p, keep); }
+}
+function drawCut() {
+  const t = cutT;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (t > 520 && t < 760) ctx.translate((Math.random() - .5) * 4, (Math.random() - .5) * 3);
+  // the sky goes from a cold dusk to fire
+  const burn = Math.max(0, Math.min(1, (t - 470) / 200));
+  const g = ctx.createLinearGradient(0, 0, 0, VH);
+  g.addColorStop(0, burn ? `rgb(${29 + 10 * burn | 0},${13 + 2 * burn | 0},${14 - 3 * burn | 0})` : '#14101a');
+  g.addColorStop(.6, `rgb(${40 + 38 * burn | 0},${24 + 7 * burn | 0},${34 - 14 * burn | 0})`); g.addColorStop(1, `rgb(${60 + 94 * burn | 0},${34 + 32 * burn | 0},${40 - 8 * burn | 0})`);
+  ctx.fillStyle = g; ctx.fillRect(-10, -10, VW + 20, VH + 20);
+  if (t < 760) {
+    // scenes 1-3: the gate
+    const lift = Math.max(0, Math.min(1, (t - 300) / 130)) * 64;
+    if (t > 480) {
+      // the Colossi rise beyond the wall
+      const up = Math.min(1, (t - 480) / 220);
+      for (const [i, c] of [[0, {x:0, s:.8, ph:1, lean:.2, tilt:0, sp:0}], [1, {x:0, s:1.2, ph:2.4, lean:-.3, tilt:.1, sp:0}], [2, {x:0, s:.65, ph:4, lean:.1, tilt:-.1, sp:0}]]) {
+        const cx = [VW * .3, VW * .55, VW * .8][i];
+        eyes = []; drawColossus(c, cx, VH * 1.15 + (1 - up) * 160 * c.s);
+        ctx.globalCompositeOperation = 'lighter';
+        for (const e of eyes) { const r = 18 * e.s, g2 = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, r); g2.addColorStop(0, `rgba(255,170,80,${.6 * up})`); g2.addColorStop(1, 'rgba(255,120,40,0)'); ctx.fillStyle = g2; ctx.fillRect(e.x - r, e.y - r, r * 2, r * 2); }
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    }
+    cutWall(VH * .78, lift, t > 430);
+    // you, at the winch
+    const fx = t < 240 ? VW / 2 - 110 + Math.min(1, t / 200) * 40 : VW / 2 - 70;
+    ctx.fillStyle = '#0c0606'; ctx.fillRect(VW / 2 - 64, VH * .78 - 16, 10, 16); ctx.fillStyle = '#5a4a3a';
+    const ang = t > 300 && t < 430 ? (t - 300) * .2 : 0; ctx.fillRect(VW / 2 - 59 + Math.cos(ang) * 6 - 1, VH * .78 - 12 + Math.sin(ang) * 6 - 1, 3, 3);
+    cutFigure(fx, VH * .78 - 26, 1, t > 470 ? '#0c0606' : null);
+  } else {
+    // scene 4: the burning city, and the last gate far up the hill
+    const k = Math.min(1, (t - 760) / 200), hx = VW * .72, hy = VH * .3;
+    ctx.fillStyle = '#2a1410'; ctx.beginPath(); ctx.moveTo(VW * .35, VH); ctx.quadraticCurveTo(hx - 40, hy + 10, hx, hy + 6); ctx.quadraticCurveTo(hx + 50, hy + 10, VW + 10, VH * .6); ctx.lineTo(VW + 10, VH); ctx.fill();
+    // the last gate, still shut, lit by a single lamp
+    ctx.fillStyle = '#120808'; ctx.fillRect(hx - 18, hy - 22, 36, 28); for (let x = hx - 18; x < hx + 18; x += 8) ctx.fillRect(x, hy - 26, 5, 4);
+    ctx.fillStyle = '#3a2620'; ctx.fillRect(hx - 6, hy - 10, 12, 16);
+    ctx.fillStyle = `rgba(255,214,140,${.6 + .3 * Math.sin(t * .1)})`; ctx.fillRect(hx - 1, hy - 18, 2, 2);
+    // rooftops burning in the foreground
+    const glow = ctx.createLinearGradient(0, VH * .5, 0, VH); glow.addColorStop(0, 'rgba(255,110,40,0)'); glow.addColorStop(1, 'rgba(255,110,40,.35)');
+    ctx.fillStyle = glow; ctx.fillRect(0, VH * .5, VW, VH * .5);
+    const roofs = [];
+    for (let i = 0; i < 14; i++) {
+      const x = i * 40 - 10, h = 40 + hash(i, 7) * 50; roofs.push([x, h]);
+      ctx.fillStyle = '#100707'; ctx.fillRect(x, VH - h, 34, h); ctx.beginPath(); ctx.moveTo(x - 4, VH - h); ctx.lineTo(x + 17, VH - h - 18); ctx.lineTo(x + 38, VH - h); ctx.fill();
+      if (hash(i, 5) < .6) { ctx.fillStyle = '#ff9a4a'; ctx.fillRect(x + 8, VH - h + 12, 4, 5); ctx.fillRect(x + 22, VH - h + 26, 4, 5); }
+    }
+    roofs.forEach(([x, h], i) => {
+      if (hash(i, 3) > .7) return;
+      for (let j = 0; j < 3; j++) { const fx = x + 8 + j * 8, fh = 10 + Math.sin(t * .23 + i * 2 + j * 1.7) * 5 + hash(i, j) * 8, base = VH - h - 18 + Math.abs(j - 1) * 8;
+        ctx.fillStyle = '#c43a14'; ctx.fillRect(fx - 3, base - fh, 7, fh + 4); ctx.fillStyle = '#ff8a2a'; ctx.fillRect(fx - 2, base - fh * .75, 5, fh * .75 + 3); ctx.fillStyle = '#ffd07a'; ctx.fillRect(fx - 1, base - fh * .4, 3, fh * .4 + 2); }
+    });
+    if (t % 3 === 0) parts.push({x:Math.random() * VW, y:VH, vx:(Math.random() - .5) * .4, vy:-.8 - Math.random(), life:120, color:Math.random() < .5 ? '#ff9a4a' : '#ffd07a', size:1});
+    // you, small, starting the climb
+    cutFigure(VW * .2 + k * 40, VH - 52 - k * 6, 1, '#0c0606');
+  }
+  for (const q of parts) { ctx.globalAlpha = Math.min(1, q.life / 20); ctx.fillStyle = q.color; ctx.fillRect(q.x, q.y, q.size, q.size); }
+  ctx.globalAlpha = 1;
+  // the words
+  for (const [a, b, line] of CUT_LINES) {
+    if (t < a || t > b) continue;
+    const al = Math.min(1, (t - a) / 30, (b - t) / 30);
+    ctx.globalAlpha = al; ctx.font = '20px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000'; ctx.fillText(line, VW / 2 + 1, 41); ctx.fillStyle = '#f2e2c4'; ctx.fillText(line, VW / 2, 40);
+    ctx.globalAlpha = 1;
+  }
+  // letterbox, fades and the skip hint
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, 14); ctx.fillRect(0, VH - 14, VW, 14);
+  const fade = t < 30 ? 1 - t / 30 : t > CUT_END - 50 ? (t - (CUT_END - 50)) / 50 : Math.abs(t - 760) < 20 ? 1 - Math.abs(t - 760) / 20 : 0;
+  if (cutSkip) { ctx.fillStyle = `rgba(0,0,0,${Math.min(1, cutSkip / 20)})`; ctx.fillRect(0, 0, VW, VH); }
+  else if (fade > 0) { ctx.fillStyle = `rgba(0,0,0,${Math.min(1, fade)})`; ctx.fillRect(0, 0, VW, VH); }
+  if (t > 40 && !cutSkip) txt('any key to skip', 8, VH - 11, 8, 'rgba(234,223,210,.45)', 'left');
+  ctx.restore();
+}
 function introBanner() { banner = {title:'Six notes lie in the ruins', sub:'Find them. They remember what you did.', color:'#e3d6bd', t:330}; }
 // NPCs talk in little voice blips while their words type out
 const VOICES = {v:{f:150, type:'square', vol:.02, var:.3, rate:2}, f:{f:104, type:'sawtooth', vol:.018, var:.22, rate:2},
@@ -6585,7 +6776,7 @@ function start(data) {
   }
   applyGateOpen(); if (save.gateOpen) gateLiftT = 999;
   if (!save.lookV2) { if (save.look && save.look.hood === 'crimson') save.look.hood = 'class'; save.lookV2 = true; persist(); }
-  if (!save.clsChosen) openClassPick();
+  if (!save.seenIntro) { parts = []; startCut(); } else if (!save.clsChosen) openClassPick();
   requestAnimationFrame(frame);
 }
 try { window.claude?.hot?.snapshot?.(() => ({snap:{v:2, save, room:room && room.key, x:p.x, y:p.y, hp:p.hp}})); } catch (e) {}
