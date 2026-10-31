@@ -56,12 +56,13 @@ button{font-family:var(--ui);font-size:.64rem;letter-spacing:.06em;color:var(--a
 button svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 button:hover{border-color:var(--ember);color:#ffd2a0}
 button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
-.touch{display:none;grid-template-columns:repeat(3,52px) 1fr repeat(4,52px);gap:8px;user-select:none;-webkit-user-select:none;touch-action:none}
+.touch{display:none;justify-content:space-between;align-items:end;gap:8px;user-select:none;-webkit-user-select:none;touch-action:none}
 .touch button{height:52px;font-size:.6rem;padding:0;border-radius:50%;justify-content:center;background:radial-gradient(circle at 50% 35%,#4a3a30,#1e1613);border:1px solid #6b5236;box-shadow:inset 0 1px 0 #ffffff1a,0 3px 0 #0008;touch-action:none}
 .touch button.on{background:#ff8a3d55;border-color:var(--ember)}
 .touch .gap{min-width:0}
-@media (pointer:coarse){ .touch{display:grid} .keys{display:none} }
-@media (max-width:420px){ .touch{grid-template-columns:repeat(3,42px) minmax(0,1fr) repeat(4,42px);gap:5px} .touch button{height:44px;font-size:.55rem} }
+.tpad{display:grid;grid-template-columns:repeat(2,52px);gap:8px}.tact{display:grid;grid-template-columns:repeat(3,52px);gap:8px}
+@media (pointer:coarse){ .touch{display:flex} .keys{display:none} }
+@media (max-width:420px){ .tpad,.tact{gap:5px} .tpad{grid-template-columns:repeat(2,44px)} .tact{grid-template-columns:repeat(3,44px)} .touch button{height:44px;font-size:.55rem} }
 .dlg[hidden]{display:none}
 .mapc{position:absolute;left:7px;top:7px;width:calc(100% - 14px);height:calc(100% - 14px);pointer-events:none;z-index:2}
 .mapc[hidden]{display:none}
@@ -173,16 +174,20 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
   </header>
   <div class="frame"><canvas id="game" width="512" height="288" tabindex="0" aria-label="Wallfall game screen"></canvas><canvas id="mapc" class="mapc" hidden aria-label="Map of the city"></canvas><button class="fsx" id="fsx" type="button">Exit full screen</button><p class="ver" id="ver"></p><div class="dlg" id="dlg" hidden role="dialog" aria-modal="true"></div></div>
   <div class="touch" id="touch">
-    <button data-k="left" aria-label="Move left">&#9664;</button>
-    <button data-k="right" aria-label="Move right">&#9654;</button>
-    <button data-k="up" aria-label="Aim up">&#9650;</button>
-    <button data-k="down" aria-label="Drop through ledge">&#9660;</button>
-    <div class="gap"></div>
-    <button data-k="hook">Hook</button>
-    <button data-k="attack">Hit</button>
-    <button data-k="parry">Parry</button>
-    <button data-k="dash">Dash</button>
-    <button data-k="jump">Jump</button>
+    <div class="tpad">
+      <button data-k="left" aria-label="Move left">&#9664;</button>
+      <button data-k="right" aria-label="Move right">&#9654;</button>
+      <button data-k="up" aria-label="Aim up">&#9650;</button>
+      <button data-k="down" aria-label="Drop through ledge">&#9660;</button>
+    </div>
+    <div class="tact">
+      <button data-k="hook">Hook</button>
+      <button data-k="skill">Skill</button>
+      <button data-k="parry">Parry</button>
+      <button data-k="attack">Hit</button>
+      <button data-k="dash">Dash</button>
+      <button data-k="jump">Jump</button>
+    </div>
   </div>
   <div class="bar">
     <div class="keys" id="keys"></div>
@@ -200,7 +205,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.3';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.4';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1925,13 +1930,14 @@ function musSting(kind) {
 
 /* ---------- Input ---------- */
 const held = {}, hit = {};
-const ACTIONS = [['left', 'Move left'], ['right', 'Move right'], ['up', 'Aim up'], ['jump', 'Jump'], ['attack', 'Strike / talk'], ['dash', 'Dash'], ['parry', 'Parry'], ['hook', 'Grapple'], ['down', 'Drop through ledges'], ['map', 'Map']];
+const ACTIONS = [['left', 'Move left'], ['right', 'Move right'], ['up', 'Aim up'], ['jump', 'Jump'], ['attack', 'Strike / talk'], ['dash', 'Dash'], ['parry', 'Parry'], ['skill', 'Class skill'], ['hook', 'Grapple'], ['down', 'Drop through ledges'], ['map', 'Map']];
 const DEFAULT_BINDS = {left:['ArrowLeft', 'KeyA', null], right:['ArrowRight', 'KeyD', null], up:['KeyW', 'ArrowUp', null], jump:['KeyZ', 'Space', 'ArrowUp'],
-  attack:['KeyX', 'KeyJ', null], dash:['KeyC', 'ShiftLeft', 'ShiftRight'], parry:['KeyE', 'KeyK', null], hook:['KeyV', 'KeyF', null], down:['ArrowDown', 'KeyS', null], map:['KeyM', null, null]};
+  attack:['KeyX', 'KeyJ', null], dash:['KeyC', 'ShiftLeft', 'ShiftRight'], parry:['KeyE', 'KeyK', null], skill:['KeyQ', 'KeyL', null], hook:['KeyV', 'KeyF', null], down:['ArrowDown', 'KeyS', null], map:['KeyM', null, null]};
 let binds = JSON.parse(JSON.stringify(DEFAULT_BINDS));
 try { const b = JSON.parse(localStorage.getItem('wallfall-binds') || 'null'); if (b) for (const [a] of ACTIONS) if (Array.isArray(b[a])) binds[a] = [0, 1, 2].map(i => b[a][i] || null); } catch (e) {}
 if (!binds.up.some(Boolean)) binds.up = ['KeyW', 'ArrowUp', null];
 if (!binds.parry.some(Boolean)) binds.parry = ['KeyE', 'KeyK', null];
+if (!binds.skill.some(Boolean)) binds.skill = ['KeyQ', 'KeyL', null];
 let KEYMAP = {};
 const KEYNAMES = {ArrowLeft:'←', ArrowRight:'→', ArrowUp:'↑', ArrowDown:'↓', Space:'Space', ShiftLeft:'L Shift', ShiftRight:'R Shift',
   ControlLeft:'L Ctrl', ControlRight:'R Ctrl', AltLeft:'L Alt', AltRight:'R Alt', Enter:'Enter', Tab:'Tab', Backquote:'`', Minus:'-', Equal:'=',
@@ -3398,7 +3404,7 @@ function enterRoom(key) {
   if (!save.visited[key]) { save.visited[key] = true; persist(); }
   toast = {text:room.name, t:150};
   enemies = room.ents.filter(e => 'gjukOerwlcby'.includes(e.t)).map(e => makeEnemy(e.t, e.x, e.y));
-  eshots = []; ebombs = []; bfx = []; setBars(null); thralls = []; zaps = []; blasts = []; crumbles = {}; drops = [];
+  eshots = []; ebombs = []; pwaves = []; bfx = []; setBars(null); thralls = []; zaps = []; blasts = []; crumbles = {}; drops = [];
   vents = room.ents.filter(e => e.t === 'F').map(e => ({x:e.x, y:e.y, ph:(e.x * 37) % 160}));
   arena = ARENAS[key] && !save.arenas[key] ? {key, cfg:ARENAS[key], stage:'idle', wave:0, delay:0} : null;
   boss = key === 'X' && save.gateOpen && !save.bossDead ? makeBoss() : null;
@@ -3503,6 +3509,115 @@ function findAnchor() {
 function burst(x, y, color, n = 10, sp = 2) {
   for (let i = 0; i < n; i++) { const a = Math.random()*Math.PI*2, s = Math.random()*sp; parts.push({x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s - .5, life:30 + Math.random()*20, color, size:Math.random() < .5 ? 1 : 2}); }
 }
+/* ---------- Class skills ----------
+   Every class has a second move on its own key (Q or L) with a cooldown, shown at the bottom left. */
+const SKILLS = {
+  warden:{name:'Riposte Spin', cd:150}, mage:{name:'Fire Nova', cd:180}, breaker:{name:'Earthsplitter', cd:200},
+  hunter:{name:'Volley', cd:120}, knife:{name:'Shadowstep', cd:150}, necro:{name:'Bone Spikes', cd:180},
+  bulwark:{name:'Shield Charge', cd:150}, lancer:{name:'Rising Pike', cd:140}, sapper:{name:'Cluster Charge', cd:200},
+  storm:{name:'Thunderfall', cd:200}, reaver:{name:'Whirlwind', cd:220}, pilgrim:{name:'Palm Blast', cd:120}, gunner:{name:'Buckshot', cd:160}};
+let pwaves = [];
+const skillDmg = d => d + (save.whet ? 1 : 0);
+// hit everything a test picks out, once; bosses included
+function hitArea(test, dmg, kx, col = '#ffcf8a', hitSet) {
+  let n = 0;
+  for (const e of enemies) {
+    if (e.dead || e.prop || e.crate || e.ghost || e.spawn > 0 || (hitSet && hitSet.has(e))) continue;
+    if (!test(e)) continue;
+    if (hitSet) hitSet.add(e);
+    hitEnemy(e, dmg, kx ? kx(e) : 0); e.flash = 12; burst(e.x + e.w / 2, e.y + e.h / 2, col, 8, 1.8); n++;
+  }
+  if (boss && !['wait', 'intro', 'dying'].includes(boss.state) && !(hitSet && hitSet.has(boss))) { const bx = bossBoxes(boss).body; if (test(bx)) { if (hitSet) hitSet.add(boss); bossDamage(dmg, false); n++; } }
+  if (n) sfx.hit();
+  return n;
+}
+const inCircle = (cx, cy, r) => e => { const ex = Math.max(e.x, Math.min(cx, e.x + e.w)), ey = Math.max(e.y, Math.min(cy, e.y + e.h)); return Math.hypot(ex - cx, ey - cy) < r; };
+const inBox = b => e => overlap(b, e);
+function floorBelow(x, y) { const cx = Math.floor(x / T); let cy = Math.floor(y / T); while (cy < room.h && tile(cx, cy) !== '#' && tile(cx, cy) !== '-') cy++; return cy * T; }
+function useSkill() {
+  const k = clsKey(), S = SKILLS[k]; if (!S || p.skillCd > 0 || p.hook) return;
+  const cx = p.x + p.w / 2, cy = p.y + p.h / 2, f = p.face, A = cls().atk;
+  p.skillCd = S.cd; p.skillFlash = 20;
+  if (k === 'warden') { hitArea(inCircle(cx, cy, 42), skillDmg(2), e => Math.sign(e.x + e.w / 2 - cx) * 10); p.spin = Math.max(p.spin || 0, 16); blasts.push({x:cx, y:cy, r:42, life:14}); sfx.heavy(); }
+  else if (k === 'mage') { for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; shots.push({x:cx, y:cy, vx:Math.cos(a) * 3.4, vy:Math.sin(a) * 3.4, life:30, dmg:skillDmg(1), kind:'fire', hit:[]}); } sfx.fire(); sfx.boom(); }
+  else if (k === 'breaker') { if (p.onGround) spawnQuake(); else { p.vy = 9; p.pendingQuake = true; p.noCut = 0; } sfx.heavy(); }
+  else if (k === 'hunter') { for (const a of [-.18, 0, .18]) shots.push({x:cx + f * 10, y:p.y + 9, vx:Math.cos(a) * 7.5 * f, vy:Math.sin(a) * 7.5, life:32, dmg:skillDmg(1), kind:'bolt', pierce:true, hit:[]}); sfx.shoot(); }
+  else if (k === 'knife') {
+    let best = null, bd = 170;
+    for (const e of enemies) { if (e.dead || e.prop || e.crate || e.ghost || e.dummy && false) continue; const d = Math.hypot(e.x + e.w / 2 - cx, e.y + e.h / 2 - cy); if (d < bd && Math.abs(e.y + e.h - p.y - p.h) < 40) { bd = d; best = e; } }
+    if (best) {
+      const side = Math.sign(best.x + best.w / 2 - cx) || f, nx = best.x + best.w / 2 + side * 16 - p.w / 2;
+      burst(cx, cy, '#3a2a3a', 14, 1.6);
+      if (!solid(Math.floor(nx / T), Math.floor((p.y + 4) / T)) && !solid(Math.floor((nx + p.w) / T), Math.floor((p.y + p.h - 2) / T))) { p.x = nx; p.face = -side; }
+      hitEnemy(best, skillDmg(3), -side * 6); best.flash = 12; burst(best.x + best.w / 2, best.y + best.h / 2, '#ff5a4a', 12, 2); sfx.hit(); p.inv = Math.max(p.inv, 20);
+    } else { p.dashT = 10; }
+    sfx.dash();
+  }
+  else if (k === 'necro') { for (let i = 0; i < 3; i++) { const x = cx + f * (26 + i * 22); pwaves.push({spike:true, x, y:floorBelow(x, p.y + 4), delay:i * 7, life:20, dmg:skillDmg(2), hit:new Set()}); } sfx.raise(); }
+  else if (k === 'bulwark') { p.dashT = 16; p.charge = 16; p.chargeHit = new Set(); sfx.heavy(); }
+  else if (k === 'lancer') { p.vy = -9.6; p.onGround = false; p.noCut = 22; p.launchHit = 18; p.launchSet = new Set(); sfx.swing(); burst(cx, p.y + p.h, '#ffcf8a', 8, 1.5); }
+  else if (k === 'sapper') { for (const v of [-1, 0, 1]) shots.push({kind:'bomb', x:cx + f * 6, y:p.y + 6, vx:f * (2.4 + v * .9) + p.vx * .3, vy:-4.2 - Math.abs(v) * .4, life:90, dmg:skillDmg(2), radius:A.radius || 36, hit:[]}); sfx.swing(); }
+  else if (k === 'storm') {
+    const pool = enemies.filter(e => !e.dead && !e.prop && !e.crate && !e.ghost && Math.hypot(e.x + e.w / 2 - cx, e.y + e.h / 2 - cy) < 190).sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy)).slice(0, 3);
+    for (const e of pool) { const ex = e.x + e.w / 2, ey = e.y + e.h / 2; zaps.push({pts:[{x:ex + 8, y:ey - 140}, {x:ex - 6, y:ey - 90}, {x:ex + 5, y:ey - 40}, {x:ex, y:ey}], life:16}); hitEnemy(e, skillDmg(3), 0); e.flash = 12; }
+    if (boss && !['wait', 'intro', 'dying'].includes(boss.state)) { const bx = bossBoxes(boss).head; if (Math.hypot(bx.x - cx, bx.y - cy) < 220) { zaps.push({pts:[{x:bx.x + 11, y:bx.y - 120}, {x:bx.x, y:bx.y - 60}, {x:bx.x + 11, y:bx.y + 13}], life:16}); bossDamage(skillDmg(3), true); } }
+    shake = Math.max(shake, 6); sfx.zap(); sfx.boom();
+  }
+  else if (k === 'reaver') { p.whirl = 54; sfx.heavy(); }
+  else if (k === 'pilgrim') { const b = {x:f > 0 ? p.x + p.w : p.x - 46, y:p.y - 8, w:46, h:p.h + 16}; hitArea(inBox(b), skillDmg(2), () => f * 18, '#fff0c8'); for (let i = 0; i < 10; i++) parts.push({x:cx + f * 10, y:cy - 4 + Math.random() * 8, vx:f * (2 + Math.random() * 3), vy:(Math.random() - .5), life:16, color:'#fff0c8', size:2}); p.vx = -f * 2; sfx.heavy(); shake = Math.max(shake, 4); }
+  else if (k === 'gunner') { for (let i = -2; i <= 2; i++) shots.push({x:cx + f * 10, y:p.y + 9, vx:Math.cos(i * .14) * 7 * f, vy:Math.sin(i * .14) * 7, life:14, dmg:skillDmg(2), kind:'ball', hit:[]}); p.vx = -f * 4; p.lock = 8; sfx.boom(); shake = Math.max(shake, 7); burst(cx + f * 14, p.y + 9, '#ffcf70', 12, 2.4); }
+}
+function spawnQuake() {
+  const y = p.y + p.h, cx = p.x + p.w / 2;
+  for (const d of [-1, 1]) pwaves.push({x:cx, y, dir:d, life:40, dmg:skillDmg(3), hit:new Set()});
+  shake = Math.max(shake, 10); sfx.slam(); burst(cx, y - 2, '#8c7d6a', 20, 2.6);
+}
+function skillTick() {
+  if (p.skillCd > 0) p.skillCd--;
+  if (p.skillFlash > 0) p.skillFlash--;
+  if (hit.skill && mode === 'play') useSkill();
+  const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+  if (p.pendingQuake && p.onGround) { p.pendingQuake = false; spawnQuake(); }
+  if (p.charge > 0) { p.charge--; hitArea(inBox({x:p.face > 0 ? p.x + p.w - 2 : p.x - 14, y:p.y, w:16, h:p.h}), skillDmg(2), () => p.face * 16, '#ffe0a0', p.chargeHit); }
+  if (p.launchHit > 0) { p.launchHit--; hitArea(inBox({x:p.x - 6, y:p.y - 30, w:p.w + 12, h:34}), skillDmg(3), () => 0, '#ffcf8a', p.launchSet); }
+  if (p.whirl > 0) { p.whirl--; p.spin = Math.max(p.spin || 0, 4); if (p.whirl % 9 === 0) { hitArea(inCircle(cx, cy, 36), skillDmg(1), e => Math.sign(e.x + e.w / 2 - cx) * 4, '#ff8a6a'); sfx.swing(); } }
+  for (const w of pwaves) {
+    if (w.spike) { if (w.delay > 0) { w.delay--; continue; } w.life--; if (w.life > 8) hitArea(inBox({x:w.x - 7, y:w.y - 30, w:14, h:30}), w.dmg, () => 0, '#e8e2d0', w.hit); if (w.life === 19) burst(w.x, w.y - 4, '#cfc8b4', 8, 1.6); continue; }
+    w.x += w.dir * 4; w.life--;
+    if (solid(Math.floor(w.x / T), Math.floor((w.y - 4) / T)) || tile(Math.floor(w.x / T), Math.floor((w.y + 2) / T)) === '.') w.life = 0;
+    hitArea(inBox({x:w.x - 6, y:w.y - 16, w:12, h:16}), w.dmg, () => w.dir * 8, '#ffb04a', w.hit);
+    if (tick % 2) parts.push({x:w.x, y:w.y - 2, vx:-w.dir * .4, vy:-1 - Math.random(), life:14, color:'#c9b08a', size:2});
+  }
+  pwaves = pwaves.filter(w => w.life > 0);
+}
+function drawSkillFx() {
+  for (const w of pwaves) {
+    if (w.spike) {
+      if (w.delay > 0) continue;
+      const k = w.life > 14 ? (20 - w.life) / 6 : w.life > 6 ? 1 : w.life / 6, h = 28 * k;
+      ctx.fillStyle = '#cfc8b4'; ctx.beginPath(); ctx.moveTo(w.x - 6, w.y); ctx.lineTo(w.x - 1, w.y - h); ctx.lineTo(w.x + 1, w.y - h); ctx.lineTo(w.x + 6, w.y); ctx.fill();
+      ctx.fillStyle = '#e8e2d0'; ctx.fillRect(w.x - 1, w.y - h, 1, h); ctx.fillStyle = '#7aff9a'; ctx.globalAlpha = .5; ctx.fillRect(w.x - 6, w.y - 2, 12, 2); ctx.globalAlpha = 1;
+      continue;
+    }
+    ctx.fillStyle = '#c9a070'; ctx.fillRect(w.x - 4, w.y - 12, 8, 12); ctx.fillStyle = '#fff0c8'; ctx.fillRect(w.x - 1, w.y - 10, 2, 10);
+  }
+  if (p.whirl > 0) {
+    const cx = p.x + p.w / 2, cy = p.y + 11, a = tick * .6;
+    ctx.strokeStyle = 'rgba(255,170,130,.7)'; ctx.lineWidth = 3;
+    for (let i = 0; i < 2; i++) { ctx.beginPath(); ctx.arc(cx, cy, 30, a + i * Math.PI, a + i * Math.PI + 1.3); ctx.stroke(); }
+  }
+}
+function drawSkillHud() {
+  const S = SKILLS[clsKey()]; if (!S || mode === 'won') return;
+  const k = keyName((binds.skill || []).find(Boolean)) || '?', ready = !(p.skillCd > 0);
+  ctx.font = '8px Silkscreen, ui-monospace, monospace';
+  const tw = Math.ceil(ctx.measureText(S.name).width), w = tw + 30, x = 8, y = VH - 24;
+  ctx.fillStyle = 'rgba(16,10,8,.78)'; ctx.fillRect(x, y, w, 16);
+  ctx.fillStyle = ready ? '#ffc45a' : '#5a4636'; ctx.fillRect(x, y + 15, ready ? w : Math.round(w * (1 - p.skillCd / S.cd)), 1);
+  ctx.globalAlpha = ready ? 1 : .5; keycap(k, x + 3, y + 3); ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = '#eadfd2'; ctx.fillText(S.name, x + 22, y + 4); ctx.globalAlpha = 1;
+  if (p.skillFlash > 0) { ctx.globalAlpha = p.skillFlash / 20; ctx.fillStyle = '#ffc45a'; ctx.fillRect(x, y, w, 16); ctx.globalAlpha = 1; }
+}
+
 /* ---------- Parry ----------
    A quick guard: press parry just before something hits you. A blow inside the window does nothing to you,
    staggers whatever threw it, and resets the parry so you can chain them. Shots are knocked back the way they came. */
@@ -3683,6 +3798,7 @@ function update() {
   }
   updateShots();
   updateClassFx();
+  skillTick();
   regionUpdate(ax, atkBox);
   ventUpdate(); dropsUpdate();
   updateEShots(atkBox);
@@ -4981,7 +5097,7 @@ function drawArenaHint() {
   }
 }
 function drawHUD() {
-  drawLowHp(); drawArenaHint();
+  drawLowHp(); drawArenaHint(); drawSkillHud();
   // left plate: health, gear
   const lw = Math.max(p.max * 9 + 10, 4 * 18 + 8 + 38);
   panel(6, 6, lw, 40);
@@ -5430,6 +5546,7 @@ function render() {
   drawPeers();
   if (mode !== 'dead') drawPlayer();
   if (mode !== 'dead') drawParry();
+  drawSkillFx();
   drawDropHint();
   for (const q of parts) { ctx.globalAlpha = Math.min(1, q.life / 20); ctx.fillStyle = q.color; ctx.fillRect(q.x, q.y, q.size, q.size); }
   ctx.globalAlpha = 1; drawRegionFront();

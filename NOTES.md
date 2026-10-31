@@ -9,12 +9,12 @@ Who is working on what right now. Add a line before you start and remove it when
 
 Format: `- who: what, in which part of the game (date)`
 
-- MelloJello087's agent: a second attack (skill) for every class, in CLASSES and player combat (2026-10-31)
 - MelloJello087's agent: start with only dash; double jump and wall jump become pickups, map adjusted so it still progresses, in rooms, items and movement (2026-10-31)
 
 ## Handoff
 Newest first. Keep each entry to a few lines: what changed, what is unfinished, what the other person should know. Delete entries once they stop being useful.
 
+- **2026-10-31, MelloJello087's agent, v0.1.4:** Every class has a second move on a new key (Q or L; a Skill button on touch) with a cooldown, shown bottom left. `SKILLS` table plus `useSkill`/`skillTick` in the "Class skills" section: Riposte Spin, Fire Nova, Earthsplitter, Volley, Shadowstep, Bone Spikes, Shield Charge, Rising Pike, Cluster Charge, Thunderfall, Whirlwind, Palm Blast, Buckshot. The touch buttons are now two groups (`.tpad`, `.tact`). Tested headless: every class's skill fires; 11 of 13 hurt enemies standing next to you (Rising Pike only hits above you, Whirlwind needs them closer).
 - **2026-10-31, MelloJello087's agent, v0.1.3:** Parry: new key (E or K, rebindable; a Parry button on touch). A 14-frame window; a hit inside it does no damage, staggers the nearest enemy for about 1.3 s (`e.stun`, skipped AI in `updateEnemy`), and resets the parry so they chain. Enemy shots inside the window come back as your own fire bolt. Bosses don't stagger. Tested headless: parried hit kept full health and stunned the enemy; an unparried one hurt.
 - **2026-10-31, MelloJello087's agent, v0.1.2:** Look screen: every group (hood, tunic, eyes, lamp, skin) has a rainbow "pick any color" swatch, and skin has a "One tone, no shading" box. Saved in `save.look` as `<group>:'custom'` plus `<group>C:'#hex'` and `skinFlat`, so co-op partners see it too (old versions just fall back). Tested in Chrome: picking colors updates the preview and saves.
 
