@@ -235,7 +235,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.15';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.16';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -2498,6 +2498,7 @@ function updateArena() {
       else {
         a.stage = 'done'; save.arenas[a.key] = true; persist(); setBars(null); sfx.pick(); musSting('clear');
         banner = {title:'The bars rise', sub:'A gate cog lies where the last of them fell.', color:'#e8c48a', t:240};
+        voice(VOICE_COG[Math.min(2, Object.keys(save.arenas).filter(k => ARENAS[k]).length - 1)] || VOICE_COG[0], 160);
       }
     }
   }
@@ -3108,6 +3109,7 @@ function bossFelled(e) {
   p.max = maxHp(); p.hp = p.max; sfx.pick(); musSting('clear');
   const B = BOSSES[e.kind];
   banner = {title:B.heart, sub:'You can take one more hit. The way out is open.', color:B.color, t:330};
+  if (VOICE_BOSS[e.kind]) voice(VOICE_BOSS[e.kind], 200);
   burst(e.x + e.w / 2, e.y + e.h / 2, B.color, 50, 3.5);
 }
 function updateRBoss(e) {
@@ -3675,6 +3677,8 @@ function districtEnter(key) {
   const first = !(save.districts || {})[d]; curDistrict = d;
   save.districts = save.districts || {}; save.districts[d] = true; persist();
   dcard = {d, t:0, len:first ? 330 : 170, first};
+  if (first && d === 'gate') voice('There you are. The last of them are behind this gate. So is your sister.', 340);
+  if (first && d === 'under') voice('Hiding underground? We are very patient.', 340);
   try { districtSting(); } catch (e) {}
   return true;
 }
@@ -4325,7 +4329,7 @@ function update() {
   }
   updateShots();
   updateClassFx();
-  skillTick(); moveTick();
+  skillTick(); moveTick(); voiceTick();
   regionUpdate(ax, atkBox);
   ventUpdate(); dropsUpdate();
   updateEShots(atkBox);
@@ -6248,7 +6252,7 @@ function render() {
   if (target && !p.hook) keycap(keyOf('hook'), target.x + 8 - cx, target.y - 18 - cy);
   ctx.restore();
 
-  drawHUD(); drawDistrictCard();
+  drawHUD(); drawDistrictCard(); drawVoice();
   if (mode === 'respawn') { ctx.fillStyle = `rgba(10,6,5,${modeT / 24})`; ctx.fillRect(0, 0, VW, VH); }
   if (mode === 'dead' && p.downed) {
     ctx.fillStyle = 'rgba(40,8,4,.45)'; ctx.fillRect(0, 0, VW, VH);
@@ -6277,8 +6281,13 @@ let dlg = {open:false, opts:[], idx:0};
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* ---------- Opening cutscene ----------
    Plays once at the start of a new game, before the class picker. Any key, click or tap skips it. */
-const CUT_LINES = [[40, 230, 'They trusted you with the Outer Gate.'], [280, 450, 'You opened it.'], [540, 740, 'You let them in.'], [800, 960, 'One gate still stands.'], [990, 1110, 'Climb.']];
-const CUT_END = 1170;
+// a line starting with ~ is the Ash-King speaking
+const PRO = 620;
+const CUT_LINES = [[40, 200, 'The Council took your mother’s name. Then they took her.'], [220, 390, 'Out on the plain, something offered you a bargain.'],
+  [410, 600, '~Open the gate. We take the Council. You and your sister are spared.'],
+  [PRO + 40, PRO + 230, 'So you took the key to the Outer Gate.'], [PRO + 280, PRO + 450, 'You opened it.'], [PRO + 500, PRO + 620, 'They burned the Council.'], [PRO + 635, PRO + 745, 'Then they kept going.'],
+  [PRO + 800, PRO + 935, 'Wren is somewhere behind the last gate.'], [PRO + 950, PRO + 1060, 'So is the Ash-King.'], [PRO + 1080, PRO + 1170, 'Climb.']];
+const CUT_END = PRO + 1230;
 let cutT = 0, cutSkip = 0;
 function startCut() { mode = 'cut'; cutT = 0; cutSkip = 0; for (const k in held) held[k] = false; }
 function endCut() {
@@ -6287,11 +6296,13 @@ function endCut() {
 }
 function cutUpdate() {
   cutT++; updateParts();
-  if (cutT === 300) { sfx.clang(); }
-  if (cutT > 300 && cutT < 420 && cutT % 14 === 0) tone(70 + (cutT % 28), .09, 'square', .03);
-  if (cutT === 430) { sfx.slam(); }
-  if (cutT === 540 || cutT === 620) { tone(46, .9, 'sawtooth', .07, 30); }
-  if (cutT === 600) sfx.boom();
+  const c = cutT - PRO;
+  if (cutT === 300 || cutT === 420) { tone(38, 1.8, 'sawtooth', .06, 30); tone(57, 1.4, 'sine', .05, 50, .1); }   // something answers from the plain
+  if (c === 300) { sfx.clang(); }
+  if (c > 300 && c < 420 && c % 14 === 0) tone(70 + (c % 28), .09, 'square', .03);
+  if (c === 430) { sfx.slam(); }
+  if (c === 540 || c === 620) { tone(46, .9, 'sawtooth', .07, 30); }
+  if (c === 600) sfx.boom();
   if (cutT > 20 && Object.keys(hit).some(k => hit[k])) cutSkip = 1;
   if (cutSkip) cutSkip++;
   if (cutT >= CUT_END || cutSkip > 20) endCut();
@@ -6350,9 +6361,31 @@ function cutCity(t, fig) {
     // you, on a rooftop, looking up at it
     if (fig) { const rx = roofs[3][0], rh = roofs[3][1]; cutFigure(rx + 8, VH - rh - 26 + 2, 1, 0); }
 }
+// the bargain: you on the wall at night, and something enormous out on the plain
+function drawPrologue(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, VH); g.addColorStop(0, '#07060c'); g.addColorStop(.6, '#12101a'); g.addColorStop(1, '#1c1820');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  for (let n = 0; n < 50; n++) { ctx.fillStyle = `rgba(220,220,255,${.2 + .2 * Math.sin(t * .03 + n)})`; ctx.fillRect(hash(n, 4) * VW, hash(n, 5) * VH * .55, 1, 1); }
+  const z = 1 + .05 * t / PRO; ctx.save(); ctx.translate(VW / 2, VH * .75); ctx.scale(z, z); ctx.translate(-VW / 2, -VH * .75);
+  // the plain, far below
+  ctx.fillStyle = '#0d0b10'; ctx.fillRect(-20, VH * .66, VW + 40, VH);
+  // it rises out of the dark, eyes first
+  const up = Math.max(0, Math.min(1, (t - 60) / 360)), eyes = Math.max(0, Math.min(1, (t - 240) / 120)), base = VH * 1.98 + (1 - up * (2 - up)) * 220;
+  cutColossus(VW * .36, base, 2.4, t * .006, .1, eyes);
+  // its crown of embers
+  if (up > 0) { const P = giantPose(VW * .36, base, 2.4, t * .006, .1, 0), hx = P.head.x, hy = P.head.y - 30 * 2.4 + 8; for (let i = -2; i <= 2; i++) { ctx.fillStyle = `rgba(255,${120 + i * 10},50,${.7 * eyes})`; ctx.beginPath(); ctx.moveTo(hx + i * 9 - 4, hy + 6 + Math.abs(i) * 4); ctx.lineTo(hx + i * 9, hy - 8 + Math.abs(i) * 4 + Math.sin(t * .1 + i) * 2); ctx.lineTo(hx + i * 9 + 4, hy + 6 + Math.abs(i) * 4); ctx.fill(); } }
+  // the wall you stand on
+  const wy = VH * .8;
+  ctx.fillStyle = '#060405'; ctx.fillRect(-20, wy, VW + 40, VH); for (let x = -20; x < VW + 20; x += 22) ctx.fillRect(x, wy - 10, 13, 10);
+  const fx = VW * .66;
+  { const lg = ctx.createRadialGradient(fx + 7, wy - 8, 0, fx + 7, wy - 8, 26); lg.addColorStop(0, 'rgba(255,200,120,.4)'); lg.addColorStop(1, 'rgba(255,160,80,0)'); ctx.fillStyle = lg; ctx.fillRect(fx - 20, wy - 34, 54, 54); }
+  cutFigure(fx, wy - 26, -1, 0, true);
+  ctx.restore();
+}
 function drawCut() {
-  const t = cutT, gate = t < 760;
+  const T_ = cutT, t = cutT - PRO, gate = t < 760;
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (T_ < PRO) drawPrologue(T_); else {
   // a slow push in on each shot, and the ground shaking when they come
   const k = gate ? t / 760 : (t - 760) / 400, zoom = 1 + .06 * k;
   ctx.translate(VW / 2, VH * .7); ctx.scale(zoom, zoom); ctx.translate(-VW / 2, -VH * .7);
@@ -6406,23 +6439,24 @@ function drawCut() {
   } else {
     cutCity(t, true);
   }
+  }
   for (const q of parts) { ctx.globalAlpha = Math.min(1, q.life / 20); ctx.fillStyle = q.color; ctx.fillRect(q.x, q.y, q.size, q.size); }
   ctx.globalAlpha = 1;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   // letterbox
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, 22); ctx.fillRect(0, VH - 22, VW, 22);
   // the words, low and quiet
-  for (const [a, b, line] of CUT_LINES) {
-    if (t < a || t > b) continue;
-    const al = Math.max(0, Math.min(1, (t - a) / 40, (b - t) / 40));
-    ctx.globalAlpha = al; ctx.font = 'italic 15px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#000'; ctx.fillText(line, VW / 2 + 1, VH - 37); ctx.fillStyle = '#eadfd2'; ctx.fillText(line, VW / 2, VH - 38);
+  for (const [a, b, ln] of CUT_LINES) {
+    if (T_ < a || T_ > b) continue;
+    const al = Math.max(0, Math.min(1, (T_ - a) / 40, (b - T_) / 40)), it = ln[0] === '~', line = it ? '“' + ln.slice(1) + '”' : ln;
+    ctx.globalAlpha = al; ctx.font = (it ? '' : 'italic ') + '15px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000'; ctx.fillText(line, VW / 2 + 1, VH - 37); ctx.fillStyle = it ? '#ff8a5a' : '#eadfd2'; ctx.fillText(line, VW / 2, VH - 38);
     ctx.globalAlpha = 1;
   }
-  const fade = t < 40 ? 1 - t / 40 : t > CUT_END - 60 ? (t - (CUT_END - 60)) / 60 : Math.abs(t - 760) < 24 ? 1 - Math.abs(t - 760) / 24 : 0;
+  const fade = T_ < 40 ? 1 - T_ / 40 : T_ > CUT_END - 60 ? (T_ - (CUT_END - 60)) / 60 : Math.abs(t - 760) < 24 ? 1 - Math.abs(t - 760) / 24 : Math.abs(t) < 24 ? 1 - Math.abs(t) / 24 : 0;
   if (cutSkip) { ctx.fillStyle = `rgba(0,0,0,${Math.min(1, cutSkip / 20)})`; ctx.fillRect(0, 0, VW, VH); }
   else if (fade > 0) { ctx.fillStyle = `rgba(0,0,0,${Math.min(1, fade)})`; ctx.fillRect(0, 0, VW, VH); }
-  if (t > 40 && !cutSkip) txt('any key to skip', 8, VH - 15, 8, 'rgba(234,223,210,.35)', 'left');
+  if (T_ > 40 && !cutSkip) txt('any key to skip', 8, VH - 15, 8, 'rgba(234,223,210,.35)', 'left');
   ctx.restore();
 }
 /* ---------- Title screen ----------
@@ -6461,6 +6495,28 @@ function drawTitle() {
   txt("A VILLAIN'S METROIDVANIA", VW / 2, 86, 8, '#e3c8a0', 'center');
   ctx.restore();
 }
+/* ---------- The Ash-King's voice ----------
+   Now and then it speaks to you, low on the screen in ember red. */
+let voiceQ = [], voiceCur = null;
+function voice(text, delay = 0) { voiceQ.push({text, delay, t:0}); }
+function voiceTick() {
+  if (!voiceCur && voiceQ.length && mode === 'play') { if (voiceQ[0].delay > 0) voiceQ[0].delay--; else { voiceCur = voiceQ.shift(); if (ac && soundOn) { tone(38, 1.6, 'sawtooth', .05, 30); tone(57, 1.2, 'sine', .04, 50, .1); } } }
+  if (voiceCur && ++voiceCur.t > 300) voiceCur = null;
+}
+function drawVoice() {
+  if (!voiceCur || mode !== 'play') return;
+  const t = voiceCur.t, a = Math.max(0, Math.min(1, t / 30, (300 - t) / 40));
+  ctx.save(); ctx.globalAlpha = a;
+  const band = ctx.createLinearGradient(0, VH - 70, 0, VH - 20); band.addColorStop(0, 'rgba(20,4,2,0)'); band.addColorStop(.5, 'rgba(20,4,2,.6)'); band.addColorStop(1, 'rgba(20,4,2,0)');
+  ctx.fillStyle = band; ctx.fillRect(0, VH - 72, VW, 54);
+  ctx.font = '14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const line = '“' + voiceCur.text + '”', sh = Math.sin(t * .7) * .4;
+  ctx.fillStyle = '#000'; ctx.fillText(line, VW / 2 + 1 + sh, VH - 44); ctx.fillStyle = '#ff8a5a'; ctx.fillText(line, VW / 2 + sh, VH - 45);
+  ctx.font = '8px Silkscreen, ui-monospace, monospace'; ctx.fillStyle = '#a0503a'; ctx.fillText('THE ASH-KING', VW / 2, VH - 62);
+  ctx.restore();
+}
+const VOICE_BOSS = {forge:'That forge made the chains that held us out. You gave it to me. Thank you.', eel:'The deep was always ours. You only opened the door.', thorn:'Their queen bargained too. She was worse at it than you.'};
+const VOICE_COG = ['One cog. The gate wants to open for you, warden.', 'Two. You are almost home.', 'Three. Come up, and we will talk terms again.'];
 function introBanner() { banner = {title:'Six notes lie in the ruins', sub:'Find them. They remember what you did.', color:'#e3d6bd', t:330}; }
 // NPCs talk in little voice blips while their words type out
 const VOICES = {v:{f:150, type:'square', vol:.02, var:.3, rate:2}, f:{f:104, type:'sawtooth', vol:.018, var:.22, rate:2},
@@ -6580,7 +6636,7 @@ function openGate() {
   const hint = save.notes < 4 && !save.flags.taught ? 'Locked: you do not know how. Find more notes, or someone who knows the gate' : 'Locked: your hands will not do it';
   openDlg({kicker:`The Last Gate · ${save.notes} of 6 notes found`, title:'The winch is whole again',
     body:[save.tide > save.ember ? 'The handles are warm, as if the gate has been waiting for you.' : 'The handles are cold. Your hands are not steady.',
-      'Raise the gate and the Colossi walk into the last safe city. That was the plan when you came here.'],
+      'Raise the gate and the Colossi walk into the last safe city. The Ash-King swears that this time it will keep its word.'],
     opts:[
       {text:'Raise the gate. Let them in.', tag:'Something out there will answer', run:raiseGate},
       {text:'Drop the gate for good.', tag:can ? 'The gate keeps out' : hint, disabled:!can, run:() => finish('low')},
@@ -6591,6 +6647,7 @@ function raiseGate() {
   save.gateOpen = true; persist(); applyGateOpen(); gateLiftT = 0;
   sfx.horn(); shake = 16;
   banner = {title:'The Last Gate is open', sub:'Beyond it, something on the plain has turned toward you.', color:'#ff8a3d', t:320};
+  voice('We had a deal, warden. We still do. Come out and take your crown.', 220);
 }
 function applyGateOpen() {
   const r = ROOMS.G; if (!save.gateOpen || r.gateOpened) return;
