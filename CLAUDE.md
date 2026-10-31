@@ -12,9 +12,10 @@ If you are an agent and your tool did not load this file on its own, read it and
 
 **After every finished update:**
 1. Test it (see Testing below).
-2. Update NOTES.md: remove your claim, add a short handoff.
-3. Commit, run `git pull --rebase --autostash` again, then push.
-4. Tell your human it was pushed. If the push fails, pull and try again. Never leave finished work only on your computer.
+2. Run `git pull --rebase --autostash`, then add 0.0.1 to the version (see Versions below).
+3. Update NOTES.md: remove your claim, add a short handoff.
+4. Commit, pull again, then push.
+5. Tell your human the version you pushed. If the push fails, pull and try again. Never leave finished work only on your computer.
 
 If git stops with a conflict, or anything looks wrong, stop and follow "Working in the same file" below. Don't guess, and never run anything that throws work away (`git reset --hard`, `git checkout --`, `git clean`, force-push) to make a problem go away.
 
@@ -70,6 +71,7 @@ The game shows its version in the corner of the screen, hidden in full screen. T
 ## Things that break quietly
 - **One file, no build, no packages.** The game must stay a single HTML file, and `server.js` must keep working with no dependencies.
 - **The server needs the page to contain a literal `<head>`** (it adds a marker there that tells the game to use this server for co-op) **and the word `Wallfall`** (otherwise it rejects the file from GitHub).
+- **Small enemies:** straight shots fly over anything short on the floor. Any new small enemy must go in the `SMALL` list so shots, bombs and bones aim at it, or some classes won't be able to hit it.
 - **Saves:** they live in each player's browser under `wallfall-save`. Give any new save field a default in `fresh()`, and don't rename or repurpose existing fields. If you change the world in a way old saves can't handle, bump `worldV` and migrate in the check at the bottom of the file, as it already does.
 - **Co-op message size:** the server drops any player who sends a message over 16 KB, and a player's state is about 4 KB. Keep it small.
 - **Mixed versions:** the page only updates when someone reloads, so players in the same game can be on different versions. Co-op code must cope with missing fields.

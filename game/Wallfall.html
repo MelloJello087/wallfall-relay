@@ -195,7 +195,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.0';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.1';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -710,6 +710,11 @@ function updateThralls() {
       const box = {x:t.x - 4, y:t.y - 3, w:t.w + 8, h:t.h + 6};
       if (tgt && overlap(box, tgt)) { hitEnemy(tgt, 1 + (save.whet ? 1 : 0), t.face * 3); t.cd = 32; t.atk = 10; sfx.hit(); burst(tgt.x + tgt.w / 2, tgt.y + tgt.h / 2, '#7aff9a', 5, 1.2); }
       else if (bossT && overlap(box, bossT)) { bossDamage(1 + (save.whet ? 1 : 0), false); t.cd = 32; t.atk = 10; }
+      else if (tgt && SMALL.includes(tgt.t) && tgt.y + tgt.h < t.y) {
+        // thralls can't reach the air, so they throw a bone at what's flying overhead
+        const x = tcx, y = t.y + 4, dx = tgt.x + tgt.w / 2 - x, dy = tgt.y + tgt.h / 2 - y, d = Math.hypot(dx, dy) || 1;
+        if (d < 180 && los(x, y, x + dx, y + dy)) { shots.push({kind:'bone', x, y, vx:dx / d * 4.5, vy:dy / d * 4.5, life:50, dmg:1 + (save.whet ? 1 : 0), hit:[], seek:tgt}); t.cd = 48; t.atk = 10; t.face = Math.sign(dx) || t.face; sfx.swing(); }
+      }
     }
   }
   thralls = thralls.filter(t => t.life > 0);
@@ -733,9 +738,32 @@ function drawThralls() {
     ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(122,255,154,.12)'; ctx.fillRect(x - 3, y - 2, 16, 20); ctx.globalCompositeOperation = 'source-over';
   }
 }
+// small things slip under a straight shot or sit past a lobbed bomb, so bolts, bombs and thrown bones lean toward them
+const SMALL = 'grjcle';
+function smallFoe(x, y, dir, up, range) {
+  let best = null, bd = range;
+  for (const e of enemies) {
+    if (e.dead || e.spawn > 0 || e.ghost || !SMALL.includes(e.t)) continue;
+    const dx = e.x + e.w / 2 - x, dy = e.y + e.h / 2 - y, d = Math.hypot(dx, dy);
+    if (d >= bd || (up ? dy > 0 || Math.abs(dx) > 24 - dy : dx * dir < -6 || Math.abs(dy) > Math.abs(dx) * 1.2 + 24) || !los(x, y, e.x + e.w / 2, e.y + e.h / 2)) continue;
+    best = e; bd = d;
+  }
+  return best;
+}
+function steerShot(s, most = .22) {
+  const e = s.seek;
+  if (e.dead || s.hit.includes(e)) { s.seek = null; return; }
+  const sp = Math.hypot(s.vx, s.vy || 0), a = Math.atan2(s.vy || 0, s.vx);
+  let turn = Math.atan2(e.y + e.h / 2 - s.y, e.x + e.w / 2 - s.x) - a;
+  turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+  turn = Math.max(-most, Math.min(most, turn));
+  s.vx = Math.cos(a + turn) * sp; s.vy = Math.sin(a + turn) * sp;
+}
 function throwBomb() {
-  const A = cls().atk;
-  shots.push({kind:'bomb', x:p.x + p.w / 2 + p.face * 8, y:p.y + 6, vx:p.up ? p.face * .8 + p.vx * .3 : p.face * 3.4 + p.vx * .4, vy:p.up ? -6.2 : -3.6, life:90, dmg:playerDmg(A), radius:A.radius, hit:[]});
+  const A = cls().atk, x = p.x + p.w / 2 + p.face * 8, y = p.y + 6, e = smallFoe(p.x + p.w / 2, y, p.face, p.up, 140);
+  // with something small nearby the lob lands on it instead of sailing past
+  const vx = e ? (e.x + e.w / 2 - x) / 28 : p.up ? p.face * .8 + p.vx * .3 : p.face * 3.4 + p.vx * .4, vy = e ? (e.y + e.h / 2 - y) / 28 - 3.5 : p.up ? -6.2 : -3.6;
+  shots.push({kind:'bomb', x, y, vx, vy, life:90, dmg:playerDmg(A), radius:A.radius, hit:[], seek:e});
 }
 function explode(s) {
   s.life = 0; shake = Math.max(shake, 7); sfx.boom();
@@ -754,6 +782,7 @@ function updateBomb(s) {
   if (tick % 2) parts.push({x:s.x, y:s.y - 4, vx:0, vy:-.4, life:10, color:Math.random() < .5 ? '#ffd27a' : '#ff6a2a', size:1});
   let boom = s.life <= 0 || solid(Math.floor(s.x / T), Math.floor((s.y + 3) / T)) || tile(Math.floor(s.x / T), Math.floor((s.y + 3) / T)) === '-' && s.vy > 0;
   if (!boom) for (const e of enemies) if (!e.dead && !(e.spawn > 0) && s.x > e.x - 2 && s.x < e.x + e.w + 2 && s.y > e.y - 2 && s.y < e.y + e.h + 2) { boom = true; break; }
+  if (!boom && s.seek && !s.seek.dead && Math.hypot(s.seek.x + s.seek.w / 2 - s.x, s.seek.y + s.seek.h / 2 - s.y) < 18) boom = true;
   if (!boom && boss) { const bx = bossBoxes(boss), pt = {x:s.x - 3, y:s.y - 3, w:6, h:6}; if (overlap(pt, bx.body) || overlap(pt, bx.head)) boom = true; }
   if (boom) explode(s);
 }
@@ -812,9 +841,11 @@ function updateClassFx() {
 
 let shots = [];
 function fireShot() {
-  const A = cls().atk;
-  if (p.up) shots.push({x:p.x + p.w/2, y:p.y - 2, vx:0, vy:-A.speed, up:true, life:A.life, dmg:playerDmg(A), pierce:!!A.pierce, kind:A.kind, hit:[]});
-  else shots.push({x:p.x + p.w/2 + p.face * 10, y:p.y + 9, vx:p.face * A.speed, life:A.life, dmg:playerDmg(A), pierce:!!A.pierce, kind:A.kind, hit:[]});
+  const A = cls().atk, cx = p.x + p.w/2, e = smallFoe(cx, p.up ? p.y : p.y + 9, p.face, p.up, A.speed * A.life);
+  if (p.up) shots.push({x:cx, y:p.y - 2, vx:0, vy:-A.speed, up:true, life:A.life, dmg:playerDmg(A), pierce:!!A.pierce, kind:A.kind, hit:[], seek:e});
+  // at point-blank the shot starts at the enemy rather than past it
+  else shots.push({x:cx + p.face * (e ? Math.max(0, Math.min(10, (e.x + e.w / 2 - cx) * p.face)) : 10), y:p.y + 9, vx:p.face * A.speed, life:A.life, dmg:playerDmg(A), pierce:!!A.pierce, kind:A.kind, hit:[], seek:e});
+  if (e) steerShot(shots[shots.length - 1], Math.PI);
   if (A.recoil && p.up) { if (!p.onGround) { p.vy = Math.max(p.vy, 2); } shake = Math.max(shake, 5); burst(p.x + p.w/2, p.y - 4, '#c9c4bc', 14, 1.4); }
   else if (A.recoil) {
     // the handgonne kicks: on the ground it shoves you back, in the air it throws you up and away
@@ -826,6 +857,7 @@ function fireShot() {
 function updateShots() {
   for (const s of shots) {
     if (s.kind === 'bomb') { updateBomb(s); continue; }
+    if (s.seek) steerShot(s);
     s.x += s.vx; s.y += s.vy || 0; s.life--;
     if (s.life === 0) burst(s.x, s.y, s.kind === 'fire' ? '#ff8a2a' : '#c9ccd2', s.kind === 'fire' ? 8 : 3, 1);
     if (s.kind === 'ball' && tick % 2) parts.push({x:s.x - s.vx, y:s.y, vx:0, vy:-.2, life:16, color:'rgba(190,185,175,.6)', size:2});
@@ -850,7 +882,7 @@ function updateShots() {
 }
 function drawShots() {
   for (const s of shots) {
-    if (s.up && s.kind !== 'bomb') { const x = Math.round(s.x), y = Math.round(s.y); ctx.save(); ctx.translate(x, y); ctx.rotate(-Math.PI / 2); ctx.translate(-x, -y); drawShot(s); ctx.restore(); }
+    if ((s.up || s.vy) && s.kind !== 'bomb') { const x = Math.round(s.x), y = Math.round(s.y); ctx.save(); ctx.translate(x, y); ctx.rotate(s.up ? Math.atan2(s.vy, s.vx) : Math.atan(s.vy / s.vx)); ctx.translate(-x, -y); drawShot(s); ctx.restore(); }
     else drawShot(s);
   }
 }
@@ -864,6 +896,7 @@ function drawShot(s) {
       return;
     }
     if (s.kind === 'ball') { ctx.fillStyle = '#2a2a2e'; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#8a8e96'; ctx.fillRect(x - 1, y - 2, 2, 1); return; }
+    if (s.kind === 'bone') { ctx.fillStyle = '#e8e2d0'; ctx.fillRect(x - 3, y, 6, 1); ctx.fillRect(x - 4, y - 1, 2, 3); ctx.fillRect(x + 2, y - 1, 2, 3); return; }
     if (s.kind === 'fire') {
       ctx.fillStyle = '#c43a14'; ctx.fillRect(x - 3, y - 2, 5, 5);
       ctx.fillStyle = '#ff8a24'; ctx.fillRect(x - 2, y - 2, 4, 4); ctx.fillRect(x - 3 - d * 2, y - 1, 2, 2);
