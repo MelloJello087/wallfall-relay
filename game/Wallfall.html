@@ -202,7 +202,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.6';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.7';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -643,6 +643,8 @@ let clsOverride = null;
 const clsKey = () => clsOverride || (CLASSES[save.cls] ? save.cls : 'warden');
 const cls = () => CLASSES[clsKey()];
 // air jumps only once the Wingbone is found; before that it's one jump and a dash
+// everyone runs a bit slower than the class numbers say; raise toward 1 to speed the whole game up
+const MOVE_K = .82;
 const airJ = () => save.dbl ? (cls().airJumps || 1) : 0;
 const WBMP = {
   blade:["........#", ".......#.", "......#..", ".....#...", "..#.#....", "...#.....", "..#.#....", ".#.......", "#........"],
@@ -2650,7 +2652,7 @@ const headUnder = () => R && R.water && p.y + 5 > R.water.y;
 function waterPhys(ax) {
   p.vy = Math.min(p.vy + .17, 1.9);
   if (p.vy < -3.8) p.vy = -3.8;
-  const cap = cls().speed * .7; p.vx = Math.max(-cap, Math.min(cap, p.vx));
+  const cap = cls().speed * MOVE_K * .7; p.vx = Math.max(-cap, Math.min(cap, p.vx));
 }
 function swimStroke() {
   if (!pInWater()) return false;
@@ -3744,11 +3746,11 @@ function update() {
       p.hook = null; p.vy = jumped ? -8.3 : -7; p.noCut = 24; p.vx *= .5; p.air = airJ(); p.dashLeft = cls().dashes; p.jbuf = 0; sfx.jump();
     } else { p.vx = dx / d * 8; p.vy = dy / d * 8; if (dx) p.face = Math.sign(dx); }
   } else if (p.dashT > 0) {
-    p.dashT--; p.vx = p.face * 7; p.vy = 0;
+    p.dashT--; p.vx = p.face * 6.3; p.vy = 0;
     parts.push({x:p.x + p.w/2, y:p.y + 3 + Math.random()*9, vx:-p.face*.6, vy:0, life:18, color:'#ffb36a', size:2});
   } else {
     if (p.lock > 0) p.lock--;
-    else { p.vx += (ax*cls().speed - p.vx) * (p.onGround ? .35 : .2); if (ax) p.face = ax; }
+    else { p.vx += (ax*cls().speed*MOVE_K - p.vx) * (p.onGround ? .35 : .2); if (ax) p.face = ax; }
     if (pInWater()) waterPhys(ax); else p.vy = Math.min(p.vy + .5, 8);
     if (p.noCut > 0) p.noCut--;
     else if (!held.jump && p.vy < -2) p.vy += .6;
