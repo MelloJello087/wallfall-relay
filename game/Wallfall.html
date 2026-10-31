@@ -202,7 +202,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.7';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.8';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -4849,6 +4849,20 @@ function heroSprite(ox, oy, f, ghost) {
   return {hand:{x:f > 0 ? ox + H.x : ox + 19 - H.x, y:oy + H.y}};
 }
 function ghostless() { return mode !== 'play'; }
+// the hero is drawn off-screen first, then stamped with a rim around it so it reads against the city
+const HCV = document.createElement('canvas'), SCV = document.createElement('canvas'); HCV.width = HCV.height = SCV.width = SCV.height = 72;
+const hctx = HCV.getContext('2d'), sctx = SCV.getContext('2d'), HO = 26;
+let RIM = 'rgba(255,226,180,.55)', RIM2 = '#0e0907';
+function outlinedHero(ox, oy, f) {
+  const keep = ctx; hctx.clearRect(0, 0, 72, 72); ctx = hctx;
+  let r; try { r = heroSprite(HO, HO, f, null); } finally { ctx = keep; }
+  const x = ox - HO, y = oy - HO, tint = col => { sctx.globalCompositeOperation = 'copy'; sctx.drawImage(HCV, 0, 0); sctx.globalCompositeOperation = 'source-in'; sctx.fillStyle = col; sctx.fillRect(0, 0, 72, 72); sctx.globalCompositeOperation = 'source-over'; };
+  tint(RIM); for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2], [-1, -1], [1, -1], [-1, 1], [1, 1]]) ctx.drawImage(SCV, x + dx, y + dy);
+  tint(RIM2); for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.drawImage(SCV, x + dx, y + dy);
+  ctx.drawImage(HCV, x, y);
+  r.hand.x += x; r.hand.y += y;
+  return r;
+}
 function drawPlayer() {
   if (p.inv > 0 && (p.inv >> 2) % 2 && mode === 'play') return;
   const f = p.face, cx = Math.round(p.x + p.w/2), ox = cx - 10, oy = Math.round(p.y + p.h) - 26;
@@ -4897,7 +4911,7 @@ function drawPlayer() {
     ctx.strokeStyle = `rgba(255,120,60,${.25 * a})`; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(cx, cy2, 19, tick * .3, tick * .3 + Math.PI * 1.2); ctx.stroke();
   }
-  const r = heroSprite(ox, oy, f, null);
+  const r = outlinedHero(ox, oy, f);
   if (cls().atk.air && (!p.onGround || p.launchCd > 0) && !ghostless()) {
     const cooling = p.launchCd > 0;
     for (let i = 0; i < 3; i++) { ctx.fillStyle = !cooling && i < 3 - p.launches ? '#ffcf8a' : 'rgba(80,60,50,.75)'; ctx.fillRect(cx - 5 + i * 4, oy - 6, 2, 2); }
