@@ -190,7 +190,6 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
       <button data-k="hook">Hook</button>
       <button data-k="skill">Skill</button>
       <button data-k="skill2">Skill 2</button>
-      <button data-k="parry">Parry</button>
       <button data-k="attack">Hit</button>
       <button data-k="dash">Dash</button>
       <button data-k="jump">Jump</button>
@@ -212,7 +211,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.10';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.11';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -670,6 +669,8 @@ const curAtk = () => p.atkOv || (p.lash ? LASH : cls().atk);
 // air jumps only once the Wingbone is found; before that it's one jump and a dash
 // everyone runs a bit slower than the class numbers say; raise toward 1 to speed the whole game up
 const MOVE_K = .82;
+// gravity and top falling speed for the player; jumps are tuned so their heights stay the same
+const GRAV = .36, FALL = 6.2, JUMP = -7.1, AIRJUMP = -6.1;
 const airJ = () => save.dbl ? (cls().airJumps || 1) : 0;
 const WBMP = {
   blade:["........#", ".......#.", "......#..", ".....#...", "..#.#....", "...#.....", "..#.#....", ".#.......", "#........"],
@@ -2043,13 +2044,12 @@ function musSting(kind) {
 
 /* ---------- Input ---------- */
 const held = {}, hit = {};
-const ACTIONS = [['left', 'Move left'], ['right', 'Move right'], ['up', 'Aim up'], ['jump', 'Jump'], ['attack', 'Strike / talk'], ['dash', 'Dash'], ['parry', 'Parry'], ['skill', 'Class skill'], ['skill2', 'Second skill'], ['hook', 'Grapple'], ['down', 'Drop through ledges'], ['map', 'Map']];
+const ACTIONS = [['left', 'Move left'], ['right', 'Move right'], ['up', 'Aim up'], ['jump', 'Jump'], ['attack', 'Strike / talk'], ['dash', 'Dash'], ['skill', 'Class skill'], ['skill2', 'Second skill'], ['hook', 'Grapple'], ['down', 'Drop through ledges'], ['map', 'Map']];
 const DEFAULT_BINDS = {left:['ArrowLeft', 'KeyA', null], right:['ArrowRight', 'KeyD', null], up:['KeyW', 'ArrowUp', null], jump:['KeyZ', 'Space', 'ArrowUp'],
-  attack:['KeyX', 'KeyJ', null], dash:['KeyC', 'ShiftLeft', 'ShiftRight'], parry:['KeyE', 'KeyK', null], skill:['KeyQ', 'KeyL', null], skill2:['KeyR', 'KeyI', null], hook:['KeyV', 'KeyF', null], down:['ArrowDown', 'KeyS', null], map:['KeyM', null, null]};
+  attack:['KeyX', 'KeyJ', null], dash:['KeyC', 'ShiftLeft', 'ShiftRight'], skill:['KeyQ', 'KeyL', null], skill2:['KeyR', 'KeyI', null], hook:['KeyV', 'KeyF', null], down:['ArrowDown', 'KeyS', null], map:['KeyM', null, null]};
 let binds = JSON.parse(JSON.stringify(DEFAULT_BINDS));
 try { const b = JSON.parse(localStorage.getItem('wallfall-binds') || 'null'); if (b) for (const [a] of ACTIONS) if (Array.isArray(b[a])) binds[a] = [0, 1, 2].map(i => b[a][i] || null); } catch (e) {}
 if (!binds.up.some(Boolean)) binds.up = ['KeyW', 'ArrowUp', null];
-if (!binds.parry.some(Boolean)) binds.parry = ['KeyE', 'KeyK', null];
 if (!binds.skill.some(Boolean)) binds.skill = ['KeyQ', 'KeyL', null];
 if (!binds.skill2.some(Boolean)) binds.skill2 = ['KeyR', 'KeyI', null];
 let KEYMAP = {};
@@ -3949,19 +3949,18 @@ function drawShieldOn(x, y, w) {
 }
 
 /* ---------- Parry ----------
-   A quick guard: press parry just before something hits you. A blow inside the window does nothing to you,
-   staggers whatever threw it, and resets the parry so you can chain them. Shots are knocked back the way they came. */
+   No longer a control of its own (removed in v0.1.11). It now only powers the Warden's Steel Guard: while p.parryT runs,
+   a blow does nothing to you and staggers whatever threw it, and shots are knocked back the way they came. */
 const PARRY_WIN = 14, PARRY_CD = 40;
 function parryUpdate() {
   if (p.parryT > 0) p.parryT--;
   if (p.parryCd > 0) p.parryCd--;
-  if (hit.parry && !(p.parryCd > 0) && mode === 'play') { p.parryT = PARRY_WIN; p.parryCd = PARRY_CD; sfx.swing(); }
 }
 function parried(fromX) {
   p.parryT = 0; p.parryCd = 6; p.inv = 24; shake = Math.max(shake, 6); sfx.clang(); tone(1800, .12, 'triangle', .04, 900);
   const cx = p.x + p.w / 2 + Math.sign(fromX - p.x - p.w / 2) * 8;
   burst(cx, p.y + 10, '#ffffff', 16, 2.6); burst(cx, p.y + 10, '#ffe08a', 10, 1.6);
-  pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'PARRY'});
+  pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'GUARD'});
   p.parryFx = 12;
   // whoever threw the blow staggers
   let best = null, bd = 70;
@@ -4061,7 +4060,7 @@ function update() {
     p.hook.t++;
     if (d < 10 || p.hook.t > 45 || p.jbuf > 0) {
       const jumped = p.jbuf > 0;
-      p.hook = null; p.vy = jumped ? -8.3 : -7; p.noCut = 24; p.vx *= .5; p.air = airJ(); p.dashLeft = cls().dashes; p.jbuf = 0; sfx.jump();
+      p.hook = null; p.vy = jumped ? JUMP : -6; p.noCut = 24; p.vx *= .5; p.air = airJ(); p.dashLeft = cls().dashes; p.jbuf = 0; sfx.jump();
     } else { p.vx = dx / d * 8; p.vy = dy / d * 8; if (dx) p.face = Math.sign(dx); }
   } else if (p.dashT > 0) {
     p.dashT--; p.vx = p.face * 6.3; p.vy = 0;
@@ -4069,9 +4068,9 @@ function update() {
   } else {
     if (p.lock > 0) p.lock--;
     else { p.vx += (ax*cls().speed*MOVE_K - p.vx) * (p.onGround ? .35 : .2); if (ax) p.face = ax; }
-    if (pInWater()) waterPhys(ax); else p.vy = Math.min(p.vy + .5, 8);
+    if (pInWater()) waterPhys(ax); else p.vy = Math.min(p.vy + GRAV, p.dive ? 8 : Math.max(FALL, p.vy));
     if (p.noCut > 0) p.noCut--;
-    else if (!held.jump && p.vy < -2) p.vy += .6;
+    else if (!held.jump && p.vy < -2) p.vy += .45;
   }
 
   if (held.down && p.onGround && !p.hook && p.dashT === 0 && standingOnLedge()) { save.dropped = (save.dropped || 0) + 1; p.drop = 12; p.onGround = false; p.vy = Math.max(p.vy, 1); }
@@ -4079,9 +4078,9 @@ function update() {
   if (!p.hook && p.jbuf > 0 && p.dashT === 0) {
     if (held.down && p.onGround && standingOnLedge()) { p.drop = 10; p.jbuf = 0; p.onGround = false; }
     else if (!p.onGround && swimStroke()) {}
-    else if (p.onGround || p.coyote > 0) { p.vy = -8.3; p.jbuf = 0; p.coyote = 0; sfx.jump(); }
-    else if (p.wallT > 0) { p.vy = -7.6; p.vx = -p.wallS * 3.8; p.face = -p.wallS; p.lock = 8; p.wallT = 0; p.jbuf = 0; p.air = airJ(); p.dashLeft = cls().dashes; sfx.jump(); burst(p.x + (p.wallS > 0 ? p.w : 0), p.y + p.h/2, '#b8a890', 6, 1.2); }
-    else if (p.air > 0) { p.air--; p.vy = -7.2; p.jbuf = 0; sfx.air(); burst(p.x + p.w/2, p.y + p.h, '#ffd6a0', 10, 1.5); }
+    else if (p.onGround || p.coyote > 0) { p.vy = JUMP; p.jbuf = 0; p.coyote = 0; sfx.jump(); }
+    else if (p.wallT > 0) { p.vy = -6.5; p.vx = -p.wallS * 3.8; p.face = -p.wallS; p.lock = 8; p.wallT = 0; p.jbuf = 0; p.air = airJ(); p.dashLeft = cls().dashes; sfx.jump(); burst(p.x + (p.wallS > 0 ? p.w : 0), p.y + p.h/2, '#b8a890', 6, 1.2); }
+    else if (p.air > 0) { p.air--; p.vy = AIRJUMP; p.jbuf = 0; sfx.air(); burst(p.x + p.w/2, p.y + p.h, '#ffd6a0', 10, 1.5); }
   }
 
   const ox = p.x, oy = p.y;
