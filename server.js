@@ -10,15 +10,25 @@ const MAX_PLAYERS = 4;          // per game
 const MAX_MESSAGE = 16 * 1024;  // bytes; a player's state is about 4 KB at most
 const games = new Map();        // code -> Set of clients
 
-// the game itself is served from the same address, so players just open the site and play
+// the game itself is served from the same address, so players just open the site and play.
+// It is fetched fresh from GitHub (checked at most once a minute), so pushing a new game file updates the
+// site without redeploying. If GitHub can't be reached, the copy that shipped with the server is used.
 const GAME_FILE = path.join(__dirname, 'game', 'Wallfall.html');
-function gamePage() {
-  try {
-    // a marker tells the game it was loaded from this server, so co-op connects back here on its own
-    return fs.readFileSync(GAME_FILE, 'utf8').replace('<head>', '<head><meta name="wallfall-relay" content="1">');
-  } catch (e) { return null; }
+const GAME_URL = process.env.GAME_URL || 'https://raw.githubusercontent.com/MelloJello087/wallfall-relay/main/game/Wallfall.html';
+let cached = null, cachedAt = 0;
+async function gamePage() {
+  if (!cached || Date.now() - cachedAt > 60000) {
+    cachedAt = Date.now();
+    try {
+      const r = await fetch(GAME_URL, {signal: AbortSignal.timeout(5000)});
+      if (r.ok) { const t = await r.text(); if (t.includes('Wallfall')) cached = t; }
+    } catch (e) {}
+    if (!cached) try { cached = fs.readFileSync(GAME_FILE, 'utf8'); } catch (e) {}
+  }
+  // a marker tells the game it was loaded from this server, so co-op connects back here on its own
+  return cached ? cached.replace('<head>', '<head><meta name="wallfall-relay" content="1">') : null;
 }
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = (req.url || '/').split('?')[0];
   if (url === '/health' || url === '/status') {
     res.writeHead(200, {'Content-Type': 'text/plain'});
@@ -26,7 +36,7 @@ const server = http.createServer((req, res) => {
     return;
   }
   if (url === '/' || url === '/index.html' || url === '/Wallfall.html') {
-    const page = gamePage();
+    const page = await gamePage();
     if (page) { res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache'}); res.end(page); return; }
     res.writeHead(500, {'Content-Type': 'text/plain'}); res.end('The game file (game/Wallfall.html) is missing from the server.\n'); return;
   }

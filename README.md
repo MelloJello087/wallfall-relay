@@ -29,3 +29,7 @@ Each player keeps their own save. Up to four players per game.
 ## Test the server on your own computer (optional)
     npm start
 Then open http://localhost:8080 in two browser tabs.
+
+## Getting new versions
+- **The game** updates on its own: the server re-reads `game/Wallfall.html` from this GitHub repo (at most once a minute), so pushing a new game file is enough. Reload the page.
+- **The server code** (`server.js`) only changes when Railway redeploys. If Railway doesn't redeploy by itself after a push, open the project in Railway, press **Ctrl+K** (Cmd+K on a Mac), and choose **Deploy Latest Commit**.
