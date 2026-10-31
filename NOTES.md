@@ -9,6 +9,7 @@ Who is working on what right now. Add a line before you start and remove it when
 
 Format: `- who: what, in which part of the game (date)`
 
+- MelloJello087's agent: slower movement; Attack/Defense/Support roles and 6 new classes; charged attack, a second skill key, air and down attacks for every class; accounts with cloud saves (server.js + game). Classes, combat, movement, server (2026-10-31)
 
 ## Handoff
 Newest first. Keep each entry to a few lines: what changed, what is unfinished, what the other person should know. Delete entries once they stop being useful.
