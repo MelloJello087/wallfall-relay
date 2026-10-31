@@ -153,6 +153,10 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 .llabel{margin:0 0 5px;font-family:var(--ui);font-size:.52rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faded)}
 .llabel span{color:var(--ink);margin-left:6px}
 .lswatches{display:flex;flex-wrap:wrap;gap:6px}
+.lpick{position:relative;width:26px;height:26px;border-radius:50%;border:2px dashed #2a1d1660;background:conic-gradient(#e84a3a,#e8c84a,#5ac85a,#4aa8e8,#a84ae8,#e84a3a);cursor:pointer;display:inline-block;overflow:hidden}
+.lpick.on{outline:2px solid var(--seal);outline-offset:2px;border-style:solid}
+.lpick input{position:absolute;inset:-6px;opacity:0;cursor:pointer;width:40px;height:40px}
+.lflat{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-family:var(--ui);font-size:.55rem;letter-spacing:.06em;text-transform:uppercase;color:var(--faded);cursor:pointer}
 .card button.sw{width:26px;height:26px;padding:0;border-radius:50%;background:var(--c);border:2px solid #2a1d1640;box-shadow:inset 0 -3px 0 #0003;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .card button.sw i{font-family:var(--ui);font-style:normal;font-size:.36rem;color:#f0e6d6;letter-spacing:0}
 .card button.sw:hover{transform:translateY(-1px)}
@@ -195,7 +199,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.1';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.2';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1022,21 +1026,35 @@ const LOOKS = {
     light:{name:'Light', c:{s:'#e8b892', S:'#b8845e'}}, tan:{name:'Tan', c:{s:'#c08a64', S:'#8e5e40'}},
     brown:{name:'Brown', c:{s:'#8e5e40', S:'#64402a'}}, dark:{name:'Dark', c:{s:'#5e3a26', S:'#40261a'}}}},
 };
+for (const g in LOOKS) LOOKS[g].opts.custom = {name:'Your color', custom:true};
 const DEFAULT_LOOK = {hood:'class', tunic:'class', eyes:'class', lamp:'amber', skin:'tan'};
+// turn one picked color into the darker and lighter tones the sprite uses
+const hexRgb = hx => { const n = parseInt(String(hx || '#888888').slice(1), 16) || 0; return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const shadeHex = (hx, k) => '#' + hexRgb(hx).map(v => Math.max(0, Math.min(255, Math.round(k >= 1 ? v + (255 - v) * (k - 1) : v * k))).toString(16).padStart(2, '0')).join('');
+function customTones(g, hx, flat) {
+  if (g === 'hood') return {R:hx, r:shadeHex(hx, .78), d:shadeHex(hx, .55), D:shadeHex(hx, .36), H:shadeHex(hx, 1.25)};
+  if (g === 'tunic') return {l:hx, L:flat ? hx : shadeHex(hx, .7)};
+  if (g === 'eyes') return {e:hx};
+  if (g === 'skin') return {s:hx, S:flat ? hx : shadeHex(hx, .72)};
+  return {};
+}
 const look = () => Object.assign({}, DEFAULT_LOOK, save.look || {});
 function lookPal() {
   const L = look(), out = {};
   for (const k of ['hood', 'tunic', 'eyes', 'skin']) {
     let o = LOOKS[k].opts[L[k]];
+    if (L[k] === 'custom') o = {c:customTones(k, L[k + 'C'] || '#888888', false)};
     if (k === 'hood' && (!o || !o.c)) o = LOOKS.hood.opts[outfit().hood];
     if (k === 'eyes' && (!o || !o.c)) o = {c:{e:outfit().eye || '#ffcf8a'}};
     if (o && o.c) Object.assign(out, o.c);
   }
+  if (L.skinFlat && out.s) out.S = out.s;   // one-tone skin: no shading at all
   return out;
 }
-const lampCols = () => (LOOKS.lamp.opts[look().lamp] || LOOKS.lamp.opts.amber).lamp;
+const lampCols = () => { const L = look(); if (L.lamp === 'custom' && L.lampC) { const c = L.lampC; return [c, shadeHex(c, 1.7), hexRgb(c).join(',')]; } return (LOOKS.lamp.opts[L.lamp] || LOOKS.lamp.opts.amber).lamp; };
 const swatchColor = (group, key) => {
   const o = LOOKS[group].opts[key];
+  if (o.custom) return look()[group + 'C'] || '#888888';
   if (group === 'hood') return (o.c || LOOKS.hood.opts[outfit().hood].c).R; if (group === 'tunic') return o.c ? o.c.l : (cls().pal.l || HPAL.l);
   if (group === 'eyes') return o.c ? o.c.e : (outfit().eye || '#ffcf8a'); if (group === 'lamp') return o.lamp[0]; return o.c.s;
 };
@@ -1051,10 +1069,16 @@ function openWardrobe() {
 }
 function renderWardrobe(focusId) {
   const L = look();
-  const groups = Object.entries(LOOKS).map(([g, G]) => `<div class="lgroup"><p class="llabel">${G.label} <span>${esc(G.opts[L[g]].name)}</span></p><div class="lswatches">${Object.keys(G.opts).map(k => `<button class="sw${L[g] === k ? ' on' : ''}" id="sw-${g}-${k}" data-g="${g}" data-k="${k}" aria-label="${esc(G.label)}: ${esc(G.opts[k].name)}" aria-pressed="${L[g] === k}" style="--c:${swatchColor(g, k)}">${k === 'class' ? '<i>class</i>' : ''}</button>`).join('')}</div></div>`).join('');
+  const groups = Object.entries(LOOKS).map(([g, G]) => `<div class="lgroup"><p class="llabel">${G.label} <span>${esc(G.opts[L[g]].name)}</span></p><div class="lswatches">${Object.keys(G.opts).filter(k => k !== 'custom').map(k => `<button class="sw${L[g] === k ? ' on' : ''}" id="sw-${g}-${k}" data-g="${g}" data-k="${k}" aria-label="${esc(G.label)}: ${esc(G.opts[k].name)}" aria-pressed="${L[g] === k}" style="--c:${swatchColor(g, k)}">${k === 'class' ? '<i>class</i>' : ''}</button>`).join('')}<label class="lpick${L[g] === 'custom' ? ' on' : ''}" title="Pick any color" style="${L[g] === 'custom' ? `background:${esc(L[g + 'C'] || '#888888')}` : ''}"><input type="color" id="pk-${g}" data-g="${g}" value="${esc(L[g + 'C'] || swatchColor(g, L[g] === 'custom' ? 'custom' : (L[g] in G.opts ? L[g] : Object.keys(G.opts)[0])))}" aria-label="${esc(G.label)}: pick any color"></label></div>${g === 'skin' ? `<label class="lflat"><input type="checkbox" id="lFlat"${L.skinFlat ? ' checked' : ''}> One tone, no shading</label>` : ''}</div>`).join('');
   dlgEl.innerHTML = `<div class="card wardrobe"><p class="kicker">Your look</p><h2>How do they see you coming?</h2><div class="wgrid"><div class="pv"><canvas id="pv" width="40" height="34" aria-label="Preview of your character"></canvas></div><div class="lgroups">${groups}</div></div><div class="row"><button class="act" id="lRand">Randomize</button><button class="act primary" id="lDone">Done</button></div></div>`;
   dlgEl.querySelectorAll('.sw').forEach(b => b.addEventListener('click', () => { save.look = Object.assign(look(), {[b.dataset.g]:b.dataset.k}); persist(); renderWardrobe(b.id); }));
-  document.getElementById('lRand').addEventListener('click', () => { const nl = {}; for (const g in LOOKS) { const ks = Object.keys(LOOKS[g].opts); nl[g] = ks[Math.floor(Math.random() * ks.length)]; } save.look = nl; persist(); renderWardrobe('lRand'); });
+  // any color: the preview follows the picker live, and the choice sticks when it closes
+  dlgEl.querySelectorAll('.lpick input').forEach(inp => {
+    const g = inp.dataset.g, set = () => { save.look = Object.assign(look(), {[g]:'custom', [g + 'C']:inp.value}); persist(); drawPreview(); inp.parentElement.style.background = inp.value; inp.parentElement.classList.add('on'); };
+    inp.addEventListener('input', set); inp.addEventListener('change', () => { set(); renderWardrobe(inp.id); });
+  });
+  const fl = document.getElementById('lFlat'); if (fl) fl.addEventListener('change', () => { save.look = Object.assign(look(), {skinFlat:fl.checked}); persist(); drawPreview(); });
+  document.getElementById('lRand').addEventListener('click', () => { const nl = {}; for (const g in LOOKS) { const ks = Object.keys(LOOKS[g].opts).filter(k => k !== 'custom'); nl[g] = ks[Math.floor(Math.random() * ks.length)]; } save.look = nl; persist(); renderWardrobe('lRand'); });
   document.getElementById('lDone').addEventListener('click', closeWardrobe);
   const f = document.getElementById(focusId || 'lDone'); if (f) f.focus({preventScroll:true});
   drawPreview();
