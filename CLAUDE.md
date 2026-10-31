@@ -73,6 +73,7 @@ The game shows its version in the corner of the screen, hidden in full screen. T
 - **The server needs the page to contain a literal `<head>`** (it adds a marker there that tells the game to use this server for co-op) **and the word `Wallfall`** (otherwise it rejects the file from GitHub).
 - **Small enemies:** straight shots fly over anything short on the floor. Any new small enemy must go in the `SMALL` list so shots, bombs and bones aim at it, or some classes won't be able to hit it.
 - **Saves:** they live in each player's browser under `wallfall-save`. Give any new save field a default in `fresh()`, and don't rename or repurpose existing fields. If you change the world in a way old saves can't handle, bump `worldV` and migrate in the check at the bottom of the file, as it already does.
+- **Accounts** live in `DATA_DIR/accounts.json` on the server (a Railway Volume mounted at `/data`, with `DATA_DIR=/data`). Never delete or overwrite that file, and keep the `/api/*` routes working for older pages.
 - **Co-op message size:** the server drops any player who sends a message over 16 KB, and a player's state is about 4 KB. Keep it small.
 - **Mixed versions:** the page only updates when someone reloads, so players in the same game can be on different versions. Co-op code must cope with missing fields.
 - **Three ways to run:** the Railway site, a downloaded copy opened from disk, and a claude.ai page. Each has its own co-op connection (the Transports in the Online co-op section), so leave all three working.

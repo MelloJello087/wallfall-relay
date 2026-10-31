@@ -28,11 +28,89 @@ async function gamePage() {
   // a marker tells the game it was loaded from this server, so co-op connects back here on its own
   return cached ? cached.replace('<head>', '<head><meta name="wallfall-relay" content="1">') : null;
 }
+// --- Accounts: a name and password, and one cloud save each.
+// Kept in DATA_DIR/accounts.json. On Railway, mount a Volume and set DATA_DIR to its path (for example /data),
+// or every redeploy forgets all accounts. Passwords are stored only as scrypt hashes.
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+const DB_FILE = path.join(DATA_DIR, 'accounts.json');
+let db = {users:{}, sessions:{}};
+try { db = Object.assign(db, JSON.parse(fs.readFileSync(DB_FILE, 'utf8'))); } catch (e) {}
+let dbTimer = null;
+function saveDb() {
+  if (dbTimer) return;
+  dbTimer = setTimeout(() => {
+    dbTimer = null;
+    try { fs.mkdirSync(DATA_DIR, {recursive:true}); fs.writeFileSync(DB_FILE + '.tmp', JSON.stringify(db)); fs.renameSync(DB_FILE + '.tmp', DB_FILE); }
+    catch (e) { console.error('Could not write accounts:', e.message); }
+  }, 500);
+}
+const hashPw = (pw, salt) => crypto.scryptSync(pw, salt, 64).toString('hex');
+const SESSION_MS = 60 * 24 * 3600 * 1000, MAX_SAVE = 64 * 1024;
+const tries = new Map();   // ip -> [count, since]: slows down password guessing
+function tooMany(ip) { const t = tries.get(ip); if (!t || Date.now() - t[1] > 60000) return false; return t[0] >= 10; }
+function failed(ip) { const t = tries.get(ip); if (!t || Date.now() - t[1] > 60000) tries.set(ip, [1, Date.now()]); else t[0]++; }
+function newSession(key) { const token = crypto.randomBytes(24).toString('hex'); db.sessions[token] = {u:key, exp:Date.now() + SESSION_MS}; return token; }
+function userFor(req) {
+  const tok = (req.headers.authorization || '').replace(/^Bearer /, '');
+  const s = db.sessions[tok];
+  if (!s || s.exp < Date.now()) return null;
+  return db.users[s.u] ? {key:s.u, u:db.users[s.u], tok} : null;
+}
+function readBody(req) {
+  return new Promise((ok, fail) => {
+    let n = 0; const parts = [];
+    req.on('data', c => { n += c.length; if (n > MAX_SAVE + 4096) { fail(new Error('too big')); req.destroy(); } else parts.push(c); });
+    req.on('end', () => { try { ok(JSON.parse(Buffer.concat(parts).toString('utf8') || '{}')); } catch (e) { fail(e); } });
+    req.on('error', fail);
+  });
+}
+async function api(req, res, url) {
+  const out = (code, o) => { res.writeHead(code, {'Content-Type':'application/json', 'Access-Control-Allow-Origin':'*', 'Cache-Control':'no-store'}); res.end(JSON.stringify(o)); };
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  let b = {};
+  if (req.method === 'POST') { try { b = await readBody(req); } catch (e) { return out(400, {err:'That request was too big or broken.'}); } }
+  if (url === '/api/register' || url === '/api/login') {
+    if (tooMany(ip)) return out(429, {err:'Too many tries. Wait a minute.'});
+    const name = String(b.name || '').trim(), pw = String(b.password || ''), key = name.toLowerCase();
+    if (!/^[A-Za-z0-9_ -]{3,16}$/.test(name)) return out(400, {err:'Names are 3 to 16 letters, numbers, spaces, - or _.'});
+    if (pw.length < 6 || pw.length > 72) return out(400, {err:'Passwords are 6 to 72 characters.'});
+    if (url === '/api/register') {
+      if (db.users[key]) { failed(ip); return out(409, {err:'That name is taken.'}); }
+      const salt = crypto.randomBytes(16).toString('hex');
+      db.users[key] = {name, salt, hash:hashPw(pw, salt), save:null, savedAt:0, created:Date.now()};
+      const token = newSession(key); saveDb();
+      return out(200, {token, name, save:null, savedAt:0});
+    }
+    const u = db.users[key];
+    if (!u || !crypto.timingSafeEqual(Buffer.from(hashPw(pw, u.salt), 'hex'), Buffer.from(u.hash, 'hex'))) { failed(ip); return out(401, {err:'Wrong name or password.'}); }
+    const token = newSession(key); saveDb();
+    return out(200, {token, name:u.name, save:u.save, savedAt:u.savedAt});
+  }
+  const who = userFor(req);
+  if (!who) return out(401, {err:'Please log in again.'});
+  if (url === '/api/save' && req.method === 'POST') {
+    const txt = JSON.stringify(b.save || null);
+    if (txt.length > MAX_SAVE) return out(413, {err:'That save is too big.'});
+    who.u.save = b.save || null; who.u.savedAt = Date.now(); saveDb();
+    return out(200, {ok:true, savedAt:who.u.savedAt});
+  }
+  if (url === '/api/load') return out(200, {name:who.u.name, save:who.u.save, savedAt:who.u.savedAt});
+  if (url === '/api/logout' && req.method === 'POST') { delete db.sessions[who.tok]; saveDb(); return out(200, {ok:true}); }
+  return out(404, {err:'Not found'});
+}
+// forget sessions that have run out
+setInterval(() => { let n = 0; for (const [t, s] of Object.entries(db.sessions)) if (s.exp < Date.now()) { delete db.sessions[t]; n++; } if (n) saveDb(); }, 3600 * 1000);
+
 const server = http.createServer(async (req, res) => {
   const url = (req.url || '/').split('?')[0];
+  if (url.startsWith('/api/')) {
+    if (req.method === 'OPTIONS') { res.writeHead(204, {'Access-Control-Allow-Origin':'*', 'Access-Control-Allow-Headers':'Content-Type, Authorization', 'Access-Control-Allow-Methods':'GET, POST'}); res.end(); return; }
+    try { await api(req, res, url); } catch (e) { res.writeHead(500, {'Content-Type':'application/json'}); res.end('{"err":"Server error"}'); }
+    return;
+  }
   if (url === '/health' || url === '/status') {
     res.writeHead(200, {'Content-Type': 'text/plain'});
-    res.end(`Wallfall relay is running. Games open: ${games.size}\n`);
+    res.end(`Wallfall relay is running. Games open: ${games.size}. Accounts: ${Object.keys(db.users).length}${process.env.DATA_DIR ? '' : ' (not on a volume: they reset on redeploy)'}\n`);
     return;
   }
   if (url === '/' || url === '/index.html' || url === '/Wallfall.html') {
