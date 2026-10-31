@@ -9,7 +9,7 @@ Who is working on what right now. Add a line before you start and remove it when
 
 Format: `- who: what, in which part of the game (date)`
 
-- (nothing claimed)
+- mlrgamestudios: letting every class hit small enemies (bolts, bombs, melee reach, thralls), in the Class powers and Update sections of game/Wallfall.html (2026-10-30)
 
 ## Handoff
 Newest first. Keep each entry to a few lines: what changed, what is unfinished, what the other person should know. Delete entries once they stop being useful.
