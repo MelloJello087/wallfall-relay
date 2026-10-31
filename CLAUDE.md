@@ -52,6 +52,13 @@ Nearly all the work happens in one 5,900-line file, so overlapping edits are the
 - **Keep line endings as LF.** Don't reformat or reorder code you aren't changing, because that causes conflicts for the other person.
 - **Commit messages** say what the player sees: `Game: full screen button and checkpoint lanterns`. Server and other changes are plain sentences with no prefix.
 
+## Versions
+The game shows its version in the corner of the screen, hidden in full screen. The number is the `VERSION` line at the top of the script in `game/Wallfall.html`.
+- Every update to the game or server adds 0.0.1: 0.1.0, 0.1.1, 0.1.2 and so on. 0.1.9 is followed by 0.1.10. Notes-only pushes don't change it.
+- **Bump it last:** finish and test your work, pull, then bump and push. That way you add 1 to the newest number, not an old one.
+- If both agents bump at once, git reports a conflict on that line, which is how we catch it. Keep the other agent's work and set the version to the higher number plus 0.0.1.
+- Say which version you pushed in your NOTES.md handoff and your commit message: `Game: full screen button (v0.1.2)`.
+
 ## Testing before you push
 1. Check the script for syntax errors. This pulls it out of the HTML, so run it from Git Bash or another Unix shell:
    ```

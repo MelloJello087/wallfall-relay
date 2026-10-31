@@ -45,6 +45,8 @@ canvas:focus-visible{box-shadow:0 0 0 2px var(--ember)}
 .frame:fullscreen .mapc,.frame.fakefs .mapc{left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,calc(100vh * 16 / 9));height:auto;aspect-ratio:16/9}
 .fsx{display:none;position:absolute;bottom:10px;right:10px;opacity:.55;z-index:3;font:600 .7rem/1 ui-monospace,monospace;letter-spacing:.06em;padding:8px 10px;border-radius:3px;border:1px solid #6b5236;background:#1a1210cc;color:#e8dcc8;cursor:pointer}
 .frame:fullscreen .fsx,.frame.fakefs .fsx{display:block}
+.ver{position:absolute;right:13px;bottom:11px;z-index:1;margin:0;font-size:.55rem;letter-spacing:.08em;color:var(--ash);opacity:.4;pointer-events:none;user-select:none}
+.frame:fullscreen .ver,.frame.fakefs .ver{display:none}
 .bar{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#1f1512,#171010);border:1px solid #3a2a22;border-radius:4px;padding-block:12px;padding-inline:14px}
 .keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px 18px;font-size:.62rem;color:var(--muted);letter-spacing:.05em;flex:1 1 420px;min-width:0}
 .keys span{display:inline-flex;gap:5px;align-items:center;min-width:0}
@@ -165,7 +167,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
     <div><p class="eyebrow">A villain's metroidvania</p><h1>Wallfall</h1></div>
     <p class="tag">You opened the Outer Gate and let the Colossi in. Now you climb toward the last gate still standing. Six notes remember what you did.</p>
   </header>
-  <div class="frame"><canvas id="game" width="512" height="288" tabindex="0" aria-label="Wallfall game screen"></canvas><canvas id="mapc" class="mapc" hidden aria-label="Map of the city"></canvas><button class="fsx" id="fsx" type="button">Exit full screen</button><div class="dlg" id="dlg" hidden role="dialog" aria-modal="true"></div></div>
+  <div class="frame"><canvas id="game" width="512" height="288" tabindex="0" aria-label="Wallfall game screen"></canvas><canvas id="mapc" class="mapc" hidden aria-label="Map of the city"></canvas><button class="fsx" id="fsx" type="button">Exit full screen</button><p class="ver" id="ver"></p><div class="dlg" id="dlg" hidden role="dialog" aria-modal="true"></div></div>
   <div class="touch" id="touch">
     <button data-k="left" aria-label="Move left">&#9664;</button>
     <button data-k="right" aria-label="Move right">&#9654;</button>
@@ -193,6 +195,8 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
+const VERSION = '0.1.0';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
 const VW = 512, VH = 288, T = 16, CW = 32, CH = 18;
