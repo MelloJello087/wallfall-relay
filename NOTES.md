@@ -22,7 +22,7 @@ Newest first. Keep each entry to a few lines: what changed, what is unfinished, 
 Things only the humans can answer.
 
 - What are the next goals for the game? The Goals list in CLAUDE.md only covers what already exists.
-- Does Railway redeploy on every push? If so, every push drops open co-op games, including pushes that only change notes.
+- Please confirm in Railway that auto-deploy is off. It looks off: the live site kept the old server after two pushes on 2026-10-30, until someone ran "Deploy Latest Commit". If it's on, every push drops open co-op games, including pushes that only change notes.
 
 ## Ideas
 Not agreed to, just not forgotten.

@@ -41,8 +41,7 @@ Story text is short, cold and personal. The player is the villain, and the game 
 
 ## Pushing to `main` is publishing
 - **`game/Wallfall.html` goes live within about a minute** with no deploy. The server re-reads it from GitHub's `main`. Never push a game you haven't run.
-- **`server.js` goes live only when Railway redeploys.** A redeploy wipes every open co-op game, because games live only in the server's memory. Before pushing server changes, check `/health`. If games are open, warn the humans first.
-- Any push may trigger a redeploy if Railway auto-deploys. We haven't confirmed whether it does, so record it in NOTES.md once someone knows.
+- **`server.js` goes live only when a human redeploys.** Railway doesn't seem to redeploy on push (see Open questions in NOTES.md), so after pushing a server change, ask your human to run "Deploy Latest Commit" in Railway. A redeploy wipes every open co-op game, because games live only in the server's memory, so check `/health` first and warn the humans if games are open.
 
 ## Working in the same file
 Nearly all the work happens in one 5,900-line file, so overlapping edits are the main risk.
