@@ -180,6 +180,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
     <div class="gap"></div>
     <button data-k="hook">Hook</button>
     <button data-k="attack">Hit</button>
+    <button data-k="parry">Parry</button>
     <button data-k="dash">Dash</button>
     <button data-k="jump">Jump</button>
   </div>
@@ -199,7 +200,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.2';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.3';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -584,7 +585,7 @@ function drawCampProps() {
 function drawPops() {
   for (const q of pops) {
     ctx.globalAlpha = Math.min(1, q.life / 15);
-    txt(String(q.v), Math.round(q.x), Math.round(q.y - (45 - q.life) * .5), 8, q.v >= 3 ? '#ffcf70' : '#ffffff', 'center');
+    txt(q.txt || String(q.v), Math.round(q.x), Math.round(q.y - (45 - q.life) * .5), 8, q.v >= 3 ? '#ffcf70' : '#ffffff', 'center');
   }
   ctx.globalAlpha = 1;
 }
@@ -1924,12 +1925,13 @@ function musSting(kind) {
 
 /* ---------- Input ---------- */
 const held = {}, hit = {};
-const ACTIONS = [['left', 'Move left'], ['right', 'Move right'], ['up', 'Aim up'], ['jump', 'Jump'], ['attack', 'Strike / talk'], ['dash', 'Dash'], ['hook', 'Grapple'], ['down', 'Drop through ledges'], ['map', 'Map']];
+const ACTIONS = [['left', 'Move left'], ['right', 'Move right'], ['up', 'Aim up'], ['jump', 'Jump'], ['attack', 'Strike / talk'], ['dash', 'Dash'], ['parry', 'Parry'], ['hook', 'Grapple'], ['down', 'Drop through ledges'], ['map', 'Map']];
 const DEFAULT_BINDS = {left:['ArrowLeft', 'KeyA', null], right:['ArrowRight', 'KeyD', null], up:['KeyW', 'ArrowUp', null], jump:['KeyZ', 'Space', 'ArrowUp'],
-  attack:['KeyX', 'KeyJ', null], dash:['KeyC', 'ShiftLeft', 'ShiftRight'], hook:['KeyV', 'KeyF', null], down:['ArrowDown', 'KeyS', null], map:['KeyM', null, null]};
+  attack:['KeyX', 'KeyJ', null], dash:['KeyC', 'ShiftLeft', 'ShiftRight'], parry:['KeyE', 'KeyK', null], hook:['KeyV', 'KeyF', null], down:['ArrowDown', 'KeyS', null], map:['KeyM', null, null]};
 let binds = JSON.parse(JSON.stringify(DEFAULT_BINDS));
 try { const b = JSON.parse(localStorage.getItem('wallfall-binds') || 'null'); if (b) for (const [a] of ACTIONS) if (Array.isArray(b[a])) binds[a] = [0, 1, 2].map(i => b[a][i] || null); } catch (e) {}
 if (!binds.up.some(Boolean)) binds.up = ['KeyW', 'ArrowUp', null];
+if (!binds.parry.some(Boolean)) binds.parry = ['KeyE', 'KeyK', null];
 let KEYMAP = {};
 const KEYNAMES = {ArrowLeft:'←', ArrowRight:'→', ArrowUp:'↑', ArrowDown:'↓', Space:'Space', ShiftLeft:'L Shift', ShiftRight:'R Shift',
   ControlLeft:'L Ctrl', ControlRight:'R Ctrl', AltLeft:'L Alt', AltRight:'R Alt', Enter:'Enter', Tab:'Tab', Backquote:'`', Minus:'-', Equal:'=',
@@ -2079,6 +2081,7 @@ function killCheck(e) { if (e.hp <= 0 && !e.dead) { e.dead = true;
   if (!e.dummy && cls().frenzy && (p.kills = (p.kills || 0) + 1) % 3 === 0 && p.hp < p.max) { p.hp++; burst(p.x + p.w/2, p.y + 6, '#ff5a4a', 12, 1.5); sfx.heal(); } burst(e.x + e.w/2, e.y + e.h/2, DEATHCOL[e.t] || '#ff7a2e', e.t === 'u' ? 30 : 18, 2.5); if (e.t === 'u') shake = 6; } }
 function updateEnemy(e) {
   if (e.crate) return;
+  if (e.stun > 0) { e.stun--; if (e.t !== 'j' && e.t !== 'l' && e.vy !== undefined) { e.vy = Math.min((e.vy || 0) + .5, 8); moveY(e, false); } if (tick % 8 === 0) parts.push({x:e.x + e.w / 2 + (Math.random() - .5) * 10, y:e.y - 3, vx:0, vy:-.3, life:16, color:'#ffe08a', size:1}); return; }
   if (e.t === 'prop') { updateProp(e); return; }
   if (e.t === 'boss') { updateRBoss(e); return; }
   if ('rwlcby'.includes(e.t)) { const F = foeFor(e); updateFoe(e, F, F.x + F.w / 2, F.y + F.h / 2); return; }
@@ -2168,7 +2171,9 @@ function updateEShots(atkBox) {
     if (tick % 2) parts.push({x:s.x, y:s.y, vx:(Math.random() - .5) * .3, vy:-.2, life:14, color:Math.random() < .5 ? '#ffb04a' : '#e04a14', size:1});
     if (atkBox && s.x > atkBox.x && s.x < atkBox.x + atkBox.w && s.y > atkBox.y && s.y < atkBox.y + atkBox.h) { s.life = 0; burst(s.x, s.y, '#ffcf8a', 8, 1.5); sfx.hit(); continue; }
     if (!s.ghost && solid(Math.floor(s.x / T), Math.floor(s.y / T))) { s.life = 0; burst(s.x, s.y, '#ff8a2a', 10, 1.6); continue; }
-    if (!(p.spin > 0) && Math.abs(s.x - (p.x + p.w/2)) < p.w/2 + s.r && Math.abs(s.y - (p.y + p.h/2)) < p.h/2 + s.r) { s.life = 0; burst(s.x, s.y, '#ff8a2a', 10, 1.6); hurt(s.x, s.dmg || 1); continue; }
+    if (!(p.spin > 0) && Math.abs(s.x - (p.x + p.w/2)) < p.w/2 + s.r && Math.abs(s.y - (p.y + p.h/2)) < p.h/2 + s.r) {
+      if (p.parryT > 0 && p.inv <= 0) { parried(s.x); s.life = 0; const sp = Math.max(4, Math.hypot(s.vx, s.vy) * 1.4), d = Math.sign(s.x - p.x - p.w / 2) || p.face; shots.push({x:s.x, y:s.y, vx:d * sp, vy:0, life:60, dmg:2, kind:'fire', hit:[]}); continue; }
+      s.life = 0; burst(s.x, s.y, '#ff8a2a', 10, 1.6); hurt(s.x, s.dmg || 1); continue; }
     for (const t of thralls) if (t.rise === 0 && t.life > 0 && Math.abs(s.x - (t.x + t.w/2)) < t.w/2 + s.r && Math.abs(s.y - (t.y + t.h/2)) < t.h/2 + s.r) { s.life = 0; burst(s.x, s.y, '#ff8a2a', 8, 1.4); thrallHurt(t, s.dmg || 1, s.x); break; }
   }
   eshots = eshots.filter(s => s.life > 0 && s.y < room.ph + 40 && s.x > -40 && s.x < room.pw + 40);
@@ -3498,8 +3503,35 @@ function findAnchor() {
 function burst(x, y, color, n = 10, sp = 2) {
   for (let i = 0; i < n; i++) { const a = Math.random()*Math.PI*2, s = Math.random()*sp; parts.push({x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s - .5, life:30 + Math.random()*20, color, size:Math.random() < .5 ? 1 : 2}); }
 }
+/* ---------- Parry ----------
+   A quick guard: press parry just before something hits you. A blow inside the window does nothing to you,
+   staggers whatever threw it, and resets the parry so you can chain them. Shots are knocked back the way they came. */
+const PARRY_WIN = 14, PARRY_CD = 40;
+function parryUpdate() {
+  if (p.parryT > 0) p.parryT--;
+  if (p.parryCd > 0) p.parryCd--;
+  if (hit.parry && !(p.parryCd > 0) && mode === 'play') { p.parryT = PARRY_WIN; p.parryCd = PARRY_CD; sfx.swing(); }
+}
+function parried(fromX) {
+  p.parryT = 0; p.parryCd = 6; p.inv = 24; shake = Math.max(shake, 6); sfx.clang(); tone(1800, .12, 'triangle', .04, 900);
+  const cx = p.x + p.w / 2 + Math.sign(fromX - p.x - p.w / 2) * 8;
+  burst(cx, p.y + 10, '#ffffff', 16, 2.6); burst(cx, p.y + 10, '#ffe08a', 10, 1.6);
+  pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'PARRY'});
+  p.parryFx = 12;
+  // whoever threw the blow staggers
+  let best = null, bd = 70;
+  for (const e of enemies) { if (e.dead || e.prop || e.crate || e.dummy) continue; const d = Math.abs(e.x + e.w / 2 - fromX) + Math.abs(e.y + e.h / 2 - (p.y + p.h / 2)) * .5; if (d < bd) { bd = d; best = e; } }
+  if (best && best.t !== 'boss') { best.stun = 80; best.flash = 12; knock(best, Math.sign(best.x + best.w / 2 - p.x - p.w / 2) * 10); }
+}
+function drawParry() {
+  if (!(p.parryT > 0) && !(p.parryFx > 0)) return;
+  const cx = p.x + p.w / 2, cy = p.y + 11;
+  if (p.parryT > 0) { ctx.strokeStyle = `rgba(230,240,255,${.35 + .4 * p.parryT / PARRY_WIN})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 15, p.face > 0 ? -1.2 : Math.PI - 1.2, p.face > 0 ? 1.2 : Math.PI + 1.2); ctx.stroke(); }
+  if (p.parryFx > 0) { p.parryFx--; ctx.strokeStyle = `rgba(255,255,255,${p.parryFx / 12})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, 22 - p.parryFx, 0, Math.PI * 2); ctx.stroke(); }
+}
 function hurt(fromX, dmg = 1) {
   if (p.inv > 0 || mode !== 'play') return;
+  if (p.parryT > 0) { parried(fromX); return; }
   if (cls().block && p.atkT === 0 && !p.dive && Math.sign(fromX - (p.x + p.w/2)) === p.face) {
     dmg -= 1; sfx.clang(); burst(p.x + p.w/2 + p.face * 10, p.y + 8, '#ffe0a0', 10, 2); p.vx = -p.face * 2.6; p.lock = 6;
     if (dmg <= 0) { p.inv = 24; return; }
@@ -3540,6 +3572,7 @@ function update() {
   if (p.inv > 0) p.inv--;
   if (p.atkCd > 0) p.atkCd--;
   if (p.summonCd > 0) p.summonCd--;
+  parryUpdate();
   if (p.drop > 0) p.drop--;
 
   if (hit.hook) {
@@ -5396,6 +5429,7 @@ function render() {
   drawShots();
   drawPeers();
   if (mode !== 'dead') drawPlayer();
+  if (mode !== 'dead') drawParry();
   drawDropHint();
   for (const q of parts) { ctx.globalAlpha = Math.min(1, q.life / 20); ctx.fillStyle = q.color; ctx.fillRect(q.x, q.y, q.size, q.size); }
   ctx.globalAlpha = 1; drawRegionFront();

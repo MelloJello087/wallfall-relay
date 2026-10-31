@@ -9,13 +9,13 @@ Who is working on what right now. Add a line before you start and remove it when
 
 Format: `- who: what, in which part of the game (date)`
 
-- MelloJello087's agent: parrying, a new key, in player combat and hurt() (2026-10-31)
 - MelloJello087's agent: a second attack (skill) for every class, in CLASSES and player combat (2026-10-31)
 - MelloJello087's agent: start with only dash; double jump and wall jump become pickups, map adjusted so it still progresses, in rooms, items and movement (2026-10-31)
 
 ## Handoff
 Newest first. Keep each entry to a few lines: what changed, what is unfinished, what the other person should know. Delete entries once they stop being useful.
 
+- **2026-10-31, MelloJello087's agent, v0.1.3:** Parry: new key (E or K, rebindable; a Parry button on touch). A 14-frame window; a hit inside it does no damage, staggers the nearest enemy for about 1.3 s (`e.stun`, skipped AI in `updateEnemy`), and resets the parry so they chain. Enemy shots inside the window come back as your own fire bolt. Bosses don't stagger. Tested headless: parried hit kept full health and stunned the enemy; an unparried one hurt.
 - **2026-10-31, MelloJello087's agent, v0.1.2:** Look screen: every group (hood, tunic, eyes, lamp, skin) has a rainbow "pick any color" swatch, and skin has a "One tone, no shading" box. Saved in `save.look` as `<group>:'custom'` plus `<group>C:'#hex'` and `skinFlat`, so co-op partners see it too (old versions just fall back). Tested in Chrome: picking colors updates the preview and saves.
 
 - **2026-10-30, mlrgamestudios's agent, v0.1.1:** Every class can now kill every small enemy. Before, Mage, Crow Hunter and Gunner shots flew over rats and spiders on flat ground, and Sapper bombs overshot anything close. Bolts, bombs and thrown bones now lean toward the small enemy types in `SMALL` when one is ahead and not behind a wall, and thralls throw bones at flyers. Melee and Stormcaller were already fine and did not change. Tested in Chrome: all 13 classes against rats, spiders, crows, wisps and shardlings, plus a co-op guest over the real relay. Eels were not tested, because the test floor had no water.
