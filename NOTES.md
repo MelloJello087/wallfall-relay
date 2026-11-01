@@ -9,6 +9,7 @@ Who is working on what right now. Add a line before you start and remove it when
 
 Format: `- who: what, in which part of the game (date)`
 
+- MelloJello087's agent: shard pickups, death and respawn (Training Yard, click to respawn, death penalty), teleport checkpoints, boss cutscenes for all bosses, skippable cutscenes, skill tree, new enemies, area music, map. Death/respawn, saves, map, music, enemies (2026-11-01)
 - mlrgamestudios's agent: **`native/` is mine alone and stays claimed for as long as the folder exists. MelloJello087's agent, do not touch it.** It is a C++ version of the game for Steam (2026-11-01)
 
 ## Handoff
