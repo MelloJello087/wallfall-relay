@@ -77,6 +77,16 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 .tone{margin-left:auto;font-family:var(--ui);font-size:.48rem;letter-spacing:.1em;text-transform:uppercase;padding:2px 5px;border-radius:2px;white-space:nowrap}
 .tone.heal{color:#ffd08a;border:1px solid #ffd08a55}.tone.cut{color:#ff7a5a;border:1px solid #ff7a5a55}
 @media (max-width:520px){ .card.convo{grid-template-columns:1fr} .cvp canvas{width:78px;height:84px} }
+.card.admin{max-width:560px;color:#eadfd2;background:#140d0bf2;border:1px solid #7ad8ff55}
+.card.admin .kicker{color:#7ad8ff}.card.admin h2{color:#f2e2c4}
+.adl{font-family:var(--ui);font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:#a0907e;margin:10px 0 4px}
+.adrow{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.adb{font-family:var(--ui);font-size:.55rem;letter-spacing:.04em;padding:5px 8px;border:1px solid #ffffff22;background:#ffffff0a;color:#eadfd2;border-radius:2px;cursor:pointer}
+.adb:hover{background:#ffffff18}.adb.on{border-color:#7ad8ff;background:#7ad8ff22;color:#cfefff}
+.card.admin select{font:.85rem Georgia,serif;padding:4px;background:#1e1612;color:#eadfd2;border:1px solid #ffffff22;max-width:260px}
+.card.admin .cf input{font:1rem ui-monospace,monospace;padding:6px 8px;background:#1e1612;color:#eadfd2;border:1px solid #ffffff33}
+.card.admin .small{font-size:.85rem;color:#7ad8ff;margin:8px 0 0}
+.card.admin .opts{border-top-color:#ffffff18}.card.admin button.opt{color:#eadfd2}
 .dlg.ontitle{background:transparent;align-items:flex-end;padding-bottom:9%}
 .titlemenu{display:flex;flex-direction:column;align-items:center;gap:6px}
 .titlemenu .opts{display:flex;flex-direction:column;gap:4px;margin:0;border:0;min-width:220px}
@@ -249,7 +259,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.22';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.23';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -2242,6 +2252,7 @@ let binder = {open:false, cap:null};
 addEventListener('keydown', e => {
   if (e.code === 'Escape' && !dlg.open && !binder.open && !wardrobe.open) { const fr = document.querySelector('.frame'); if (fr && fr.classList.contains('fakefs')) { fr.classList.remove('fakefs'); return; } if (mode === 'play') { e.preventDefault(); openPause(); return; } }
   if (e.code === 'Escape' && dlg.open && dlg.pause && !e.repeat) { e.preventDefault(); pick(0); return; }
+  if (e.code === 'Backquote' && !e.repeat && !binder.open && !wardrobe.open) { e.preventDefault(); if (dlg.open && dlgEl.querySelector('.card.admin')) pick(0); else if (!dlg.open && mode === 'play') openAdmin(); return; }
   if (wardrobe.open) { if (e.code === 'Escape') { e.preventDefault(); closeWardrobe(); } return; }
   if (binder.open) { binderKey(e); return; }
   if (dlg.open) { dlgKey(e); return; }
@@ -4177,7 +4188,7 @@ function drawParry() {
   if (p.parryFx > 0) { p.parryFx--; ctx.strokeStyle = `rgba(255,255,255,${p.parryFx / 12})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, 22 - p.parryFx, 0, Math.PI * 2); ctx.stroke(); }
 }
 function hurt(fromX, dmg = 1) {
-  if (p.inv > 0 || mode !== 'play') return;
+  if (p.inv > 0 || mode !== 'play' || ADMIN.god) return;
   if (p.parryT > 0) { parried(fromX); return; }
   if (cls().thorns) { const cx = p.x + p.w / 2, cy = p.y + p.h / 2; hitArea(inCircle(cx, cy, 34), 2, e => Math.sign(e.x + e.w / 2 - cx) * 9, '#7aff9a'); burst(cx, cy, '#5a8a3a', 10, 2); }
   if (p.shield > 0) { p.shield = 0; p.inv = 40; sfx.clang(); burst(p.x + p.w / 2, p.y + 10, '#fff0b8', 16, 2.4); pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'AEGIS'}); return; }
@@ -4289,9 +4300,10 @@ function update() {
   }
 
   const ox = p.x, oy = p.y;
-  moveX(p);
+  if (ADMIN.fly) { p.x += ax * 5; p.y += ((held.down ? 1 : 0) - (held.up || held.jump ? 1 : 0)) * 5; p.vx = p.vy = 0; p.dashT = 0; p.hook = null; }
+  else moveX(p);
   const was = p.onGround;
-  moveY(p, p.drop > 0);
+  if (!ADMIN.fly) moveY(p, p.drop > 0); else p.onGround = false;
   if (p.hook && p.hook.t > 3 && Math.abs(p.x - ox) + Math.abs(p.y - oy) < .5) { p.hook = null; p.vy = -4; p.air = airJ(); }
   if (p.spin > 0) p.spin--;
   if (p.launchCd > 0 && --p.launchCd === 0) p.launches = 0;
@@ -4303,7 +4315,7 @@ function update() {
   p.walk = p.run ? (p.walk || 0) + Math.abs(p.vx) : 0;
   if (p.atkT > 0) p.atkT--;
 
-  if (onSpikes()) {
+  if (onSpikes() && !ADMIN.god && !ADMIN.fly) {
     p.hp--; shake = 8; sfx.hurt(); burst(p.x + p.w/2, p.y + p.h, '#ff6a4a', 14);
     if (p.hp <= 0) { die(); return; }
     p.x = entry.x; p.y = entry.y; p.vx = p.vy = 0; p.inv = 70; p.dashT = 0; p.dashLeft = cls().dashes; p.hook = null; mode = 'respawn'; modeT = 24; snapCam();
@@ -6268,7 +6280,7 @@ function render() {
   if (target && !p.hook) keycap(keyOf('hook'), target.x + 8 - cx, target.y - 18 - cy);
   ctx.restore();
 
-  drawHUD(); drawDistrictCard(); drawVoice();
+  drawHUD(); drawDistrictCard(); drawVoice(); drawAdminInfo();
   if (mode === 'respawn') { ctx.fillStyle = `rgba(10,6,5,${modeT / 24})`; ctx.fillRect(0, 0, VW, VH); }
   if (mode === 'dead' && p.downed) {
     ctx.fillStyle = 'rgba(40,8,4,.45)'; ctx.fillRect(0, 0, VW, VH);
@@ -6491,11 +6503,79 @@ function openTitle() {
   openDlg({opts, html});
   dlgEl.classList.add('ontitle');
 }
+/* ---------- Admin panel ----------
+   Press ` (the key left of 1) to open it. The first time on a device it asks for the passphrase (ADMIN_PASS).
+   This is a tool for testing, not a lock: the passphrase is in this file, which is public on GitHub. */
+const ADMIN_PASS = 'ashking';
+const ADMIN = {god:false, fly:false, info:false};
+let adminMsg = '';
+const adminOn = () => { try { return localStorage.getItem('wallfall-admin') === '1'; } catch (e) { return false; } };
+function safeSpot(k) {
+  const r = ROOMS[k], g = r.grid, s0 = r.ents.find(e => e.t === 'P');
+  if (s0) return {x:s0.x, y:s0.y};
+  for (let x = 2; x < r.w - 2; x++) for (let y = r.h - 2; y > 1; y--) if (g[y][x] === '.' && g[y - 1][x] === '.' && '#-'.includes(g[y + 1][x]) && !(REG[k] && REG[k].water && y > REG[k].water - 1)) return {x, y};
+  return {x:3, y:r.h - 3};
+}
+function adminDo(what, arg) {
+  const f = {
+    heal:() => { p.max = maxHp(); p.hp = p.max; return 'Healed'; },
+    god:() => { ADMIN.god = !ADMIN.god; return 'God mode ' + (ADMIN.god ? 'on' : 'off'); },
+    fly:() => { ADMIN.fly = !ADMIN.fly; p.vx = p.vy = 0; return 'Flying ' + (ADMIN.fly ? 'on: arrows move you through walls' : 'off'); },
+    info:() => { ADMIN.info = !ADMIN.info; return 'Position ' + (ADMIN.info ? 'shown' : 'hidden'); },
+    hook:() => { save.hook = !save.hook; return 'Grapple ' + (save.hook ? 'on' : 'off'); },
+    dbl:() => { save.dbl = !save.dbl; p.air = airJ(); return 'Double jump ' + (save.dbl ? 'on' : 'off'); },
+    wall:() => { save.wall = !save.wall; return 'Wall jump ' + (save.wall ? 'on' : 'off'); },
+    whet:() => { save.whet = !save.whet; return 'Whetstone ' + (save.whet ? 'on' : 'off'); },
+    heart:() => { save.rations = (save.rations || 0) + 1; p.max = maxHp(); p.hp = p.max; return 'One more heart'; },
+    cogs:() => { save.cogs = 3; return 'All three gate cogs'; },
+    bosses:() => { save.bosses = save.bosses || {}; for (const k in REG) if (REG[k].boss) save.bosses[k] = true; save.hearts = Object.keys(save.bosses).length; p.max = maxHp(); p.hp = p.max; return 'District bosses marked beaten'; },
+    gate:() => { save.cogs = 3; if (!save.gateOpen) raiseGate(); return 'The Last Gate is open'; },
+    kill:() => { let n = 0; for (const e of enemies) if (!e.dead && !e.prop && !e.dummy && !e.crate && e.t !== 'boss') { e.hp = 0; killCheck(e); n++; } return n + ' killed'; },
+    go:() => { const sp = safeSpot(arg); enterRoom(arg); p.x = sp.x * T + 2; p.y = (sp.y + 1) * T - p.h; p.vx = p.vy = 0; p.hook = null; snapCam(); return 'Went to ' + ROOMS[arg].name; },
+    cls:() => { chooseClass(arg); return 'Now a ' + CLASSES[arg].name; },
+    lock:() => { try { localStorage.removeItem('wallfall-admin'); } catch (e) {} ADMIN.god = ADMIN.fly = ADMIN.info = false; return 'Locked again on this device'; },
+  }[what];
+  if (f) { adminMsg = f(); persist(); }
+}
+function openAdmin() {
+  if (binder.open || wardrobe.open || !(mode === 'play' || mode === 'note')) return;
+  const opts = [{text:'Close', run:() => { adminMsg = ''; }}];
+  let html = `<div class="card admin"><p class="kicker">Admin</p>`;
+  if (!adminOn()) {
+    html += `<h2>Passphrase</h2><label class="cf"><input id="adPass" type="password" autocomplete="off"></label>${adminMsg ? `<p class="small">${esc(adminMsg)}</p>` : ''}<div class="adrow"><button class="adb" data-a="unlock">Unlock</button></div>`;
+  } else {
+    const tg = (a, label, on) => `<button class="adb${on ? ' on' : ''}" data-a="${a}">${label}</button>`, b = (a, label) => `<button class="adb" data-a="${a}">${label}</button>`;
+    const rooms = Object.keys(DISTRICTS).map(d => `<optgroup label="${esc(DISTRICTS[d].name)}">${[...DISTRICTS[d].rooms].filter(k => ROOMS[k]).map(k => `<option value="${k}"${room && room.key === k ? ' selected' : ''}>${esc(ROOMS[k].name)}</option>`).join('')}</optgroup>`).join('');
+    const classes = GROUPS.map(([g, label]) => `<optgroup label="${label}">${Object.keys(CLASSES).filter(k => CLASSES[k].group === g).map(k => `<option value="${k}"${clsKey() === k ? ' selected' : ''}>${esc(CLASSES[k].name)}</option>`).join('')}</optgroup>`).join('');
+    html += `<h2>Admin panel</h2>
+      <p class="adl">You</p><div class="adrow">${b('heal', 'Full heal')}${tg('god', 'God mode', ADMIN.god)}${tg('fly', 'Fly through walls', ADMIN.fly)}${tg('info', 'Show position', ADMIN.info)}${b('heart', '+1 heart')}</div>
+      <p class="adl">Abilities</p><div class="adrow">${tg('hook', 'Grapple', save.hook)}${tg('dbl', 'Double jump', save.dbl)}${tg('wall', 'Wall jump', save.wall)}${tg('whet', 'Whetstone', save.whet)}</div>
+      <p class="adl">Progress</p><div class="adrow">${b('cogs', 'Give 3 cogs')}${b('bosses', 'Beat district bosses')}${b('gate', 'Open the Last Gate')}${b('kill', 'Kill everything here')}</div>
+      <p class="adl">Go to</p><div class="adrow"><select id="adRoom">${rooms}</select>${b('go', 'Go')}</div>
+      <p class="adl">Class</p><div class="adrow"><select id="adCls">${classes}</select>${b('cls', 'Switch')}</div>
+      ${adminMsg ? `<p class="small" role="status">${esc(adminMsg)}</p>` : ''}<div class="adrow">${b('lock', 'Lock this device')}</div>`;
+  }
+  html += `<div class="opts"><button class="opt" id="opt0" data-i="0"><span class="t">Close</span></button></div></div>`;
+  openDlg({opts, html});
+  const pass = document.getElementById('adPass'); if (pass) pass.focus();
+  dlgEl.querySelectorAll('.adb').forEach(bt => bt.addEventListener('click', () => {
+    const a = bt.dataset.a;
+    if (a === 'unlock') { if ((pass && pass.value.trim().toLowerCase()) === ADMIN_PASS) { try { localStorage.setItem('wallfall-admin', '1'); } catch (e) {} adminMsg = 'Unlocked on this device.'; } else adminMsg = 'That is not it.'; }
+    else adminDo(a, a === 'go' ? document.getElementById('adRoom').value : a === 'cls' ? document.getElementById('adCls').value : undefined);
+    const stay = a !== 'go' && a !== 'cls' && a !== 'kill' && a !== 'gate';
+    if (stay) openAdmin(); else { pick(0); toast = {text:adminMsg, t:120}; adminMsg = ''; }
+  }));
+}
+function drawAdminInfo() {
+  if (!ADMIN.info && !ADMIN.god && !ADMIN.fly) return;
+  const l = [ADMIN.god ? 'GOD' : '', ADMIN.fly ? 'FLY' : '', ADMIN.info ? `${room.key} ${(p.x / T).toFixed(1)},${((p.y + p.h) / T).toFixed(1)} · ${enemies.filter(e => !e.dead).length} foes` : ''].filter(Boolean).join(' · ');
+  txt(l, VW / 2, VH - 12, 8, '#7ad8ff', 'center');
+}
 // the pause menu: Escape or the Menu button
 function openPause() {
   if (dlg.open || binder.open || wardrobe.open || mode !== 'play') return;
   openDlg({kicker:'Paused', title:ROOMS[room.key] ? room.name : 'Wallfall', body:[NET.on ? 'Co-op keeps running while this is open.' : 'The city waits.'],
-    opts:[{text:'Resume'}, {text:'Controls', run:() => openBinds()}, {text:'Quit to the title screen', tag:'Your progress is saved', run:() => { persist(); if (acct) cloudNow(); parts = []; openTitle(); }}]});
+    opts:[{text:'Resume'}, {text:'Controls', run:() => openBinds()}, ...(adminOn() ? [{text:'Admin panel', run:() => openAdmin()}] : []), {text:'Quit to the title screen', tag:'Your progress is saved', run:() => { persist(); if (acct) cloudNow(); parts = []; openTitle(); }}]});
   dlg.pause = true;
 }
 function leaveTitle() { mode = 'play'; dlgEl.classList.remove('ontitle'); }
@@ -6599,7 +6679,7 @@ function pick(i) {
 }
 function dlgKey(e) {
   if (e.target && e.target.tagName === 'INPUT') {
-    if (e.code === 'Enter') { e.preventDefault(); if (e.target.id === 'aName') { const pw = document.getElementById('aPw'); if (pw) pw.focus(); return; } const b = dlgEl.querySelector(e.target.id === 'cCode' ? '#opt1' : '#opt0'); if (b) b.click(); }
+    if (e.code === 'Enter') { e.preventDefault(); if (e.target.id === 'aName') { const pw = document.getElementById('aPw'); if (pw) pw.focus(); return; } if (e.target.id === 'adPass') { const u = dlgEl.querySelector('[data-a="unlock"]'); if (u) u.click(); return; } const b = dlgEl.querySelector(e.target.id === 'cCode' ? '#opt1' : '#opt0'); if (b) b.click(); }
     else if (e.code === 'Escape') { e.preventDefault(); e.target.blur(); }
     return;
   }
