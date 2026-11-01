@@ -13,7 +13,7 @@ Format: `- who: what, in which part of the game (date)`
 ## Handoff
 Newest first. Keep each entry to a few lines: what changed, what is unfinished, what the other person should know. Delete entries once they stop being useful.
 
-- **2026-11-01, MelloJello087's agent, v0.1.20:** In the cutscene's bargain scene, the Ash-King's crown is now a dark iron band on top of his head, with five points that glow faintly at the tips. It used to be loose orange spikes that looked like fire (MelloJello087 asked).
+- **2026-11-01, MelloJello087's agent, v0.1.21:** The Ash-King's crown in the bargain scene is now a chunky pixel-art iron crown sitting on top of his head (`CR` in `drawPrologue`), grey iron with three faintly glowing tips. The v0.1.20 version looked bad, according to MelloJello087.
 - **2026-11-01, MelloJello087's agent, v0.1.19:** Begin on the title screen always plays the opening cutscene now, even if you've seen it before (MelloJello087 asked).
 - **2026-11-01, MelloJello087's agent, v0.1.18:** Pause menu (`openPause`): Escape or the new Menu button opens it, with Resume, Controls, and "Quit to the title screen" (saves first, then `openTitle`; Continue picks up where you were). Escape also closes it.
 - **2026-10-31, MelloJello087's agent, v0.1.17:** Conversations have their own screen (`convo`): a moving portrait, a name and role, lines typed out in their voice, and choices marked Remorse or Cruelty (same effects as before). Three new people tell more of the story: Ilse, chained in the Foundry (O); Nessa, a ferrywoman in the Drowned Quarter (W); and Brother Orrin in the Queen's Garden (Q). NPC letters are `i`, `n` and `p`, added to the rooms at load. New flags: `ilseFree`, `lied`, `nessaCruel`, `rose`. The endings don't read the new flags yet.

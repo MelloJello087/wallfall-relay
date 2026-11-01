@@ -249,7 +249,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.20';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.21';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -6388,15 +6388,13 @@ function drawPrologue(t) {
   // it rises out of the dark, eyes first
   const up = Math.max(0, Math.min(1, (t - 60) / 360)), eyes = Math.max(0, Math.min(1, (t - 240) / 120)), base = VH * 1.98 + (1 - up * (2 - up)) * 220;
   cutColossus(VW * .36, base, 2.4, t * .006, .1, eyes);
-  // its crown: a dark iron band on top of the head, the points just warm at the tips
+  // its crown: a heavy iron crown sitting on the top of its head, drawn in big pixels, the tips barely warm
   if (up > 0) {
-    const sc = 2.4, P = giantPose(VW * .36, base, sc, t * .006, .1, 0), hx = P.head.x, top = P.head.y - 8 * sc - 22 * sc, by = top + 4.5 * sc, hw = 7.4 * sc;
-    ctx.fillStyle = '#18161a'; ctx.beginPath(); ctx.moveTo(hx - hw, by + 3 * sc); ctx.lineTo(hx - hw + 1, by); ctx.lineTo(hx + hw - 1, by); ctx.lineTo(hx + hw, by + 3 * sc); ctx.closePath(); ctx.fill();
-    for (let i = -2; i <= 2; i++) { const px = hx + i * hw * .42, ph = (5.5 - Math.abs(i) * 1.1) * sc; ctx.beginPath(); ctx.moveTo(px - 1.4 * sc, by + 1); ctx.lineTo(px, by - ph); ctx.lineTo(px + 1.4 * sc, by + 1); ctx.fill(); }
-    ctx.fillStyle = '#3e3a44'; ctx.fillRect(hx - hw + 2, by + 1, hw * 2 - 4, 1);
-    ctx.globalCompositeOperation = 'lighter';
-    for (let i = -2; i <= 2; i++) { const px = hx + i * hw * .42, py = by - (5.5 - Math.abs(i) * 1.1) * sc, gl = ctx.createRadialGradient(px, py, 0, px, py, 4); gl.addColorStop(0, `rgba(255,140,60,${(.35 + .1 * Math.sin(t * .05 + i)) * eyes})`); gl.addColorStop(1, 'rgba(255,100,40,0)'); ctx.fillStyle = gl; ctx.fillRect(px - 4, py - 4, 8, 8); }
-    ctx.globalCompositeOperation = 'source-over';
+    const sc = 2.4, P = giantPose(VW * .36, base, sc, t * .006, .1, 0), hx = P.head.x, top = P.head.y - 8 * sc - 22 * sc;
+    const CR = ['o.....o.....o', '#.....#.....#', '#h...#h#...h#', '##h.##h##.h##', 'hhhhhhhhhhhhh', '#############', '#############'], c = 3, x0 = Math.round(hx - 6.5 * c), y0 = Math.round(top + 16 - CR.length * c);
+    CR.forEach((row, j) => { for (let i = 0; i < row.length; i++) { const ch = row[i]; if (ch === '.') continue;
+      ctx.fillStyle = ch === 'o' ? `rgba(255,140,70,${(.5 + .15 * Math.sin(t * .05 + i)) * eyes})` : ch === 'h' ? '#6a5f74' : '#2a2330'; ctx.fillRect(x0 + i * c, y0 + j * c, c, c); } });
+    ctx.fillStyle = `rgba(150,140,170,${.35 * eyes})`; ctx.fillRect(x0, y0 + 4 * c, c, c);
   }
   // the wall you stand on
   const wy = VH * .8;
