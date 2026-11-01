@@ -273,7 +273,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.39';
+const VERSION = '0.1.40';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -558,6 +558,9 @@ makeRoom('h', 'The Cinder Halls', 11, 1, 2, 1, {indoor:true, biome:'ash'}, B => 
 });
 
 const EXTRA = [
+  ['g', 'm', 60, 5], ['o', 'm', 30, 6], ['I', 'm', 60, 2], ['V', 'm', 30, 2], ['s', 'm', 16, 20],
+  ['C', 'z', 30], ['D', 'z', 50], ['F', 'z', 60], ['F', 'z', 90], ['G', 'z', 40], ['h', 'z', 40], ['Y', 'z', 20],
+  ['O', 'A', 30], ['O', 'A', 60], ['U', 'A', 20], ['B', 'A', 70], ['K', 'A', 40], ['a', 'A', 30], ['h', 'A', 50], ['h', 'A', 10], ['A', 'A', 40],
   ['A','r',70], ['A','r',72], ['A','r',74], ['A','y',92], ['H','b',43], ['H','l',62,4], ['H','y',112],
   ['C','w',20], ['C','r',44], ['C','r',46], ['D','c',30], ['D','c',72], ['D','y',56], ['B','r',40], ['B','r',42], ['B','r',44], ['B','c',80], ['B','c',110],
   ['J','b',40], ['J','c',20], ['K','w',30], ['K','l',50,6], ['I','r',100], ['I','r',102], ['I','c',140], ['I','c',200], ['I','l',120,5], ['I','w',215],
@@ -826,7 +829,7 @@ const hasteK = () => 1 - .12 * upLv('haste');
 const CACHES = [['H', 23, 4, 8], ['C', 4, 3, 8], ['D', 22, 3, 15], ['B', 19, 3, 8], ['I', 150, 3, 8], ['F', 119, 7, 15], ['O', 56, 2, 8], ['W', 89, 3, 8], ['Q', 86, 5, 15],
   ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8], ['g', 33, 5, 15], ['o', 13, 6, 8], ['s', 24, 9, 15]];
 let sparks = [], shardShow = null, shardFlash = 0;
-function shardVal(e) { return e.t === 'boss' ? 40 : e.t === 'u' ? 4 : 'ewcyl'.includes(e.t) ? 2 : 1; }
+function shardVal(e) { return e.t === 'boss' ? 40 : e.t === 'u' ? 4 : e.t === 'z' ? 3 : 'ewcylm'.includes(e.t) ? 2 : 1; }
 let gems = [], wakeReq = false;
 const litHas = (k, x) => Object.keys(save.lit || {}).some(id => id.startsWith(k + ',' + x + ',')) || !!(save.cp && save.cp.k === k && save.cp.x === x);
 function litList() { const L = Object.keys(save.lit || {}).map(id => id.split(',')); if (save.cp && !L.some(([k, x]) => k === save.cp.k && +x === save.cp.x)) L.push([save.cp.k, String(save.cp.x), String(save.cp.y)]); return L.filter(([k]) => ROOMS[k]).map(([k, x, y]) => ({k, x:+x, y:+y})); }
@@ -1021,7 +1024,7 @@ function drawThralls() {
     ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(122,255,154,.12)'; ctx.fillRect(x - 3, y - 2, 16, 20); ctx.globalCompositeOperation = 'source-over';
   }
 }
-const SMALL = 'grjcle';
+const SMALL = 'grjcleA';
 function smallFoe(x, y, dir, up, range) {
   let best = null, bd = range;
   for (const e of enemies) {
@@ -2616,18 +2619,22 @@ function makeEnemy(t, x, y, spawn) {
   else if (t === 'b') e = {t, x:x*T + 1, y:(y + 1)*T - 16, w:14, h:16, vx:0, vy:0, hp:3, onGround:false, face:-1, cd:60 + Math.random() * 60, st:'walk', stT:0, ph:0};
   else if (t === 'y') e = {t, x:x*T + 2, y:(y + 1)*T - 20, w:12, h:20, vx:0, vy:0, hp:3, onGround:false, face:-1, cd:70 + Math.random() * 50, st:'idle', stT:0};
   else if (t === 'e') e = {t, x:x*T, y:y*T + 4, w:18, h:8, hp:3, hx:x*T, ph:Math.random() * 6, st:'swim', stT:0, vx:0, vy:0, face:1};
+  else if (t === 'm') e = {t, x:x*T, y:y*T, w:14, h:18, hp:4, ph:Math.random() * 6, cd:90 + Math.random() * 60, st:'drift', stT:0, face:1};
+  else if (t === 'z') e = {t, x:x*T, y:(y + 1)*T - 22, w:16, h:22, vx:0, vy:0, hp:5, onGround:false, face:-1, cd:60, st:'walk', stT:0, hp0:5};
+  else if (t === 'A') e = {t, x:x*T + 3, y:(y + 1)*T - 9, w:10, h:9, vx:0, vy:0, hp:1, onGround:false, face:-1, cd:0, st:'creep', stT:0, ph:Math.random() * 6};
   else e = {t:'k', x:x*T, y:(y + 1)*T - 16, w:16, h:16, hp:4, cd:50 + Math.random() * 60, face:-1, mouth:0};
   e.flash = 0; e.spawn = spawn ? 40 : 0; if (spawn && t === 'j') { e.aggro = true; e.cd = 30 + Math.random() * 60; }
   return e;
 }
-const DMG = {g:1, j:1, u:2, k:1, e:1, boss:1, r:1, w:1, l:1, c:1, b:1, y:1};
-const DEATHCOL = {g:'#ff7a2e', j:'#2a2222', u:'#ff7a2e', k:'#ff9a3a', e:'#7ad8d0', r:'#6a4a3a', w:'#8a8e96', l:'#9ad8ff', c:'#5a3a44', b:'#ff8a2a', y:'#5a6a3a'};
+const DMG = {g:1, j:1, u:2, k:1, e:1, boss:1, r:1, w:1, l:1, c:1, b:1, y:1, m:1, z:1, A:1};
+const DEATHCOL = {m:'#c8b8ff', z:'#8a6a4a', A:'#ff8a2a', g:'#ff7a2e', j:'#2a2222', u:'#ff7a2e', k:'#ff9a3a', e:'#7ad8d0', r:'#6a4a3a', w:'#8a8e96', l:'#9ad8ff', c:'#5a3a44', b:'#ff8a2a', y:'#5a6a3a'};
 let eshots = [];
 function knock(e, v) {
   if (!'gurc'.includes(e.t)) return;
   const ov = e.vx; e.vx = v * (e.t === 'u' ? .3 : 1); moveX(e); e.vx = ov;
 }
-function killCheck(e) { if (e.hp <= 0 && !e.dead) { e.dead = true;
+const zBlock = e => e.t === 'z' && e.st !== 'stagger' && Math.sign(p.x + p.w / 2 - e.x - e.w / 2) === e.face && p.y + p.h > e.y + 6;
+function killCheck(e) { if (e.hp <= 0 && !e.dead && zBlock(e) && !e.blew) { e.hp = e.hp0; sfx.clang(); burst(e.x + e.w / 2 + e.face * 8, e.y + 10, '#c9d2dc', 8, 1.6); return; } if (e.hp <= 0 && !e.dead) { e.dead = true;
   if (e.crate) { crateBroken(e); return; }
   if (!e.dummy && !e.prop) dropShards(e);
   if (!e.dummy && !e.crate && cls().atk.type === 'summon' && Math.random() < .2) summonThrall(e.x + e.w/2, e.y + e.h);
@@ -2658,7 +2665,7 @@ function updateEnemy(e) {
   if (e.stun > 0) { e.stun--; if (e.t !== 'j' && e.t !== 'l' && e.vy !== undefined) { e.vy = Math.min((e.vy || 0) + .5, 8); moveY(e, false); } if (tick % 8 === 0) parts.push({x:e.x + e.w / 2 + (Math.random() - .5) * 10, y:e.y - 3, vx:0, vy:-.3, life:16, color:'#ffe08a', size:1}); return; }
   if (e.t === 'prop') { updateProp(e); return; }
   if (e.t === 'boss') { updateRBoss(e); return; }
-  if ('rwlcby'.includes(e.t)) { const F = foeFor(e); updateFoe(e, F, F.x + F.w / 2, F.y + F.h / 2); return; }
+  if ('rwlcbymzA'.includes(e.t)) { const F = foeFor(e); updateFoe(e, F, F.x + F.w / 2, F.y + F.h / 2); return; }
   const F = foeFor(e), pcx = F.x + F.w/2, pcy = F.y + F.h/2;
   if (e.t === 'g') {
     e.vy = Math.min(e.vy + .5, 8);
@@ -3048,6 +3055,27 @@ function updateFoe(e, F, pcx, pcy) {
     if (keepEdge && e.onGround && e.vx) { const fx = e.vx > 0 ? e.x + e.w + 1 : e.x - 1, below = tile(Math.floor(fx / T), Math.floor((e.y + e.h + 2) / T)); if (below !== '#' && below !== '-') { e.x -= e.vx; e.vx = 0; e.face = -e.face; } }
   };
   if (e.cd > 0) e.cd--;
+  if (e.t === 'm') {
+    e.ph += .03; e.face = Math.sign(dx) || e.face;
+    const dy = pcy - (e.y + e.h / 2), d = Math.hypot(dx, dy) || 1;
+    if (e.st === 'drift') { if (d < 220) { e.x += dx / d * .45; e.y += dy / d * .45 + Math.sin(e.ph * 2) * .3; } if (e.cd <= 0 && d < 170) { e.st = 'wail'; e.stT = 40; } }
+    else if (--e.stT <= 0) { e.st = 'drift'; e.cd = 150 + Math.random() * 60; for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + e.ph; eshots.push({x:ex, y:e.y + 8, vx:Math.cos(a) * 1.6, vy:Math.sin(a) * 1.6, life:110, r:3, dmg:1, ghost:true, note:true}); } tone(260, .6, 'sine', .03, 180, 0, 'sfx'); }
+    return;
+  }
+  if (e.t === 'z') {
+    if (e.hp < e.hp0) { const front = Math.sign(dx) === e.face && F.y + F.h > e.y + 6 && e.st !== 'stagger'; if (front) { e.hp = e.hp0; sfx.clang(); burst(ex + e.face * 8, e.y + 10, '#c9d2dc', 8, 1.6); if (F === p) { p.vx = e.face * 3; p.lock = 6; } } else e.hp0 = e.hp; }
+    if (e.st === 'walk') { if (level && Math.abs(dx) < 200) e.face = Math.sign(dx) || e.face; e.vx = e.face * .55; walker(); if (level && Math.abs(dx) < 90 && e.cd <= 0) { e.st = 'brace'; e.stT = 30; } }
+    else if (e.st === 'brace') { e.vx = 0; walker(); if (--e.stT <= 0) { e.st = 'bash'; e.stT = 26; sfx.heavy(); } }
+    else if (e.st === 'bash') { e.vx = e.face * 3.6; walker(false); if (--e.stT <= 0 || e.vx === 0) { e.st = 'stagger'; e.stT = 50; e.cd = 120; } }
+    else { e.vx = 0; walker(); if (--e.stT <= 0) e.st = 'walk'; }
+    return;
+  }
+  if (e.t === 'A') {
+    e.ph += .4;
+    if (e.st === 'creep') { if (level && Math.abs(dx) < 160) { e.face = Math.sign(dx) || e.face; e.vx = e.face * 1.9; } else e.vx = e.face * .4; walker(); if (Math.abs(dx) < 22 && level) { e.st = 'fuse'; e.stT = 34; sfx.creak(); } }
+    else { e.vx = 0; walker(); if (--e.stT <= 0) { e.hp = 0; e.blew = true; const bx = ex, by = e.y + 4; burst(bx, by, '#ff8a2a', 24, 3); burst(bx, by, '#3a3030', 12, 2); sfx.boom(); shake = Math.max(shake, 6); if (Math.hypot(p.x + p.w / 2 - bx, p.y + p.h / 2 - by) < 34) hurt(bx, 2); for (const o of enemies) if (o !== e && !o.dead && !o.prop && o.t !== 'boss' && Math.hypot(o.x + o.w / 2 - bx, o.y + o.h / 2 - by) < 34) { o.hp -= 3; o.flash = 12; killCheck(o); } killCheck(e); } }
+    return;
+  }
   if (e.t === 'r') {
     e.ph += .3;
     if (e.onGround) {
@@ -3128,6 +3156,28 @@ function drawEBombs() {
 function drawFoe(e, x, y, fl) {
   const d = e.face || 1, c = col => fl ? '#ffffff' : col;
   const R = (dx, dy, w, h, col) => { ctx.fillStyle = c(col); ctx.fillRect(d > 0 ? x + dx : x + e.w - dx - w, y + dy, w, h); };
+  if (e.t === 'm') {
+    const bob = Math.round(Math.sin((e.ph || 0) * 2) * 2), wail = e.st === 'wail';
+    ctx.globalAlpha = .82; ctx.fillStyle = c('#2a2434'); ctx.beginPath(); ctx.moveTo(x + 7, y + bob); ctx.quadraticCurveTo(x - 2, y + 6 + bob, x, y + 18 + bob); for (let i = 0; i <= 4; i++) ctx.lineTo(x + i * 3.5, y + 18 + bob - (i % 2) * 3); ctx.quadraticCurveTo(x + 16, y + 6 + bob, x + 7, y + bob); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = c('#d8d0e0'); ctx.fillRect(x + 4, y + 3 + bob, 6, 6); ctx.fillStyle = '#100c14'; ctx.fillRect(x + 5, y + 5 + bob, 1, 2); ctx.fillRect(x + 8, y + 5 + bob, 1, 2); ctx.fillRect(x + 6, y + 7 + bob, 2, wail ? 2 : 1);
+    if (wail) { ctx.strokeStyle = `rgba(200,180,255,${.3 + .3 * Math.sin(tick * .5)})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x + 7, y + 8 + bob, 10 + (40 - e.stT) * .3, 0, Math.PI * 2); ctx.stroke(); }
+    return;
+  }
+  if (e.t === 'z') {
+    const lean = e.st === 'brace' ? 1 : e.st === 'bash' ? 2 : 0, st = e.st === 'walk' ? (tick >> 3) % 2 : 0;
+    R(3, 18, 3, 4 - st, '#2a2420'); R(9, 18, 3, 3 + st, '#2a2420');
+    R(3, 7, 9, 11, '#5a3a2a'); R(3, 7, 9, 2, '#7a5238'); R(4, 1, 7, 7, '#3e3630'); R(5, 0, 5, 1, '#5e544a'); R(8, 3, 2, 1, '#ff7a3a');
+    R(11 + lean, 3, 4, 17, '#6e6862'); R(11 + lean, 3, 1, 17, '#9a948c'); R(12 + lean, 9, 2, 3, '#c43a14');
+    if (e.st === 'stagger') { ctx.fillStyle = '#ffd27a'; ctx.fillRect(x + 4 + ((tick >> 2) % 3) * 3, y - 4, 2, 2); }
+    return;
+  }
+  if (e.t === 'A') {
+    const fuse = e.st === 'fuse', blink = fuse && (tick >> (e.stT < 14 ? 1 : 2)) % 2, leg = (Math.floor(e.ph) % 2);
+    R(1, 7, 2, 2 - leg, '#2a1a12'); R(7, 7, 2, 1 + leg, '#2a1a12'); R(0, 2, 10, 6, blink ? '#ffd27a' : '#3a2018'); R(1, 1, 8, 2, '#5a3020');
+    R(2, 3, 6, 3, blink ? '#fff0b8' : '#c43a14'); R(7, 3, 2, 1, '#ffb04a');
+    if (tick % 5 === 0) parts.push({x:x + 5, y:y + 1, vx:(Math.random() - .5) * .4, vy:-.6, life:14, color:fuse ? '#ffd27a' : '#ff6a2a', size:1});
+    return;
+  }
   if (e.t === 'r') {
     const hop = e.onGround ? 0 : 1, st = (tick >> 2) % 2;
     R(0, 4, 2, 1, '#6a4a3a'); R(-3, 3 - hop, 3, 1, '#6a4a3a');
@@ -4113,7 +4163,7 @@ function enterRoom(key) {
   if (save && treeOn('defense', 2) && !bossMode) p.shield = Math.max(p.shield || 0, 99999);
   if (!save.visited[key]) { save.visited[key] = true; persist(); }
   if (!districtEnter(key)) toast = {text:room.name, t:150}; else toast = null;
-  enemies = room.ents.filter(e => 'gjukOerwlcby'.includes(e.t)).map(e => makeEnemy(e.t, e.x, e.y));
+  enemies = room.ents.filter(e => 'gjukOerwlcbymzA'.includes(e.t)).map(e => makeEnemy(e.t, e.x, e.y));
   eshots = []; ebombs = []; pwaves = []; bfx = []; setBars(null); thralls = []; zaps = []; blasts = []; crumbles = {}; drops = [];
   vents = room.ents.filter(e => e.t === 'F').map(e => ({x:e.x, y:e.y, ph:(e.x * 37) % 160}));
   arena = ARENAS[key] && !save.arenas[key] ? {key, cfg:ARENAS[key], stage:'idle', wave:0, delay:0} : null;
@@ -6064,7 +6114,7 @@ function drawEnemyBody(e) {
     return;
   }
   const x = Math.round(e.x), y = Math.round(e.y), fl = e.flash > 0 && e.flash % 4 < 2;
-  if ('rwlcby'.includes(e.t)) { drawFoe(e, x, y, fl); return; }
+  if ('rwlcbymzA'.includes(e.t)) { drawFoe(e, x, y, fl); return; }
   if (e.t === 'g') {
     const d = e.vx >= 0 ? 1 : -1, st = (tick >> 3) % 2, sw = Math.round(Math.sin(tick * .15) * 1.5);
     const X = (dx, w) => d > 0 ? x + dx : x + 14 - dx - w;
