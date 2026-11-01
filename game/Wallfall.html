@@ -249,7 +249,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.19';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.20';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -6388,8 +6388,16 @@ function drawPrologue(t) {
   // it rises out of the dark, eyes first
   const up = Math.max(0, Math.min(1, (t - 60) / 360)), eyes = Math.max(0, Math.min(1, (t - 240) / 120)), base = VH * 1.98 + (1 - up * (2 - up)) * 220;
   cutColossus(VW * .36, base, 2.4, t * .006, .1, eyes);
-  // its crown of embers
-  if (up > 0) { const P = giantPose(VW * .36, base, 2.4, t * .006, .1, 0), hx = P.head.x, hy = P.head.y - 30 * 2.4 + 8; for (let i = -2; i <= 2; i++) { ctx.fillStyle = `rgba(255,${120 + i * 10},50,${.7 * eyes})`; ctx.beginPath(); ctx.moveTo(hx + i * 9 - 4, hy + 6 + Math.abs(i) * 4); ctx.lineTo(hx + i * 9, hy - 8 + Math.abs(i) * 4 + Math.sin(t * .1 + i) * 2); ctx.lineTo(hx + i * 9 + 4, hy + 6 + Math.abs(i) * 4); ctx.fill(); } }
+  // its crown: a dark iron band on top of the head, the points just warm at the tips
+  if (up > 0) {
+    const sc = 2.4, P = giantPose(VW * .36, base, sc, t * .006, .1, 0), hx = P.head.x, top = P.head.y - 8 * sc - 22 * sc, by = top + 4.5 * sc, hw = 7.4 * sc;
+    ctx.fillStyle = '#18161a'; ctx.beginPath(); ctx.moveTo(hx - hw, by + 3 * sc); ctx.lineTo(hx - hw + 1, by); ctx.lineTo(hx + hw - 1, by); ctx.lineTo(hx + hw, by + 3 * sc); ctx.closePath(); ctx.fill();
+    for (let i = -2; i <= 2; i++) { const px = hx + i * hw * .42, ph = (5.5 - Math.abs(i) * 1.1) * sc; ctx.beginPath(); ctx.moveTo(px - 1.4 * sc, by + 1); ctx.lineTo(px, by - ph); ctx.lineTo(px + 1.4 * sc, by + 1); ctx.fill(); }
+    ctx.fillStyle = '#3e3a44'; ctx.fillRect(hx - hw + 2, by + 1, hw * 2 - 4, 1);
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = -2; i <= 2; i++) { const px = hx + i * hw * .42, py = by - (5.5 - Math.abs(i) * 1.1) * sc, gl = ctx.createRadialGradient(px, py, 0, px, py, 4); gl.addColorStop(0, `rgba(255,140,60,${(.35 + .1 * Math.sin(t * .05 + i)) * eyes})`); gl.addColorStop(1, 'rgba(255,100,40,0)'); ctx.fillStyle = gl; ctx.fillRect(px - 4, py - 4, 8, 8); }
+    ctx.globalCompositeOperation = 'source-over';
+  }
   // the wall you stand on
   const wy = VH * .8;
   ctx.fillStyle = '#060405'; ctx.fillRect(-20, wy, VW + 40, VH); for (let x = -20; x < VW + 20; x += 22) ctx.fillRect(x, wy - 10, 13, 10);
