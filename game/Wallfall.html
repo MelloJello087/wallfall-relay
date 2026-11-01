@@ -58,6 +58,10 @@ kbd{font-family:var(--ui);font-size:.6rem;color:#2a1d16;background:#e3d6bd;borde
 .menuov:hover,.menuov:focus-visible{opacity:1;outline:none;border-color:#ff9a5a}
 .menuov svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
 .card.pausecard{max-width:440px}
+.card.soundcard{max-width:420px}
+.vrow{display:grid;grid-template-columns:8.5em minmax(0,1fr) 3em;gap:10px;align-items:center;margin:8px 0;font-size:1rem}
+.vrow input{width:100%;accent-color:#8e2f22}
+.vv{font-family:var(--ui);font-size:.6rem;text-align:right;color:var(--faded)}
 .card.pausecard .opts.pgrid{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}
 .card.pausecard button.opt .t{font-size:.98rem}
 @media (max-width:420px){ .card.pausecard .opts.pgrid{grid-template-columns:1fr} }
@@ -268,7 +272,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.25';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.26';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1350,8 +1354,11 @@ try { soundOn = localStorage.getItem('wallfall-sound') !== 'off'; } catch (e) {}
 const sndBtn = document.getElementById('snd');
 sndBtn.querySelector('span').textContent = 'Sound: ' + (soundOn ? 'on' : 'off');
 function audio() { if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (ac && ac.state === 'suspended') ac.resume(); }
-function tone(f, dur, type = 'square', vol = .05, to = null, delay = 0) {
-  if (!ac || !soundOn) return;
+// volume sliders (the Sound menu): master, music, sound effects and voices, each 0 to 1
+const VOL = (() => { const d = {master:soundOn ? 1 : 0, music:.8, sfx:1, voice:1}; try { return Object.assign(d, JSON.parse(localStorage.getItem('wallfall-volume') || '{}')); } catch (e) { return d; } })();
+function tone(f, dur, type = 'square', vol = .05, to = null, delay = 0, cat = 'sfx') {
+  vol *= VOL.master * (VOL[cat] === undefined ? 1 : VOL[cat]);
+  if (!ac || !soundOn || vol < .0002) return;
   const t0 = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t0);
   if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
@@ -1807,6 +1814,7 @@ function saveName() { const v = (NET.draftName || '').trim(); if (v) { NET.name 
    has its own track. The notes are written out below and played by small synth voices. */
 let musicOn = true;
 try { musicOn = localStorage.getItem('wallfall-music') !== 'off'; } catch (e) {}
+try { if (!musicOn && !localStorage.getItem('wallfall-volume')) { VOL.music = 0; musicOn = true; } } catch (e) {}
 const mf = m => 440 * Math.pow(2, (m - 69) / 12);
 const mhash = a => { const x = Math.sin(a * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); };
 const MUS = {A:null, bus:null, verb:null, noise:null, cur:null, old:[], quiet:0};
@@ -1815,7 +1823,7 @@ function musInit(A) {
   MUS.A = A; MUS.cur = null; MUS.old = []; MUS.quiet = 0;
   const comp = A.createDynamicsCompressor();
   comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = .004; comp.release.value = .25;
-  const bus = A.createGain(); bus.gain.value = .55; bus.connect(comp); comp.connect(A.destination);
+  const bus = A.createGain(); bus.gain.value = .55 * VOL.master * VOL.music; bus.connect(comp); comp.connect(A.destination);
   const len = Math.floor(A.sampleRate * 2.6), ir = A.createBuffer(2, len, A.sampleRate);
   for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.4); }
   const verb = A.createConvolver(); verb.buffer = ir; verb.connect(bus);
@@ -6595,16 +6603,31 @@ function drawAdminInfo() {
   const l = [ADMIN.god ? 'GOD' : '', ADMIN.fly ? 'FLY' : '', ADMIN.info ? `${room.key} ${(p.x / T).toFixed(1)},${((p.y + p.h) / T).toFixed(1)} · ${enemies.filter(e => !e.dead).length} foes` : ''].filter(Boolean).join(' · ');
   txt(l, VW / 2, VH - 12, 8, '#7ad8ff', 'center');
 }
+// the Sound menu: a slider for each kind of sound, saved on this device
+function setVol(k, v) {
+  VOL[k] = Math.max(0, Math.min(1, v)); soundOn = true; musicOn = true;
+  try { localStorage.setItem('wallfall-volume', JSON.stringify(VOL)); localStorage.setItem('wallfall-sound', 'on'); localStorage.setItem('wallfall-music', 'on'); } catch (e) {}
+  if (MUS.bus && MUS.A) MUS.bus.gain.setTargetAtTime(.55 * VOL.master * VOL.music, MUS.A.currentTime, .05);
+}
+function openSound(back) {
+  const rows = [['master', 'Master volume'], ['music', 'Music'], ['sfx', 'Sound effects'], ['voice', 'Voices']];
+  const html = `<div class="card soundcard"><p class="kicker">Settings</p><h2>Sound</h2>${rows.map(([k, l]) => `<label class="vrow"><span class="vl">${l}</span><input type="range" min="0" max="100" step="1" value="${Math.round(VOL[k] * 100)}" data-k="${k}" aria-label="${l}"><span class="vv" id="vv-${k}">${VOL[k] ? Math.round(VOL[k] * 100) + '%' : 'Off'}</span></label>`).join('')}
+    <div class="opts"><button class="opt" id="opt0" data-i="0"><span class="t">Done</span></button></div></div>`;
+  openDlg({opts:[{text:'Done', run:() => back && back()}], html});
+  let last = 0;
+  dlgEl.querySelectorAll('.vrow input').forEach(r => r.addEventListener('input', () => {
+    const k = r.dataset.k, v = +r.value / 100; setVol(k, v); document.getElementById('vv-' + k).textContent = v ? Math.round(v * 100) + '%' : 'Off';
+    audio(); if (Date.now() - last > 120) { last = Date.now(); if (k === 'voice') blip(VOICES.f, 'a'); else if (k !== 'music') sfx.pick(); }
+  }));
+}
 // the pause menu: Escape or the Menu button
 function openPause() {
   if (dlg.open || binder.open || wardrobe.open || mode !== 'play') return;
   const click = id => () => { const b = document.getElementById(id); if (b) b.click(); };
   const opts = [
-    {text:'Resume'}, {text:'Map', run:click('mapb')}, {text:'Full screen', run:click('fsb')}, {text:'Co-op', run:click('coop')},
+    {text:'Resume'}, {text:'Full screen', run:click('fsb')}, {text:'Co-op', run:click('coop')},
     {text:acct ? 'Account · ' + acct.name : 'Account', run:click('acctb')}, {text:'Controls', run:click('ctl')},
-    {text:'Music: ' + (musicOn ? 'on' : 'off'), run:() => { click('mus')(); openPause(); }}, {text:'Sound: ' + (soundOn ? 'on' : 'off'), run:() => { click('snd')(); openPause(); }},
-    {text:'Admin panel', run:() => openAdmin()},
-    {text:'New game', run:() => openDlg({kicker:'New game', title:'Start over?', body:['Your save on this device will be gone: notes, items, bosses, everything.'], opts:[{text:'Start over', run:() => newGame()}, {text:'Go back', run:() => openPause()}]})},
+    {text:'Sound', run:() => openSound(openPause)}, {text:'Admin panel', run:() => openAdmin()},
     {text:'Quit to the title screen', run:() => { persist(); if (acct) cloudNow(); parts = []; openTitle(); }}];
   const btns = opts.map((o, i) => `<button class="opt" id="opt${i}" data-i="${i}"><span class="t">${esc(o.text)}</span></button>`).join('');
   openDlg({opts, html:`<div class="card pausecard"><p class="kicker">Paused${NET.on ? ' · co-op keeps running' : ''}</p><h2>${esc(room ? room.name : 'Wallfall')}</h2><div class="opts pgrid">${btns}</div></div>`});
@@ -6662,7 +6685,7 @@ let typer = null;
 function blip(V, ch) {
   const k = (ch.toLowerCase().charCodeAt(0) * 7) % 6, vow = /[aeiou]/i.test(ch);
   const f = V.f * (1 + k * V.var / 5) * (vow ? 1.12 : 1);
-  tone(f, .055, V.type, V.vol, f * .86);
+  tone(f, .055, V.type, V.vol, f * .86, 0, 'voice');
 }
 function stopTyper(finish) {
   if (!typer) return;
