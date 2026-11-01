@@ -9,6 +9,7 @@ Who is working on what right now. Add a line before you start and remove it when
 
 Format: `- who: what, in which part of the game (date)`
 
+- MelloJello087's agent: boss fight difficulty (easy, normal, hard) and a one-hit mode; beating a boss in one-hit mode turns its statue gold. Boss fights section (2026-11-01)
 
 ## Handoff
 Newest first. Keep each entry to a few lines: what changed, what is unfinished, what the other person should know. Delete entries once they stop being useful.
