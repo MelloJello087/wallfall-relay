@@ -273,7 +273,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.40';
+const VERSION = '0.1.41';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -2379,8 +2379,57 @@ Object.assign(TRACKS, {
   }},
 });
 for (const k of ['forgeboss', 'eelboss', 'thornboss']) FIGHT.add(k);
-TRACKS.choirboss = TRACKS.eelboss; TRACKS.bellboss = TRACKS.forgeboss; FIGHT.add('choirboss'); FIGHT.add('bellboss');
-Object.assign(ROOM_MUSIC, {a:'dread', h:'dread', g:'under', o:'under', c:'under', s:'belfry', b:'belfry', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
+Object.assign(TRACKS, {
+  crypt:{bpm:58, bars:8, play(c, bar, st, t, d, loop) {
+    const nm = ['Em','C','Am','Em','Em','C','Am','E'][bar], ch = CHD[nm], b = bassOf(ch);
+    if (st === 0) { INS.choir(c, t, ch.slice(0, 3), d * 16, .03, bar % 2); INS.bass(c, t, b, d * 10, .04); }
+    if (st === 0 && bar % 4 === 0) INS.drone(c, t, [40, 47], d * 64, .026);
+    if (st === 8 && bar % 2) INS.taiko(c, t, .08, 70);
+    if (loop % 2 && st % 4 === 0) INS.pluck(c, t, ch[[3, 2, 1, 2][st / 4]] + 12, .016, 1.2, 2);
+    if ((bar === 2 || bar === 6) && st === 12) INS.bell(c, t, ch[2] + 24, .016, 3);
+    if (bar === 5 && st === 6) INS.drip(c, t, 88, .028);
+  }},
+  spire:{bpm:92, bars:4, play(c, bar, st, t, d, loop) {
+    const nm = ['D','Bm','G','A'][bar], ch = CHD[nm], b = bassOf(ch);
+    if (st % 2 === 0) INS.bell(c, t, ch[[3, 2, 1, 2, 3, 1, 2, 0][st / 2]] + 12, .012, 1.4);
+    if (st === 0) { INS.pad(c, t, ch, d * 16, .01, 900); INS.bass(c, t, b, d * 6, .045); INS.bell(c, t, b + 12, .04, 4); }
+    if (st === 8) INS.bass(c, t, b + 7, d * 5, .03);
+    if (loop % 2 && (st === 0 || st === 6 || st === 10)) INS.str(c, t, ch[1] + 24, d * 4, .014);
+    if (st === 12 && bar === 3) INS.taiko(c, t, .1, 92);
+  }},
+  ashroad:{bpm:108, bars:4, play(c, bar, st, t, d, loop) {
+    const nm = ['Dm','Bb','Gm','A'][bar], ch = CHD[nm], b = bassOf(ch);
+    if ([0, 3, 6, 10, 12].includes(st)) INS.taiko(c, t, st ? .14 : .22, 74);
+    if (st === 0 || st === 8) INS.kick(c, t, .16);
+    if (st % 2 === 0) INS.bass(c, t, b + (st === 14 ? 12 : 0), d * 1.4, .045);
+    if (st === 0) INS.choir(c, t, ch.slice(0, 3), d * 16, .028, 0);
+    if (st === 4 || st === 12) INS.snare(c, t, .04);
+    if (loop % 2 && (st === 0 || st === 10)) INS.brass(c, t, ch[2] + 12, d * 4, .02);
+    if (!(loop % 2) && st % 4 === 2) INS.str(c, t, ch[[1, 2, 3, 2][(st - 2) / 4]] + 12, d * 1.5, .012);
+  }},
+  choirboss:{bpm:c => bossPh(c) > 1 ? 132 : 120, bars:4, play(c, bar, st, t, d, loop) {
+    const ph = bossPh(c), ch = CHD[['Em','C','Am','E'][bar]], b = bassOf(ch);
+    if (st === 0 || st === 8) INS.choir(c, t, ch.slice(0, 3), d * 7, .04, (st >> 3) % 2);
+    INS.str(c, t, ch[[1, 2, 3, 2][st % 4]] + 12 + (st >= 8 ? 12 : 0), d * .8, .011);
+    if ([0, 6, 10].includes(st)) INS.taiko(c, t, .2, 80);
+    if (st % 4 === 0) INS.bass(c, t, b, d * 2, .05);
+    if (st === 4 || st === 12) INS.snare(c, t, .05);
+    if (ph > 1) { INS.hat(c, t, st % 2 ? .006 : .012); if (st === 14) INS.bell(c, t, ch[3] + 24, .02, 2); }
+  }},
+  bellboss:{bpm:c => bossPh(c) > 1 ? 144 : 134, bars:4, play(c, bar, st, t, d, loop) {
+    const ph = bossPh(c), ch = CHD[['Gm','Eb','Bb','D'][bar]], b = bassOf(ch);
+    if (st === 0 || st === 8) INS.bell(c, t, ch[0] + 12, .045, 2.5);
+    if (st % 2 === 0) INS.bell(c, t, ch[[3, 2, 1, 2, 3, 2, 1, 0][st / 2]] + 24, .01, .8);
+    if ([0, 3, 8, 11].includes(st)) INS.kick(c, t, .18);
+    if (st === 4 || st === 12) INS.snare(c, t, .055);
+    if (st % 2 === 0) INS.bass(c, t, b + (st % 8 === 6 ? 12 : 0), d * 1.5, .045);
+    if (st === 0) INS.choir(c, t, ch.slice(0, 3), d * 16, .028, 1);
+    if (loop % 2 && (st === 0 || st === 10)) for (const m of ch.slice(1, 3)) INS.brass(c, t, m + 12, d * 3, .014);
+    if (ph > 1 && st % 4 === 0) INS.taiko(c, t, .14, 90);
+  }},
+});
+FIGHT.add('choirboss'); FIGHT.add('bellboss');
+Object.assign(ROOM_MUSIC, {a:'ashroad', h:'ashroad', g:'crypt', o:'crypt', c:'crypt', s:'spire', b:'spire', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
 
 function musSting(kind) {
   if (!ac || !soundOn || !musicOn) return;
