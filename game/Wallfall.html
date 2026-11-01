@@ -272,7 +272,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.37';
+const VERSION = '0.1.38';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -382,8 +382,8 @@ makeRoom('Y', 'The Barracks', 8, 4, 2, 1, {indoor:true, dark:.82}, B => {
   B.ledge(8, 13, 11); B.ledge(18, 24, 8); B.ledge(26, 30, 12); B.ledge(34, 40, 10); B.ledge(44, 50, 7); B.ledge(54, 60, 11);
   B.put('C', 32, 15);
 });
-makeRoom('X', 'Beyond the Last Gate', 11, 0, 2, 1, {dark:.4, noGiants:true}, B => {
-  B.solid(0, 16, 63, 17); B.clear(0, 13, 0, 15);
+makeRoom('X', 'The Ash Throne', 9, 1, 2, 1, {dark:.4, noGiants:true}, B => {
+  B.solid(0, 16, 63, 17); B.clear(63, 13, 63, 15);
   B.ledge(6, 10, 11); B.ledge(20, 25, 8); B.ledge(38, 43, 8); B.ledge(53, 57, 11); B.ledge(28, 35, 4);
 });
 makeRoom('G', 'The Last Gate', 9, 0, 2, 1, {dark:.4}, B => {
@@ -540,6 +540,20 @@ makeRoom('s', 'The Bell Stair', 2, -2, 1, 2, {indoor:true, biome:'spire'}, B => 
 makeRoom('b', 'The Bell Chamber', 2, -3, 2, 1, {indoor:true, biome:'spire'}, B => {
   B.solid(0, 16, 63, 17); B.clear(12, 16, 19, 17);
   B.ledge(10, 21, 13); B.ledge(3, 8, 10); B.ledge(52, 58, 10); B.ledge(28, 35, 8);
+});
+makeRoom('a', 'Beyond the Last Gate', 11, 0, 2, 1, {dark:.42, noGiants:true, biome:'ash'}, B => {
+  B.solid(0, 16, 63, 17); B.clear(0, 13, 0, 15); B.clear(56, 16, 59, 17);
+  B.ledge(8, 13, 11); B.ledge(20, 26, 8); B.ledge(34, 40, 11); B.ledge(46, 52, 7);
+  B.put('q', 4, 15);
+});
+makeRoom('h', 'The Cinder Halls', 11, 1, 2, 1, {indoor:true, biome:'ash'}, B => {
+  B.solid(0, 16, 63, 17); B.clear(56, 0, 59, 0); B.clear(0, 13, 0, 15);
+  B.ledge(54, 61, 4); B.ledge(46, 52, 8);
+  B.put('Z', 44, 1); B.put('Z', 37, 1); B.put('Z', 30, 1);
+  B.solid(18, 13, 20, 15); B.stakes(21, 26, 15); B.crumble(21, 26, 12); B.solid(27, 13, 29, 15);
+  B.ledge(8, 14, 11); B.solid(4, 6, 6, 9);
+  B.put('k', 5, 5); B.put('c', 40, 1); B.put('c', 24, 1); B.put('u', 12, 15); B.put('y', 11, 10); B.put('w', 50, 15);
+  B.put('q', 3, 15);
 });
 
 const EXTRA = [
@@ -2340,7 +2354,7 @@ Object.assign(TRACKS, {
 });
 for (const k of ['forgeboss', 'eelboss', 'thornboss']) FIGHT.add(k);
 TRACKS.choirboss = TRACKS.eelboss; TRACKS.bellboss = TRACKS.forgeboss; FIGHT.add('choirboss'); FIGHT.add('bellboss');
-Object.assign(ROOM_MUSIC, {g:'under', o:'under', c:'under', s:'belfry', b:'belfry', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
+Object.assign(ROOM_MUSIC, {a:'dread', h:'dread', g:'under', o:'under', c:'under', s:'belfry', b:'belfry', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
 
 function musSting(kind) {
   if (!ac || !soundOn || !musicOn) return;
@@ -2736,6 +2750,10 @@ function drawSpawn(e) {
 
 /* ---------- Arenas ---------- */
 const ARENAS = {
+  a:{name:'Beyond the Last Gate', sub:'The bars fall behind you. His kin come up out of the ash.', doneSub:'The way down is open. He is waiting below.', noCog:true, inside:() => p.onGround && p.x > 8 * T, bars:[[0, 0, 13, 15], [56, 59, 16, 16]], waves:[
+    [['g', 20, 15], ['g', 30, 15], ['u', 44, 15], ['g', 50, 15]],
+    [['j', 12, 4], ['j', 30, 3], ['j', 48, 5], ['y', 23, 7], ['k', 49, 6]],
+    [['u', 16, 15], ['u', 40, 15], ['w', 28, 15], ['b', 52, 15], ['y', 37, 10]]]},
   V:{name:'The Drowned Vault', inside:() => p.x + p.w < 60 * T, bars:[[63, 63, 13, 15]], waves:[
     [['g', 6, 15], ['g', 16, 15], ['r', 26, 15], ['r', 28, 15], ['r', 30, 15], ['g', 40, 15]],
     [['k', 5, 10], ['k', 25, 10], ['k', 55, 10], ['g', 12, 15], ['g', 34, 15]],
@@ -2759,7 +2777,7 @@ function updateArena() {
   if (a.stage === 'idle') {
     if (a.cfg.inside()) {
       a.stage = 'fight'; a.wave = 0; a.delay = 50; setBars(a.cfg.bars); sfx.slam(); shake = 10;
-      banner = {title:a.cfg.name, sub:'The bars slam shut. Survive three waves to take the cog.', color:'#ff8a3d', t:220};
+      banner = {title:a.cfg.name, sub:a.cfg.sub || 'The bars slam shut. Survive three waves to take the cog.', color:'#ff8a3d', t:220};
     }
   } else if (a.stage === 'fight') {
     if (a.delay > 0) {
@@ -2768,8 +2786,8 @@ function updateArena() {
       if (a.wave < a.cfg.waves.length - 1) { a.wave++; a.delay = 80; }
       else {
         a.stage = 'done'; save.arenas[a.key] = true; persist(); setBars(null); sfx.pick(); musSting('clear');
-        banner = {title:'The bars rise', sub:'A gate cog lies where the last of them fell.', color:'#e8c48a', t:240};
-        voice(VOICE_COG[Math.min(2, Object.keys(save.arenas).filter(k => ARENAS[k]).length - 1)] || VOICE_COG[0], 160);
+        banner = {title:'The bars rise', sub:a.cfg.doneSub || 'A gate cog lies where the last of them fell.', color:'#e8c48a', t:240};
+        if (!a.cfg.noCog) voice(VOICE_COG[Math.min(2, Object.keys(save.arenas).filter(k => ARENAS[k]).length - 1)] || VOICE_COG[0], 160);
       }
     }
   }
@@ -2796,26 +2814,28 @@ function drawBars() {
 }
 
 /* ---------- The Colossus ---------- */
-const BOSS_HP = 160;
+const BOSS_HP = 220;
 let boss = null, bfx = [];
-function makeBoss() { return {x:(ROOMS.X.w - 4) * T, y:16 * T, hp:BOSS_HP, max:BOSS_HP, state:'wait', t:0, face:1, phase:1, flash:0, walkPh:0, atks:0, dmgSince:0, eye:.15, arm:0, leg:0, kneel:0, hitCd:0, warned:false}; }
+function makeBoss() { return {x:6 * T, y:16 * T, hp:BOSS_HP, max:BOSS_HP, state:'wait', t:0, face:1, phase:1, flash:0, walkPh:0, atks:0, dmgSince:0, eye:.15, arm:0, leg:0, kneel:0, hitCd:0, warned:false}; }
 function bossBoxes(b) {
   const kd = b.kneel * 34;
   return {body:{x:b.x - 22, y:b.y - 100 + kd, w:44, h:100 - kd}, head:{x:b.x + b.face * 9 - 11, y:b.y - 128 + kd, w:22, h:26}};
 }
 function bossDamage(d, head) {
   const b = boss; if (!b || ['wait', 'intro', 'dying'].includes(b.state)) return;
+  if (b.state === 'summon') { if (b.hitCd <= 0) { b.hitCd = 20; sfx.clang(); pops.push({x:b.x, y:b.y - 110, v:0, life:30, txt:'KILL HIS KIN'}); } return; }
   if (head) d *= 2;
   b.hp -= d; b.flash = 10; b.dmgSince += d; sfx.hit();
   const bx = bossBoxes(b)[head ? 'head' : 'body'];
   pops.push({x:bx.x + bx.w / 2, y:bx.y - 4, v:d, life:45});
   burst(bx.x + bx.w / 2, bx.y + (head ? 12 : 30), head ? '#ffd27a' : '#ff7a2e', head ? 14 : 8, 2);
   if (b.hp <= 0) { b.hp = 0; b.state = 'dying'; b.t = 0; b.arm = 0; b.leg = 0; bfx = []; eshots = []; sfx.roar(); shake = 24; musSting('fell'); return; }
-  const ph = b.hp <= b.max / 3 ? 3 : b.hp <= b.max * 2 / 3 ? 2 : 1;
+  const ph = b.hp <= b.max / 4 ? 4 : b.hp <= b.max / 2 ? 3 : b.hp <= b.max * 3 / 4 ? 2 : 1;
   if (ph > b.phase) {
-    b.phase = ph; b.state = 'roar'; b.t = 0; b.arm = 0; b.leg = 0; b.kneel = 0;
-    banner = ph === 2 ? {title:'It is angry now', sub:'Its eye burns hotter. It will spit fire.', color:'#ff5a3a', t:180}
-                      : {title:'It will not fall quietly', sub:'Stones are coming down from the wall.', color:'#ff5a3a', t:180};
+    b.phase = ph; b.state = 'summon'; b.t = 0; b.arm = 0; b.leg = 0; b.kneel = 0; b.air = false; b.y = 16 * T;
+    banner = [null, null, {title:'He calls his kin', sub:'He will not bleed while they stand. Kill them.', color:'#ff5a3a', t:200},
+      {title:'The throne burns', sub:'More of them. His eye spits fire now.', color:'#ff5a3a', t:200},
+      {title:'The sky comes down', sub:'Ash and stone fall on the throne. He will not stop now.', color:'#ff3a2a', t:220}][ph];
   }
 }
 function bossChoose(b, dx) {
@@ -2824,20 +2844,25 @@ function bossChoose(b, dx) {
   const r = Math.random();
   if (Math.abs(dx) > 105 && r < .5) b.state = 'leap';
   else if (Math.abs(dx) < 110 && r < .55) b.state = 'swipe';
-  else if (b.phase >= 2 && r < .8) b.state = 'spit';
+  else if (b.phase >= 2 && r < .72) b.state = 'spit';
+  else if (b.phase >= 3 && r < .88) b.state = 'meteor';
   else b.state = 'stomp';
 }
+const ASH_WAVES = [null, null,
+  [['g', 20, 15], ['g', 34, 15], ['u', 46, 15], ['j', 26, 4]],
+  [['k', 7, 10], ['k', 56, 10], ['u', 22, 15], ['w', 40, 15], ['j', 14, 4], ['j', 48, 4]],
+  [['u', 18, 15], ['u', 44, 15], ['b', 30, 15], ['y', 23, 7], ['y', 40, 7], ['j', 32, 3]]];
 function updateBoss() {
   const b = boss; b.t++; if (b.flash > 0) b.flash--; if (b.hitCd > 0) b.hitCd--;
   const pcx = p.x + p.w / 2, dx = pcx - b.x, sp = b.phase === 1 ? 1 : b.phase === 2 ? 1.25 : 1.5;
   const pbox = {x:p.x + 1, y:p.y + 1, w:p.w - 2, h:p.h - 2};
   switch (b.state) {
     case 'wait':
-      b.face = -1; b.walkPh += .01;
-      if (p.x > 4 * T) { b.state = 'intro'; b.t = 0; setBars([[0, 0, 13, 15]]); sfx.slam(); shake = 8; bossIntro('ash', {x:b.x, y:b.y - 90}); }
+      b.face = 1; b.walkPh += .01;
+      if (p.x < (room.w - 5) * T) { b.state = 'intro'; b.t = 0; setBars([[63, 63, 13, 15]]); sfx.slam(); shake = 8; bossIntro('ash', {x:b.x, y:b.y - 90}); }
       break;
     case 'intro':
-      if (b.t < 60) { b.walkPh += .05; b.x -= .4; }
+      if (b.t < 60) { b.walkPh += .05; b.x += .4; }
       if (b.t === 60) { banner = {title:'The Ash-King', sub:'It stops. It turns. Its eye finds you on the stones.', color:'#ff8a3d', t:170}; }
       if (b.t > 70) b.eye = Math.min(1.2, .15 + (b.t - 70) / 70);
       if (b.t === 150) { sfx.roar(); shake = 20; banner = {title:'It has decided', sub:'It does not see the one who freed it. It sees prey.', color:'#ff5a3a', t:200}; }
@@ -2896,6 +2921,21 @@ function updateBoss() {
       if (b.t < 20) b.kneel = b.t / 20; else if (b.t < 160) b.kneel = 1; else if (b.t < 185) b.kneel = 1 - (b.t - 160) / 25; else { b.kneel = 0; b.state = 'walk'; b.t = 0; }
       if (b.t === 20) { shake = 8; sfx.slam(); if (!b.warned) { b.warned = true; banner = {title:'It staggers', sub:'Its head is low. Strike the eye for double damage.', color:'#ffd27a', t:180}; } }
       break;
+    case 'summon': {
+      b.face = Math.sign(dx) || b.face; b.eye = 1.3 + .3 * Math.sin(b.t * .2);
+      if (b.t === 1) { sfx.roar(); shake = 22; blasts.push({x:b.x, y:b.y - 60, r:200, life:16}); }
+      if (b.t === 50) { for (const [t, x, y] of ASH_WAVES[b.phase] || []) enemies.push(makeEnemy(t, x, y, true)); sfx.horn2(); }
+      if (b.t > 50 && b.t % 150 === 0) { for (const dir of [-1, 1]) bfx.push({k:'wave', x:b.x, dir, v:2.6, life:200}); shake = 8; sfx.slam(); }
+      if (b.phase >= 4 && b.t % 90 === 45) bfx.push({k:'rock', x:pcx + (Math.random() - .5) * 60, y:-30, vy:0, warn:50});
+      if (b.t > 90 && !enemies.some(e => !e.dead && !e.dummy && !e.crate && !e.prop)) { b.state = 'roar'; b.t = 0; banner = {title:'His kin are dead', sub:'Now he bleeds again.', color:'#ffd27a', t:140}; }
+      break;
+    }
+    case 'meteor': {
+      if (b.t < 40) { b.arm = -b.t / 40; b.eye = 1 + b.t / 40 * .6; }
+      else if (b.t === 40) { sfx.roar(); shake = 10; for (let i = 0; i < 9; i++) bfx.push({k:'rock', x:Math.max(2 * T, Math.min(room.pw - 2 * T, pcx + (i - 4) * 34 + (Math.random() - .5) * 14)), y:-30, vy:0, warn:30 + i * 6}); }
+      else if (b.t > 100) { b.arm = 0; b.state = 'walk'; b.t = 0; b.eye = 1; }
+      break;
+    }
     case 'roar':
       if (b.t === 1) { sfx.roar(); shake = 20; }
       b.eye = 1.5; if (b.t > 70) { b.state = 'walk'; b.t = 0; b.eye = 1; }
@@ -2904,9 +2944,12 @@ function updateBoss() {
       b.kneel = Math.min(1.7, b.t / 70); b.eye = Math.max(0, 1.2 - b.t / 110);
       if (b.t % 6 === 0) burst(b.x + (Math.random() - .5) * 40, b.y - Math.random() * 90, '#ff7a2e', 8, 2.5);
       if (b.t % 30 === 0) { shake = 10; sfx.slam(); }
-      if (b.t === 180) { if (bossMode) { setBars(null); bossWon('ash'); } else { save.bossDead = true; persist(); setBars(null); finish('crown'); } }
+      if (b.t === 40 && !bossMode) voice('It’s too late. Wren is gone.', 260);
+      if (b.t === 180 && bossMode) { setBars(null); bossWon('ash'); }
+      if (b.t === 300 && !bossMode) { save.bossDead = true; persist(); setBars(null); finish('crown'); }
       break;
   }
+  if (b.phase >= 4 && !['dying', 'summon'].includes(b.state) && b.t % 110 === 55) bfx.push({k:'rock', x:pcx + (Math.random() - .5) * 80, y:-30, vy:0, warn:50});
   b.x = Math.max(3 * T, Math.min(room.pw - 3 * T, b.x));
   if (!['wait', 'intro', 'dying'].includes(b.state) && !(p.spin > 0)) {
     const bx = bossBoxes(b);
@@ -3121,6 +3164,7 @@ const REG = {
   N:{water:10, boss:'eel', bossAt:[32, 13], trigger:() => p.x > 11 * T, bars:[[0, 0, 2, 4]]},
   Q:{},
   M:{pods:[[54, 15, 44, 49, 12], [43, 11, 32, 38, 9], [31, 8, 20, 26, 6], [19, 5, 9, 18, 5]]},
+  h:{},
   R:{boss:'thorn', bossAt:[9, 15], trigger:() => p.x < 52 * T && p.y > 7 * T, bars:[[63, 63, 2, 4]]},
   c:{boss:'choir', bossAt:[40, 8], trigger:() => p.x > 8 * T, bars:[[0, 0, 13, 15]]},
   b:{boss:'bell', bossAt:[44, 15], trigger:() => p.onGround, bars:[[12, 19, 16, 16]]},
@@ -3799,7 +3843,7 @@ const openArea = (r, x0, y0, x1, y1) => { for (let y = Math.max(0, y0); y <= Mat
 function biomeBack(g, r) {
   if (!r.biome) return;
   const keep = document.createElement('canvas'); keep.width = r.pw; keep.height = r.ph; keep.getContext('2d').drawImage(g.canvas, 0, 0);
-  const tint = {foundry:['#4e5a6c', .7], drowned:['#2a7480', .78], garden:['#4a7a3a', .55], crypt:['#6a6080', .62], spire:['#8a7050', .5]}[r.biome];
+  const tint = {foundry:['#4e5a6c', .7], drowned:['#2a7480', .78], garden:['#4a7a3a', .55], crypt:['#6a6080', .62], spire:['#8a7050', .5], ash:['#8a2a1a', .55]}[r.biome];
   g.save(); g.globalCompositeOperation = 'color'; g.globalAlpha = tint[1]; g.fillStyle = tint[0]; g.fillRect(0, 0, r.pw, r.ph);
   g.globalCompositeOperation = 'destination-in'; g.globalAlpha = 1; g.drawImage(keep, 0, 0); g.restore();
   if (!r.indoor) { g.fillStyle = r.biome === 'garden' ? 'rgba(30,50,20,.25)' : 'rgba(0,0,0,.2)'; g.fillRect(0, (r.h - 2) * T, r.pw, 2 * T); }
@@ -3831,6 +3875,14 @@ function biomeBack(g, r) {
       for (let k = 0; k < len * 4; k++) { g.fillStyle = k % 2 ? '#3a3e46' : '#5a5e66'; g.fillRect(x * T + 7 + (k % 2), T + k * 4, 2, 4); }
       g.strokeStyle = '#6a707a'; g.lineWidth = 2; g.beginPath(); g.arc(x * T + 8, T + len * 16 + 3, 4, 0, Math.PI); g.stroke();
     }
+  } else if (r.biome === 'ash') {
+    for (let i = 0; i < r.cw * 3; i++) {
+      const x = 2 + Math.floor(H(i, 1, 97) * (r.w - 4));
+      if (!openArea(r, x - 1, 2, x + 1, 12)) continue;
+      g.fillStyle = 'rgba(20,8,6,.85)'; g.fillRect(x * T, 2 * T, 14, 11 * T); g.fillStyle = 'rgba(255,90,30,.35)'; for (let k = 0; k < 11 * T; k += 9) g.fillRect(x * T + (k % 3) * 4 + 2, 2 * T + k, 2, 4);
+    }
+    const lg = g.createLinearGradient(0, r.ph - 5 * T, 0, r.ph); lg.addColorStop(0, 'rgba(255,80,20,0)'); lg.addColorStop(1, 'rgba(255,80,20,.22)'); g.fillStyle = lg; g.fillRect(0, r.ph - 5 * T, r.pw, 5 * T);
+    if (r.indoor) for (let x = 3; x < r.w - 3; x += 7) if (openArea(r, x, 1, x, 6)) { for (let k = 0; k < 18; k++) { g.fillStyle = k % 2 ? '#2a1a14' : '#4a2e22'; g.fillRect(x * T + 6 + (k % 2), T + k * 4, 3, 4); } }
   } else if (r.biome === 'crypt') {
     for (let y = 2; y < r.h - 3; y += 3) for (let x = 2; x < r.w - 3; x += 4) {
       if (!openArea(r, x, y, x + 2, y + 1) || H(x, y, 91) < .35) continue;
@@ -4545,7 +4597,7 @@ function update() {
   if (mode === 'cut') { cutUpdate(); clearHits(); return; }
   if (mode === 'bintro') { bintroTick(); clearHits(); return; }
   if (mode === 'title') { updateParts(); if (!dlg.open && !binder.open && !wardrobe.open) openTitle(); clearHits(); return; }
-  if (mode === 'won') { ringT++; if (hit.restart) newGame(); clearHits(); updateParts(); return; }
+  if (mode === 'won') { ringT++; if (epi) { epi.t++; if (epi.t > 260 && (wakeReq || Object.keys(hit).some(q => hit[q]))) { epi = null; wakeReq = false; showEnding(ending); } } else if (hit.restart) newGame(); clearHits(); updateParts(); return; }
   if (mode === 'dead') {
     if (modeT > 0) modeT--;
     if (p.downed && modeT <= 0) { p.downed = false; fallFully(); persist(); modeT = 100; wakeReq = false; }
@@ -6640,6 +6692,8 @@ function render() {
 
   if (mode !== 'bintro') drawHUD(); drawDistrictCard(); drawVoice(); drawAdminInfo(); drawBintro();
   if (mode === 'respawn') { ctx.fillStyle = `rgba(10,6,5,${modeT / 24})`; ctx.fillRect(0, 0, VW, VH); }
+  if (boss && room && room.key === 'X' && boss.phase > 1 && mode !== 'won') { ctx.fillStyle = `rgba(255,50,10,${.03 * (boss.phase - 1) + .02 * Math.sin(tick * .05)})`; ctx.fillRect(0, 0, VW, VH); }
+  drawEpilogue();
   if (mode === 'dead' && p.downed) {
     ctx.fillStyle = 'rgba(40,8,4,.45)'; ctx.fillRect(0, 0, VW, VH);
     ctx.font = '26px "IM Fell English SC", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -6927,7 +6981,7 @@ const BOSS_LIST = [
   {k:'thorn', say:'They promised me a garden. Look what grew.', room:'R', name:'The Thorn Queen', sub:'She bargained for her garden. It kept her.', from:'right'},
   {k:'choir', say:'Who opened the gate? A hundred mouths answer: you.', room:'c', name:'The Bone Choir', sub:'They sang for the city once. Now they sing for you.', from:'left'},
   {k:'bell', say:'I rang until my hands bled. You heard it. You stayed home.', room:'b', name:'The Bellwright', sub:'He rang it until his hands bled. Nobody came.', from:'left'},
-  {k:'ash', say:'Your sister is behind me. Come and take her.', room:'X', name:'The Ash-King', sub:'We had a deal, warden.', from:'left'}];
+  {k:'ash', say:'Your sister is behind me. Come and take her.', room:'X', name:'The Ash-King', sub:'We had a deal, warden.', from:'right'}];
 makeRoom('BH', 'Hall of Statues', 40, 12, 3, 1, {indoor:true, dark:.6}, B => { B.solid(0, 16, 95, 17); for (let i = 0; i < 6; i++) B.solid(10 + i * 13, 14, 14 + i * 13, 15); B.put('P', 4, 15); });
 let bintro = null;
 const DIFFS = {easy:{name:'Easy', hp:.6, dmg:0, hearts:2}, normal:{name:'Normal', hp:1, dmg:0, hearts:0}, hard:{name:'Hard', hp:1.5, dmg:1, hearts:0}};
@@ -7256,11 +7310,21 @@ function raiseGate() {
 function applyGateOpen() {
   const r = ROOMS.G; if (!save.gateOpen || r.gateOpened) return;
   r.grid = r.grid.map((row, y) => y >= 13 && y <= 15 ? row.slice(0, 59) + '.....' : row);
-  r.cache = null; r.mini = null; r.exits = null; ROOMS.X.exits = null; r.gateOpened = true; DOORS.G.add('X'); DOORS.X.add('G');
+  r.cache = null; r.mini = null; r.exits = null; ROOMS.a.exits = null; r.gateOpened = true; DOORS.G.add('a'); DOORS.a.add('G');
+}
+let epi = null;
+function drawEpilogue() {
+  if (!epi || mode !== 'won') return;
+  const t = epi.t;
+  ctx.fillStyle = `rgba(0,0,0,${Math.min(1, t / 90)})`; ctx.fillRect(0, 0, VW, VH);
+  const a = Math.max(0, Math.min(1, (t - 110) / 60));
+  if (a > 0) { ctx.save(); ctx.globalAlpha = a; ctx.font = 'italic 15px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#d8ccc0'; ctx.fillText('You tried your hardest, yet it was never enough.', VW / 2, VH / 2); ctx.restore(); }
+  if (t > 260) { ctx.globalAlpha = .3 + .2 * Math.sin(tick * .06); txt('click to continue', VW / 2, VH - 30, 8, '#8a7a6a', 'center'); ctx.globalAlpha = 1; }
 }
 function finish(k) {
   mode = 'won'; ending = k; ringT = 0; save.won = true; persist(); banner = null;
   if (k === 'crown') { sfx.horn(); shake = 14; } else if (k === 'low') { sfx.slam(); shake = 18; } else { sfx.wind(); shake = 2; }
+  if (k === 'crown') { epi = {t:0}; return; }
   setTimeout(() => { if (mode === 'won' && ending === k) showEnding(k); }, 2800);
 }
 function showEnding(k) {
