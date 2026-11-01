@@ -259,7 +259,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.23';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.24';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -2220,7 +2220,8 @@ if (!binds.skill2.some(Boolean)) binds.skill2 = ['KeyR', 'KeyI', null];
 let KEYMAP = {};
 const KEYNAMES = {ArrowLeft:'←', ArrowRight:'→', ArrowUp:'↑', ArrowDown:'↓', Space:'Space', ShiftLeft:'L Shift', ShiftRight:'R Shift',
   ControlLeft:'L Ctrl', ControlRight:'R Ctrl', AltLeft:'L Alt', AltRight:'R Alt', Enter:'Enter', Tab:'Tab', Backquote:'`', Minus:'-', Equal:'=',
-  BracketLeft:'[', BracketRight:']', Semicolon:';', Quote:"'", Comma:',', Period:'.', Slash:'/', Backslash:'\\', CapsLock:'Caps'};
+  BracketLeft:'[', BracketRight:']', Semicolon:';', Quote:"'", Comma:',', Period:'.', Slash:'/', Backslash:'\\', CapsLock:'Caps',
+  Mouse0:'Left click', Mouse1:'Middle click', Mouse2:'Right click', Mouse3:'Mouse 4', Mouse4:'Mouse 5'};
 function keyName(c) {
   if (!c) return '';
   if (KEYNAMES[c]) return KEYNAMES[c];
@@ -2317,12 +2318,24 @@ function renderBinds(focusSel) {
     }).join('');
     return `<div class="bl">${l}</div>${slots}`;
   }).join('');
-  dlgEl.innerHTML = `<div class="card"><p class="kicker">Settings</p><h2>Controls</h2><p class="body">Click a slot, then press the key you want. Backspace clears a slot. Esc cancels. A key can only do one thing, so binding it here removes it from anything else.</p><div class="bindgrid">${rows}</div><div class="row"><button class="act" id="bReset">Reset to defaults</button><button class="act primary" id="bDone">Done</button></div></div>`;
-  dlgEl.querySelectorAll('.slot').forEach(b => b.addEventListener('click', () => { binder.cap = {a:b.dataset.a, i:+b.dataset.i}; renderBinds('#' + b.id); }));
+  dlgEl.innerHTML = `<div class="card"><p class="kicker">Settings</p><h2>Controls</h2><p class="body">Click a slot, then press the key or mouse button you want. Backspace clears a slot. Esc cancels. A key can only do one thing, so binding it here removes it from anything else.</p><div class="bindgrid">${rows}</div><div class="row"><button class="act" id="bReset">Reset to defaults</button><button class="act primary" id="bDone">Done</button></div></div>`;
+  dlgEl.querySelectorAll('.slot').forEach(b => b.addEventListener('click', () => { if (binder.caught) { binder.caught = false; return; } binder.cap = {a:b.dataset.a, i:+b.dataset.i}; renderBinds('#' + b.id); }));
   document.getElementById('bReset').addEventListener('click', () => { binds = JSON.parse(JSON.stringify(DEFAULT_BINDS)); binder.cap = null; rebuildKeymap(); renderBinds('#bReset'); });
   document.getElementById('bDone').addEventListener('click', closeBinds);
   const f = dlgEl.querySelector(focusSel || '#bDone'); if (f) f.focus({preventScroll:true});
 }
+// mouse buttons bind like keys, as Mouse0 (left), Mouse1 (middle), Mouse2 (right), Mouse3 and Mouse4 (side buttons)
+document.getElementById('dlg').addEventListener('mousedown', e => {
+  if (!binder.open || !binder.cap) return;
+  e.preventDefault(); e.stopPropagation(); if (e.button === 0) { binder.caught = true; setTimeout(() => { binder.caught = false; }, 400); }
+  binderKey({code:'Mouse' + e.button, preventDefault() {}});
+}, true);
+document.getElementById('dlg').addEventListener('contextmenu', e => { if (binder.open) e.preventDefault(); });
+const mouseActs = e => !dlg.open && !binder.open && !(typeof wardrobe !== 'undefined' && wardrobe.open) && KEYMAP['Mouse' + e.button];
+cv.addEventListener('mousedown', e => { const ks = mouseActs(e); if (!ks) return; e.preventDefault(); for (const k of ks) { hit[k] = true; held[k] = true; } });
+addEventListener('mouseup', e => { const ks = KEYMAP['Mouse' + e.button]; if (!ks) return; for (const k of ks) held[k] = false; if (e.button > 2 && e.target === cv) e.preventDefault(); });
+cv.addEventListener('contextmenu', e => { if (KEYMAP.Mouse2) e.preventDefault(); });
+cv.addEventListener('auxclick', e => { if (KEYMAP['Mouse' + e.button]) e.preventDefault(); });
 function binderKey(e) {
   if (binder.cap) {
     e.preventDefault();
