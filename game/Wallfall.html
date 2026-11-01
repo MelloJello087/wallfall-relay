@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.46';
+const VERSION = '0.1.47';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1126,6 +1126,7 @@ function explode(s) {
   }
   if (boss) { const bx = bossBoxes(boss).body; if (Math.abs(bx.x + bx.w / 2 - s.x) < s.radius + bx.w / 2 && s.y > bx.y - s.radius) bossDamage(s.dmg, false); }
   for (const q of eshots) if (Math.hypot(q.x - s.x, q.y - s.y) < s.radius) q.life = 0;
+  if (pvp) pvpStrike(inCircle(s.x, s.y, s.radius + 6), s.dmg, s.x);
 }
 function updateBomb(s) {
   s.vy += .25; s.x += s.vx; s.y += s.vy; s.life--;
@@ -1231,6 +1232,7 @@ function updateShots() {
         if (!s.pierce) { s.life = 0; break; }
       }
     }
+    if (pvp && s.life > 0 && !s.pvHit) pvpStrike(b => { const hitIt = s.x > b.x - 3 && s.x < b.x + b.w + 3 && s.y > b.y - 3 && s.y < b.y + b.h + 3; if (hitIt) { s.pvHit = true; if (!s.pierce) s.life = 0; } return hitIt; }, s.dmg, s.x - s.vx * 4);
     if (boss && s.life > 0 && !s.hitBoss) {
       const bx = bossBoxes(boss), pt = {x:s.x - 2, y:s.y - 2, w:4, h:4}, head = overlap(pt, bx.head);
       if (head || overlap(pt, bx.body)) { s.hitBoss = true; bossDamage(s.dmg, head); if (!s.pierce) s.life = 0; }
@@ -1623,8 +1625,8 @@ let save = fresh();
 let bossMode = null;
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), {seenIntro:true}, s); } catch (e) {}
 const persist = () => { if (typeof bossMode !== 'undefined' && bossMode) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
-const gameDiff = () => !bossMode && DIFFS[save.diff] || DIFFS.normal;
-const maxHp = () => bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0) + upLv('vig') + (treeOn('defense', 0) ? 1 : 0) + gameDiff().hearts;
+const gameDiff = () => !bossMode && !pvp && DIFFS[save.diff] || DIFFS.normal;
+const maxHp = () => pvp ? cls().hp + 2 : bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0) + upLv('vig') + (treeOn('defense', 0) ? 1 : 0) + gameDiff().hearts;
 
 let room, enemies = [], anchors = [], parts = [], entry = {x:0, y:0}, cam = {x:0, y:0};
 const DYN = new Map(); let R = null;
@@ -1841,6 +1843,7 @@ function worldSnap() {
     dp:R.drips.map(d => [Math.round(d.x), Math.round(d.y)]), pd:R.puddles.map(q => [Math.round(q.x), q.y, q.life])};
   return w;
 }
+NET.pid = Math.random().toString(36).slice(2, 8);
 function myState() {
   const s = {v:1, r:NET.role, n:NET.name.slice(0, 14), rk:room.key, x:Math.round(p.x), y:Math.round(p.y), vx:r1(p.vx), vy:r1(p.vy), f:p.face, g:p.onGround ? 1 : 0,
     at:p.atkT, dt:p.dashT, rn:p.run, wk:Math.round(p.walk || 0), sp:p.spin, lh:p.lash ? 1 : 0, dv:p.dive ? 1 : 0, lu:p.lunge ? 1 : 0, hk:p.hook ? [Math.round(p.hook.x), Math.round(p.hook.y)] : 0,
@@ -1848,8 +1851,9 @@ function myState() {
     th:thralls.slice(0, 3).map(t => [Math.round(t.x), Math.round(t.y), t.face, t.atk, t.rise, t.life < 60 ? 1 : 0, t.inv > 0 ? 1 : 0, t.vx ? 1 : 0, t.onGround ? 1 : 0]),
     sh:shots.slice(0, 8).map(q => [Math.round(q.x), Math.round(q.y), r1(q.vx), r1(q.vy || 0), q.kind || '', q.up ? 1 : 0]),
     zp:zaps.slice(0, 3).map(z => [z.life, z.pts.map(q => [Math.round(q.x), Math.round(q.y)])]),
-    bl:blasts.slice(0, 4).map(b => [Math.round(b.x), Math.round(b.y), b.r, b.life])};
-  if (NET.role === 'host' && room.key !== 'X' && NET.peers.some(q => q.s.rk === room.key)) s.w = worldSnap();
+    bl:blasts.slice(0, 4).map(b => [Math.round(b.x), Math.round(b.y), b.r, b.life]), pi:NET.pid};
+  if (pvp) { s.pv = pvp.out; s.pk = [pvp.deaths, pvp.by2, pvp.kills]; }
+  if (NET.role === 'host' && room.key !== 'X' && room.key !== 'PV' && NET.peers.some(q => q.s.rk === room.key)) s.w = worldSnap();
   return s;
 }
 function netTick() {
@@ -1874,7 +1878,8 @@ function netTick() {
     NET.aidSeen[q.id] = top;
   }
   const was = NET.proxy;
-  NET.proxy = NET.role === 'guest' && !!NET.host && NET.host.s.rk === room.key && room.key !== 'X' && mode !== 'dead';
+  NET.proxy = NET.role === 'guest' && !!NET.host && NET.host.s.rk === room.key && room.key !== 'X' && room.key !== 'PV' && mode !== 'dead';
+  pvpTick();
   if (was && !NET.proxy) { enemies = []; enterRoom(room.key); toast = {text:'Back in your own world', t:90}; }
   if (NET.proxy && NET.host.s.w) applyWorld(NET.host.s.w, !was);
   if (tick % 2 === 0) {
@@ -2496,7 +2501,7 @@ Object.assign(TRACKS, {
   }},
 });
 FIGHT.add('choirboss'); FIGHT.add('bellboss');
-Object.assign(ROOM_MUSIC, {t:'yard', n:'city', a:'ashroad', h:'ashroad', g:'crypt', o:'crypt', c:'crypt', s:'spire', b:'spire', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
+Object.assign(ROOM_MUSIC, {PV:'ashroad', t:'yard', n:'city', a:'ashroad', h:'ashroad', g:'crypt', o:'crypt', c:'crypt', s:'spire', b:'spire', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
 
 function musSting(kind) {
   if (!ac || !soundOn || !musicOn) return;
@@ -4258,6 +4263,7 @@ const DISTRICTS = {
 const districtOf = key => Object.keys(DISTRICTS).find(d => DISTRICTS[d].rooms.includes(key)) || 'low';
 let curDistrict = null, dcard = null;
 function districtEnter(key) {
+  if (key === 'PV' || key === 'BH') return false;
   const d = districtOf(key); if (d === curDistrict) return false;
   const first = !(save.districts || {})[d]; curDistrict = d;
   save.districts = save.districts || {}; save.districts[d] = true; persist();
@@ -4288,7 +4294,7 @@ function drawDistrictCard() {
 function enterRoom(key) {
   room = ROOMS[key];
   if (save && treeOn('defense', 2) && !bossMode) p.shield = Math.max(p.shield || 0, 99999);
-  if (!save.visited[key]) { save.visited[key] = true; persist(); }
+  if (!save.visited[key] && key !== 'PV') { save.visited[key] = true; persist(); }
   if (!districtEnter(key)) toast = {text:room.name, t:150}; else toast = null;
   enemies = room.ents.filter(e => 'gjukOerwlcbymzA'.includes(e.t)).map(e => makeEnemy(e.t, e.x, e.y));
   eshots = []; ebombs = []; pwaves = []; bfx = []; setBars(null); thralls = []; zaps = []; blasts = []; crumbles = {}; drops = [];
@@ -4430,6 +4436,7 @@ function hitArea(test, dmg, kx, col = '#ffcf8a', hitSet) {
   }
   if (boss && !['wait', 'intro', 'dying'].includes(boss.state) && !(hitSet && hitSet.has(boss))) { const bx = bossBoxes(boss).body; if (test(bx)) { if (hitSet) hitSet.add(boss); bossDamage(dmg, false); n++; } }
   if (n) sfx.hit();
+  if (pvp && dmg > 0) pvpStrike(test, dmg, p.x + p.w / 2);
   return n;
 }
 const inCircle = (cx, cy, r) => e => { const ex = Math.max(e.x, Math.min(cx, e.x + e.w)), ey = Math.max(e.y, Math.min(cy, e.y + e.h)); return Math.hypot(ex - cx, ey - cy) < r; };
@@ -4728,6 +4735,7 @@ function applyAid(kind, amt) {
   if (kind === 'b') { p.song = Math.max(p.song || 0, amt); burst(cx, p.y + 8, '#ffd65a', 12, 1.6); pops.push({x:cx, y:p.y - 6, v:0, life:30, txt:'RALLY'}); }
 }
 function die() {
+  if (pvp) { pvp.deaths++; pvp.by2 = pvp.by; mode = 'dead'; modeT = 70; p.downed = false; wakeReq = false; if (pvp.byName) toast = {text:pvp.byName + ' killed you', t:120}; return; }
   p.downed = NET.on && NET.peers.some(q => q.s.rk === room.key && q.s.md === 'play' && (CLASSES[q.s.c] || {}).group === 'support');
   mode = 'dead'; modeT = p.downed ? 600 : 100; save.deaths++; wakeReq = false;
   if (!p.downed) fallFully(); persist();
@@ -4809,7 +4817,7 @@ function update() {
   if (mode === 'dead') {
     if (modeT > 0) modeT--;
     if (p.downed && modeT <= 0) { p.downed = false; fallFully(); persist(); modeT = 100; wakeReq = false; }
-    else if (!p.downed && modeT <= 40 && (wakeReq || Object.keys(hit).some(q => hit[q]))) { mode = 'play'; wakeReq = false; if (bossMode) bossHall('You fell. Try again.'); else { startAt('T'); toast = {text:save.grave ? 'Your shards wait where you fell' : 'You wake in the Training Yard', t:150}; } }
+    else if (!p.downed && modeT <= 40 && (wakeReq || Object.keys(hit).some(q => hit[q]))) { mode = 'play'; wakeReq = false; if (pvp) pvpSpawn(); else if (bossMode) bossHall('You fell. Try again.'); else { startAt('T'); toast = {text:save.grave ? 'Your shards wait where you fell' : 'You wake in the Training Yard', t:150}; } }
     clearHits(); updateParts(); return;
   }
   if (mode === 'respawn') { if (--modeT <= 0) mode = 'play'; clearHits(); return; }
@@ -4877,7 +4885,7 @@ function update() {
     parts.push({x:p.x + p.w/2, y:p.y + 3 + Math.random()*9, vx:-p.face*.6, vy:0, life:18, color:'#ffb36a', size:2});
   } else {
     if (p.lock > 0) p.lock--;
-    else { p.vx += (ax*cls().speed*MOVE_K - p.vx) * (p.onGround ? .35 : .2); if (ax) p.face = ax; }
+    else { p.vx += (ax*cls().speed*MOVE_K*(p.swift > 0 ? 1.3 : 1) - p.vx) * (p.onGround ? .35 : .2); if (ax) p.face = ax; }
     if (pInWater()) waterPhys(ax); else p.vy = Math.min(p.vy + GRAV, p.dive ? 8 : Math.max(FALL, p.vy));
     if (p.noCut > 0) p.noCut--;
     else if (!held.jump && p.vy < -2) p.vy += .45;
@@ -4921,6 +4929,7 @@ function update() {
   else if (A.type === 'melee' && p.atkT > A.dur * .35 && A.low) atkBox = {x:p.face > 0 ? p.x + p.w - 2 : p.x - A.reach, y:p.y + p.h - 13, w:A.reach + 2, h:13};
   else if (A.type === 'melee' && p.atkT > A.dur * .35 && p.up) atkBox = {x:p.x + p.w / 2 - Math.max(12, A.h / 2 + 2), y:p.y - A.reach - 2, w:Math.max(24, A.h + 4), h:A.reach + 10};
   else if (A.type === 'melee' && p.atkT > A.dur * .35) atkBox = A.both ? {x:p.x - A.reach, y:p.y + 9 - A.h/2, w:p.w + A.reach * 2, h:A.h} : {x: p.face > 0 ? p.x + p.w - 2 : p.x - A.reach, y: p.y + 9 - A.h/2, w: A.reach + 2, h: A.h};
+  if (pvp && atkBox) pvpStrike(inBox(atkBox), curAtk().dmg, p.x + p.w / 2);
   if (atkBox && cls().ward) for (const q of eshots) if (q.life > 0 && q.x > atkBox.x - 4 && q.x < atkBox.x + atkBox.w + 4 && q.y > atkBox.y - 4 && q.y < atkBox.y + atkBox.h + 4) { q.life = 0; burst(q.x, q.y, '#ffd27a', 6, 1.4); sfx.clang(); }
   for (const e of enemies) {
     if (e.flash > 0) e.flash--;
@@ -6456,7 +6465,7 @@ function drawHUD() {
     ctx.fillRect(ox + (r.gx - GX0) * (cs + 1), oy + (r.gy - GY0) * (chh + 1), r.cw * (cs + 1) - 1, r.ch * (chh + 1) - 1);
     if (r.ents.some(e => e.t === 'N') && !save.found[k] && r !== room) { ctx.fillStyle = '#e3d6bd'; ctx.fillRect(ox + (r.gx - GX0) * (cs + 1) + 1, oy + (r.gy - GY0) * (chh + 1) + 1, 1, 1); }
   }
-  const gl = !bossMode && objective();
+  const gl = !bossMode && !pvp && objective();
   if (gl && tick % 50 < 34) { const r = ROOMS[gl.k]; ctx.strokeStyle = '#ffc44a'; ctx.lineWidth = 1; ctx.strokeRect(ox + (r.gx - GX0) * (cs + 1) - .5, oy + (r.gy - GY0) * (chh + 1) - .5, r.cw * (cs + 1), r.ch * (chh + 1)); }
   if (gl) { const nm = gl.k === room.key ? 'Here: ' + gl.text : '▸ ' + ROOMS[gl.k].name; ctx.font = '8px Silkscreen, ui-monospace, monospace'; const w = Math.ceil(ctx.measureText(nm).width) + 10, y0 = 6 + GH * (chh + 1) + 28; ctx.fillStyle = 'rgba(16,10,8,.72)'; ctx.fillRect(VW - 6 - w, y0, w, 13); txt(nm, VW - 11, y0 + 3, 8, '#ffc44a', 'right'); }
   if (room && !bossMode && tick % 40 < 28) { const mx = ((room.ox + p.x) / (CW*T) - GX0) * (cs + 1), my = ((room.oy + p.y) / (CH*T) - GY0) * (chh + 1); ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(ox + mx), Math.round(oy + my), 2, 2); }
@@ -6895,7 +6904,7 @@ function render() {
   drawPeers();
   if (mode !== 'dead') drawPlayer();
   if (mode !== 'dead') drawParry();
-  drawSkillFx(); drawMoveFx(); drawShards();
+  drawSkillFx(); drawMoveFx(); drawShards(); drawPvp();
   drawDropHint();
   for (const q of parts) { ctx.globalAlpha = Math.min(1, q.life / 20); ctx.fillStyle = q.color; ctx.fillRect(q.x, q.y, q.size, q.size); }
   ctx.globalAlpha = 1; drawRegionFront();
@@ -6931,7 +6940,7 @@ function render() {
   if (target && !p.hook) keycap(keyOf('hook'), target.x + 8 - cx, target.y - 18 - cy);
   ctx.restore();
 
-  if (mode !== 'bintro') drawHUD(); drawDistrictCard(); drawVoice(); drawAdminInfo(); drawBintro();
+  if (mode !== 'bintro') drawHUD(); drawPvpHud(); drawDistrictCard(); drawVoice(); drawAdminInfo(); drawBintro();
   if (mode === 'respawn') { ctx.fillStyle = `rgba(10,6,5,${modeT / 24})`; ctx.fillRect(0, 0, VW, VH); }
   if (boss && room && room.key === 'X' && boss.phase > 1 && mode !== 'won') { ctx.fillStyle = `rgba(255,50,10,${.03 * (boss.phase - 1) + .02 * Math.sin(tick * .05)})`; ctx.fillRect(0, 0, VW, VH); }
   drawEpilogue();
@@ -6950,7 +6959,7 @@ function render() {
     ctx.fillStyle = '#000'; ctx.fillText('You fall in the rubble', VW/2 + 1, VH/2 - 11); ctx.fillStyle = '#e8503a'; ctx.fillText('You fall in the rubble', VW/2, VH/2 - 12);
     ctx.fillStyle = '#a07a46'; ctx.fillRect(VW/2 - 60, VH/2 + 6, 120, 1);
     if (save.grave && !bossMode) txt('Your ' + save.grave.n + ' shards lie where you fell. Die again first and they are gone.', VW/2, VH/2 + 28, 8, '#ffb04a', 'center');
-    if (modeT <= 40) { ctx.globalAlpha = .55 + .45 * Math.sin(tick * .08); txt(bossMode ? 'Click to go back to the hall' : 'Click to wake in the Training Yard', VW/2, VH/2 + 44, 8, '#fff0d8', 'center'); ctx.globalAlpha = da; }
+    if (modeT <= 40) { ctx.globalAlpha = .55 + .45 * Math.sin(tick * .08); txt(pvp ? 'Click to jump back in' : bossMode ? 'Click to go back to the hall' : 'Click to wake in the Training Yard', VW/2, VH/2 + 44, 8, '#fff0d8', 'center'); ctx.globalAlpha = da; }
     txt(bossMode ? 'The statue waits.' : 'You fall, and the city keeps burning.', VW/2, VH/2 + 14, 8, '#c9b8a8', 'center');
     ctx.globalAlpha = 1;
   }
@@ -7121,7 +7130,7 @@ function drawCut() {
 /* ---------- Title screen ---------- */
 const hasProgress = () => save.clsChosen && (save.frames > 300 || save.notes > 0);
 function openTitle() {
-  mode = 'title';
+  mode = 'title'; if (pvp) { pvp = null; p.fury = p.swift = 0; }
   const opts = [], btn = (text, run) => { opts.push({text, run}); return `<button class="opt" id="opt${opts.length - 1}" data-i="${opts.length - 1}"><span class="t">${esc(text)}</span></button>`; };
   let html = `<div class="titlemenu"><div class="opts">`;
   if (slotList().length) html += btn('Continue', () => openSaves());
@@ -7224,6 +7233,83 @@ const BOSS_LIST = [
   {k:'bell', say:'I rang until my hands bled. You heard it. You stayed home.', room:'b', name:'The Bellwright', sub:'He rang it until his hands bled. Nobody came.', from:'left'},
   {k:'ash', say:'Your sister is behind me. Come and take her.', room:'X', name:'The Ash-King', sub:'We had a deal, warden.', from:'right'}];
 makeRoom('BH', 'Hall of Statues', 40, 12, 3, 1, {indoor:true, dark:.6}, B => { B.solid(0, 16, 95, 17); for (let i = 0; i < 6; i++) B.solid(10 + i * 13, 14, 14 + i * 13, 15); B.put('P', 4, 15); });
+makeRoom('PV', 'The Pit', 40, 14, 3, 2, {dark:.38, noGiants:true}, B => {
+  B.solid(0, 34, 95, 35); B.solid(44, 26, 51, 33);
+  B.ledge(6, 16, 29); B.ledge(79, 89, 29); B.ledge(20, 32, 24); B.ledge(63, 75, 24); B.ledge(4, 12, 19); B.ledge(42, 53, 19); B.ledge(83, 91, 19);
+  B.ledge(16, 26, 14); B.ledge(69, 79, 14); B.ledge(34, 44, 9); B.ledge(51, 61, 9); B.ledge(8, 14, 5); B.ledge(81, 87, 5);
+  B.solid(30, 30, 33, 31); B.solid(62, 30, 65, 31);
+  for (const [x, y] of [[24, 10], [71, 10], [47, 3], [10, 14], [85, 14], [36, 20], [59, 20], [28, 3], [67, 3]]) B.put('a', x, y);
+  B.put('W', 3, 33); B.put('M', 92, 33);
+});
+const PV_SPAWNS = [[7, 33], [88, 33], [8, 18], [87, 18], [38, 8], [57, 8]];
+const PV_POWERS = [[47, 25, 'fury'], [11, 28, 'heal'], [84, 28, 'heal'], [39, 8, 'swift'], [56, 8, 'swift'], [11, 4, 'aegis'], [84, 4, 'aegis'], [47, 18, 'fury']];
+const PV_KIND = {heal:{col:'#ff6a5a', name:'Heart'}, fury:{col:'#ff3a1a', name:'Fury'}, swift:{col:'#7ad8ff', name:'Swift'}, aegis:{col:'#fff0b8', name:'Aegis'}};
+let pvp = null;
+function enterPvp() {
+  if (!NET.on || pvp || bossMode) return;
+  pvp = {back:{k:room.key, x:p.x, y:p.y}, kills:0, deaths:0, seq:0, out:[], seen:{}, pd:{}, cd:{}, by:null, by2:null, pw:PV_POWERS.map(() => 0)};
+  enterRoom('PV'); pvpSpawn(); banner = {title:'The Pit', sub:'Friends are just enemies who have not had the chance.', color:'#ff5a3a', t:220};
+}
+function leavePvp() {
+  if (!pvp) return; const b = pvp.back; pvp = null; p.fury = p.swift = 0;
+  enterRoom(ROOMS[b.k] ? b.k : 'T'); p.x = b.x; p.y = b.y; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; p.inv = 60; snapCam();
+}
+function pvpSpawn() {
+  const far = PV_SPAWNS.map(([x, y]) => ({x, y, d:Math.min(...NET.peers.filter(q => q.s.rk === 'PV').map(q => Math.hypot(q.s.x - x * T, q.s.y - y * T)), 9999)})).sort((a, b) => b.d - a.d)[0];
+  p.x = far.x * T + 2; p.y = (far.y + 1) * T - p.h; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; p.inv = 90; p.dashT = 0; p.hook = null; p.shield = 0; snapCam();
+}
+const pvpDmg = d => Math.max(1, Math.min(4, Math.round(d || 1))) + (p.fury > 0 ? 1 : 0);
+function pvpStrike(test, dmg, fromX) {
+  if (!pvp || room.key !== 'PV' || mode !== 'play') return;
+  for (const q of NET.peers) {
+    const s = q.s; if (s.rk !== 'PV' || s.md !== 'play' || !s.pi || s.iv) continue;
+    const b = {x:s.x, y:s.y, w:12, h:22};
+    if (!test(b) || (pvp.cd[s.pi] || 0) > tick) continue;
+    pvp.cd[s.pi] = tick + 22; pvp.out.push([++pvp.seq, s.pi, pvpDmg(dmg), Math.round(fromX)]); if (pvp.out.length > 8) pvp.out.shift();
+    burst(b.x + 6, b.y + 11, '#ff6a4a', 10, 2); sfx.hit(); shake = Math.max(shake, 3);
+  }
+}
+function pvpTick() {
+  if (!pvp) return;
+  if (room.key !== 'PV') { pvp = null; return; }
+  for (const q of NET.peers) {
+    const s = q.s; if (!s.pi) continue;
+    if (Array.isArray(s.pv)) {
+      const seen = pvp.seen[s.pi], top = s.pv.reduce((m, a) => Math.max(m, a[0]), seen || 0);
+      if (seen !== undefined && s.rk === 'PV') for (const [seq, to, dmg, fx] of s.pv) if (seq > seen && to === NET.pid && mode === 'play' && !(p.inv > 0)) { pvp.by = s.pi; pvp.byName = s.n; hurt(fx, Math.max(1, Math.min(5, dmg))); }
+      pvp.seen[s.pi] = top;
+    }
+    if (Array.isArray(s.pk)) { const was = pvp.pd[s.pi]; if (was !== undefined && s.pk[0] > was && s.pk[1] === NET.pid) { pvp.kills++; toast = {text:'You killed ' + (s.n || 'them'), t:120}; sfx.horn2(); } pvp.pd[s.pi] = s.pk[0]; }
+  }
+  if (p.fury > 0) p.fury--; if (p.swift > 0) p.swift--;
+  PV_POWERS.forEach(([x, y, k], i) => {
+    if (pvp.pw[i] > 0) { pvp.pw[i]--; return; }
+    if (mode === 'play' && Math.abs(p.x + p.w / 2 - (x * T + 8)) < 14 && Math.abs(p.y + p.h / 2 - (y * T + 8)) < 18) {
+      pvp.pw[i] = 900; sfx.pick(); burst(x * T + 8, y * T + 8, PV_KIND[k].col, 20, 2.4); toast = {text:PV_KIND[k].name, t:80};
+      if (k === 'heal') p.hp = Math.min(p.max, p.hp + 2); else if (k === 'fury') p.fury = 600; else if (k === 'swift') p.swift = 600; else p.shield = 99999;
+    }
+  });
+}
+function drawPvp() {
+  if (!pvp || room.key !== 'PV') return;
+  PV_POWERS.forEach(([x, y, k], i) => {
+    if (pvp.pw[i] > 0) return;
+    const cx = x * T + 8, cy = y * T + 8 + Math.sin(tick * .08 + i) * 2, c = PV_KIND[k].col;
+    ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 16); g.addColorStop(0, c + '99'); g.addColorStop(1, c + '00'); ctx.fillStyle = g; ctx.fillRect(cx - 16, cy - 16, 32, 32); ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(cx, cy - 6); ctx.lineTo(cx + 5, cy); ctx.lineTo(cx, cy + 6); ctx.lineTo(cx - 5, cy); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - 1, cy - 2, 2, 4);
+  });
+  if (p.fury > 0 && tick % 3 === 0) parts.push({x:p.x + Math.random() * p.w, y:p.y + p.h, vx:0, vy:-1, life:16, color:'#ff3a1a', size:1});
+  if (p.swift > 0 && tick % 3 === 0) parts.push({x:p.x + p.w / 2 - p.vx * 2, y:p.y + 6 + Math.random() * 12, vx:-p.vx * .2, vy:0, life:12, color:'#7ad8ff', size:1});
+}
+function drawPvpHud() {
+  if (!pvp || mode === 'title') return;
+  const rows = [[NET.name || 'You', pvp.kills, pvp.deaths, true], ...NET.peers.filter(q => q.s.rk === 'PV' && q.s.pk).map(q => [q.s.n || 'Friend', q.s.pk[2] || 0, q.s.pk[0] || 0, false])].sort((a, b) => b[1] - a[1]);
+  const w = 132, x = (VW - w) / 2, y = 6;
+  ctx.fillStyle = 'rgba(16,10,8,.78)'; ctx.fillRect(x, y, w, 12 + rows.length * 10);
+  txt('THE PIT · kills / deaths', VW / 2, y + 2, 8, '#ff8a5a', 'center');
+  rows.forEach(([n, k, d, me], i) => { txt(String(n).slice(0, 12), x + 6, y + 12 + i * 10, 8, me ? '#ffd27a' : '#e3d6bd'); txt(k + ' / ' + d, x + w - 6, y + 12 + i * 10, 8, me ? '#ffd27a' : '#e3d6bd', 'right'); });
+}
 let bintro = null;
 const DIFFS = {easy:{name:'Easy', hp:.6, dmg:0, hearts:2}, normal:{name:'Normal', hp:1, dmg:0, hearts:0}, hard:{name:'Hard', hp:1.5, dmg:1, hearts:0}};
 const golds = () => { try { return JSON.parse(localStorage.getItem('wallfall-bossgold') || '{}'); } catch (e) { return {}; } };
@@ -7370,6 +7456,7 @@ function openPause() {
     {text:'Resume'}, {text:'Full screen', run:click('fsb')}, {text:'Co-op', run:click('coop')},
     {text:acct ? 'Account · ' + acct.name : 'Account', run:click('acctb')}, {text:'Controls', run:click('ctl')},
     {text:'Sound', run:() => openSound(openPause)}, {text:'Admin panel', run:() => openAdmin()},
+    ...((NET.on || pvp) && !bossMode ? [pvp ? {text:'Leave the Pit', run:() => leavePvp()} : {text:'PvP: the Pit', run:() => enterPvp()}] : []),
     ...(bossMode ? [{text:'Back to the hall', run:() => bossHall()}] : []), {text:bossMode ? 'Leave boss fights' : 'Quit to the title screen', run:() => { endBossMode(); persist(); if (acct) cloudNow(); parts = []; openTitle(); }}];
   const btns = opts.map((o, i) => `<button class="opt" id="opt${i}" data-i="${i}"><span class="t">${esc(o.text)}</span></button>`).join('');
   openDlg({opts, html:`<div class="card pausecard"><p class="kicker">Paused${NET.on ? ' · co-op keeps running' : ''}</p><h2>${esc(room ? room.name : 'Wallfall')}</h2><div class="opts pgrid">${btns}</div></div>`});
