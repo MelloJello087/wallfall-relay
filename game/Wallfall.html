@@ -273,7 +273,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.41';
+const VERSION = '0.1.42';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -302,6 +302,7 @@ function makeRoom(key, name, gx, gy, cw, ch, opt, build) {
 
 makeRoom('T', 'Training Yard', -3, 3, 3, 1, {dark:.4}, B => {
   B.solid(0, 16, 95, 17); B.clear(95, 13, 95, 15);
+  B.clear(26, 16, 28, 17);
   B.put('M', 2, 15); B.put('P', 5, 15); B.put('W', 8, 15); B.put('S', 11, 15); B.put('&', 13, 15);
   B.put('d', 16, 15); B.put('%', 18, 15); B.put('d', 20, 15);
   B.ledge(25, 31, 9); B.put('h', 28, 10); B.put('S', 23, 15);
@@ -555,6 +556,16 @@ makeRoom('h', 'The Cinder Halls', 11, 1, 2, 1, {indoor:true, biome:'ash'}, B => 
   B.ledge(8, 14, 11); B.solid(4, 6, 6, 9);
   B.put('k', 5, 5); B.put('c', 40, 1); B.put('c', 24, 1); B.put('u', 12, 15); B.put('y', 11, 10); B.put('w', 50, 15);
   B.put('q', 3, 15);
+});
+makeRoom('t', 'The Proving Pit', -3, 4, 2, 1, {indoor:true, dark:.7}, B => {
+  B.solid(0, 16, 63, 17); B.clear(26, 0, 28, 0);
+  B.ledge(24, 30, 3); B.ledge(18, 23, 6); B.ledge(24, 30, 9); B.ledge(18, 23, 12);
+  B.ledge(4, 10, 11); B.ledge(44, 50, 11); B.ledge(54, 60, 7); B.ledge(36, 42, 6);
+});
+makeRoom('n', "The Crow's Nest", 0, 1, 1, 1, {dark:.35, skin:'roof'}, B => {
+  B.clear(20, 17, 27, 17); B.ledge(19, 28, 15); B.stakes(1, 18, 16); B.stakes(29, 30, 16);
+  B.crumble(13, 16, 12); B.crumble(7, 10, 9); B.ledge(1, 5, 6); B.put('R', 4, 5);
+  B.put('j', 10, 3); B.put('j', 22, 5); B.put('m', 16, 4);
 });
 
 const EXTRA = [
@@ -827,7 +838,7 @@ const treeHas = (g, i) => !!(save && save.tree && save.tree[g + i]);
 const treeOn = (g, i) => treeHas(g, i) && cls().group === g;
 const hasteK = () => 1 - .12 * upLv('haste');
 const CACHES = [['H', 23, 4, 8], ['C', 4, 3, 8], ['D', 22, 3, 15], ['B', 19, 3, 8], ['I', 150, 3, 8], ['F', 119, 7, 15], ['O', 56, 2, 8], ['W', 89, 3, 8], ['Q', 86, 5, 15],
-  ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8], ['g', 33, 5, 15], ['o', 13, 6, 8], ['s', 24, 9, 15]];
+  ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8], ['n', 2, 5, 25], ['t', 57, 6, 12], ['g', 33, 5, 15], ['o', 13, 6, 8], ['s', 24, 9, 15]];
 let sparks = [], shardShow = null, shardFlash = 0;
 function shardVal(e) { return e.t === 'boss' ? 40 : e.t === 'u' ? 4 : e.t === 'z' ? 3 : 'ewcylm'.includes(e.t) ? 2 : 1; }
 let gems = [], wakeReq = false;
@@ -1551,7 +1562,7 @@ function closeWardrobe() {
 }
 
 /* ---------- State ---------- */
-const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}, lit:{}, grave:null, tree:{}});
+const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}, lit:{}, grave:null, tree:{}, roam:false});
 const SAVE_KEY = 'wallfall-save';
 let save = fresh();
 let bossMode = null;
@@ -2429,7 +2440,7 @@ Object.assign(TRACKS, {
   }},
 });
 FIGHT.add('choirboss'); FIGHT.add('bellboss');
-Object.assign(ROOM_MUSIC, {a:'ashroad', h:'ashroad', g:'crypt', o:'crypt', c:'crypt', s:'spire', b:'spire', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
+Object.assign(ROOM_MUSIC, {t:'yard', n:'city', a:'ashroad', h:'ashroad', g:'crypt', o:'crypt', c:'crypt', s:'spire', b:'spire', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
 
 function musSting(kind) {
   if (!ac || !soundOn || !musicOn) return;
@@ -2830,6 +2841,12 @@ function drawSpawn(e) {
 
 /* ---------- Arenas ---------- */
 const ARENAS = {
+  t:{name:'The Proving Pit', sub:'Five waves. Nobody is watching.', doneSub:'The pit goes quiet. It gave up 80 shards.', noCog:true, reward:80, inside:() => p.onGround && p.y > 13 * T, bars:[[26, 28, 0, 0]], waves:[
+    [['g', 8, 15], ['g', 40, 15], ['A', 50, 15], ['A', 12, 15]],
+    [['z', 20, 15], ['z', 44, 15], ['j', 30, 4]],
+    [['m', 10, 6], ['m', 50, 6], ['u', 30, 15]],
+    [['y', 6, 15], ['y', 56, 15], ['b', 20, 15], ['A', 40, 15], ['A', 44, 15]],
+    [['u', 16, 15], ['u', 46, 15], ['z', 30, 15], ['m', 30, 4]]]},
   a:{name:'Beyond the Last Gate', sub:'The bars fall behind you. His kin come up out of the ash.', doneSub:'The way down is open. He is waiting below.', noCog:true, inside:() => p.onGround && p.x > 8 * T, bars:[[0, 0, 13, 15], [56, 59, 16, 16]], waves:[
     [['g', 20, 15], ['g', 30, 15], ['u', 44, 15], ['g', 50, 15]],
     [['j', 12, 4], ['j', 30, 3], ['j', 48, 5], ['y', 23, 7], ['k', 49, 6]],
@@ -2867,7 +2884,8 @@ function updateArena() {
       else {
         a.stage = 'done'; save.arenas[a.key] = true; persist(); setBars(null); sfx.pick(); musSting('clear');
         banner = {title:'The bars rise', sub:a.cfg.doneSub || 'A gate cog lies where the last of them fell.', color:'#e8c48a', t:240};
-        if (!a.cfg.noCog) voice(VOICE_COG[Math.min(2, Object.keys(save.arenas).filter(k => ARENAS[k]).length - 1)] || VOICE_COG[0], 160);
+        if (a.cfg.reward) { gainShards(a.cfg.reward, p.x + p.w / 2, p.y); persist(); }
+        if (!a.cfg.noCog) voice(VOICE_COG[Math.min(2, Object.keys(save.arenas).filter(k => ARENAS[k] && !ARENAS[k].noCog).length - 1)] || VOICE_COG[0], 160);
       }
     }
   }
@@ -4167,7 +4185,7 @@ function drawDrops() {
 /* ---------- Rooms ---------- */
 /* ---------- Districts ---------- */
 const DISTRICTS = {
-  low:{name:'The Low City', sub:'Where you grew up. Where they spat on your mother’s name.', rooms:'TAHCEL', grade:'rgba(255,140,70,.3)', col:'#ffb47a'},
+  low:{name:'The Low City', sub:'Where you grew up. Where they spat on your mother’s name.', rooms:'TAHCELtn', grade:'rgba(255,140,70,.3)', col:'#ffb47a'},
   under:{name:'The Undercity', sub:'Everyone who ran from the giants ran down here first.', rooms:'BJKIVYD', grade:'rgba(70,130,170,.45)', col:'#9ac4dc'},
   wall:{name:'The Wallwalk', sub:'The Ash-King swore they would stop at the inner wall.', rooms:'F', grade:'rgba(190,180,170,.3)', col:'#d8ccc0'},
   gate:{name:'The Last Gate', sub:'It is waiting on the other side. It said it always keeps its word.', rooms:'GX', grade:'rgba(210,40,30,.42)', col:'#ff7a5a'},
@@ -6377,6 +6395,9 @@ function drawHUD() {
     ctx.fillRect(ox + (r.gx - GX0) * (cs + 1), oy + (r.gy - GY0) * (chh + 1), r.cw * (cs + 1) - 1, r.ch * (chh + 1) - 1);
     if (r.ents.some(e => e.t === 'N') && !save.found[k] && r !== room) { ctx.fillStyle = '#e3d6bd'; ctx.fillRect(ox + (r.gx - GX0) * (cs + 1) + 1, oy + (r.gy - GY0) * (chh + 1) + 1, 1, 1); }
   }
+  const gl = !bossMode && objective();
+  if (gl && tick % 50 < 34) { const r = ROOMS[gl.k]; ctx.strokeStyle = '#ffc44a'; ctx.lineWidth = 1; ctx.strokeRect(ox + (r.gx - GX0) * (cs + 1) - .5, oy + (r.gy - GY0) * (chh + 1) - .5, r.cw * (cs + 1), r.ch * (chh + 1)); }
+  if (gl) { const nm = gl.k === room.key ? 'Here: ' + gl.text : '▸ ' + ROOMS[gl.k].name; ctx.font = '8px Silkscreen, ui-monospace, monospace'; const w = Math.ceil(ctx.measureText(nm).width) + 10, y0 = 6 + GH * (chh + 1) + 28; ctx.fillStyle = 'rgba(16,10,8,.72)'; ctx.fillRect(VW - 6 - w, y0, w, 13); txt(nm, VW - 11, y0 + 3, 8, '#ffc44a', 'right'); }
   if (room && !bossMode && tick % 40 < 28) { const mx = ((room.ox + p.x) / (CW*T) - GX0) * (cs + 1), my = ((room.oy + p.y) / (CH*T) - GY0) * (chh + 1); ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(ox + mx), Math.round(oy + my), 2, 2); }
   const ny = oy + GH * (chh + 1) + 4;
   ctx.fillStyle = '#d8ccae'; ctx.fillRect(ox, ny + 2, 8, 7); ctx.fillStyle = '#a8977a'; ctx.fillRect(ox, ny + 5, 8, 1); ctx.fillStyle = '#8e2f22'; ctx.fillRect(ox + 3, ny + 4, 2, 2);
@@ -6416,7 +6437,29 @@ function drawHUD() {
 /* ---------- The map (M) ---------- */
 const mapc = document.getElementById('mapc');
 let mapStatic = null, mapKey = '', mapMarks = [], mapMe = null, grain = null;
+function objective() {
+  const it = (k, t) => { const e = ROOMS[k].ents.find(q => q.t === t); return e ? {x:e.x, y:e.y} : {x:ROOMS[k].w / 2, y:ROOMS[k].h - 3}; };
+  const go = (k, text, at) => Object.assign({k, text}, at || it(k, 'P'));
+  if (!save.hook) return go('D', 'Find the grapple line in the Ropewalk', it('D', 'G'));
+  if (!save.dbl) return go('F', 'Find the Wingbone on the Wallwalk', it('F', 'Y'));
+  if ((save.cogs || 0) < 3) { const k = ['V', 'Y', 'L'].find(q => !save.items[q + 'C' + it(q, 'C').x]); if (k) return go(k, save.arenas[k] ? 'Take the gate cog in ' + ROOMS[k].name : 'Win the fight in ' + ROOMS[k].name + ' for a gate cog', it(k, 'C')); }
+  if (!save.gateOpen) return go('G', 'Turn the winch at the Last Gate', it('G', 'B'));
+  if (!save.bossDead) return go('X', 'Go through the gate. He is waiting below.', {x:8, y:15});
+  return null;
+}
 function mapIcon(ic, x, y, still) {
+  if (ic === 'goal') {
+    if (!still) { const t = (tick % 60) / 60; ctx.strokeStyle = `rgba(200,140,20,${.8 * (1 - t)})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, 5 + t * 9, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.fillStyle = '#c8901a'; ctx.strokeStyle = '#4a2a0a'; ctx.lineWidth = .7; ctx.beginPath();
+    for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 - Math.PI / 2, rr = i % 2 ? 2.4 : 5.6; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+    ctx.closePath(); ctx.fill(); ctx.stroke(); return;
+  }
+  if (ic === 'ember' || ic === 'grave') {
+    ctx.fillStyle = ic === 'grave' ? '#8e2f22' : '#c4501a'; ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.quadraticCurveTo(x + 4.5, y, x + 2.5, y + 3.5); ctx.lineTo(x - 2.5, y + 3.5); ctx.quadraticCurveTo(x - 4.5, y, x, y - 5); ctx.fill();
+    ctx.fillStyle = '#f0b040'; ctx.beginPath(); ctx.arc(x, y + 1.2, 1.6, 0, Math.PI * 2); ctx.fill();
+    if (ic === 'grave') { ctx.strokeStyle = '#2a1d16'; ctx.lineWidth = .7; ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2); ctx.stroke(); }
+    return;
+  }
   if (ic === 'note') {
     if (!still) { const t = (tick % 70) / 70; ctx.strokeStyle = `rgba(142,47,34,${.55 * (1 - t)})`; ctx.lineWidth = .8; ctx.beginPath(); ctx.arc(x, y, 4 + t * 6, 0, Math.PI * 2); ctx.stroke(); }
     ctx.fillStyle = 'rgba(42,29,22,.25)'; ctx.fillRect(x - 3.6, y - 2.2, 8, 5.4);
@@ -6511,7 +6554,8 @@ function drawMapStatic() {
 
   const seen = k => save.visited[k];
   const touchesSeen = r => [...DOORS[r.key]].some(k => save.visited[k]);
-  const shown = RLIST.filter(r => seen(r.key) || touchesSeen(r));
+  const goal = objective();
+  const shown = RLIST.filter(r => seen(r.key) || touchesSeen(r) || goal && goal.k === r.key);
   const bx0 = Math.min(...shown.map(r => r.gx)), bx1 = Math.max(...shown.map(r => r.gx + r.cw));
   const by0 = Math.min(...shown.map(r => r.gy)), by1 = Math.max(...shown.map(r => r.gy + r.ch));
   const top = Y + 46, avH = H - 46 - 34, avW = W - 44;
@@ -6521,7 +6565,7 @@ function drawMapStatic() {
   const at = (r, tx, ty) => ({x:ox + ((r.gx - bx0) * CW + tx) * sc, y:oy + ((r.gy - by0) * CH + ty) * sc});
   ctx.setLineDash([2.5, 2.5]); ctx.lineWidth = .7;
   for (const r of RLIST) {
-    if (seen(r.key) || !touchesSeen(r)) continue;
+    if (seen(r.key) || !touchesSeen(r) && !(goal && goal.k === r.key)) continue;
     const q = R(r); ctx.fillStyle = 'rgba(120,90,60,.07)'; ctx.fillRect(q.x, q.y, q.w, q.h); ctx.strokeStyle = 'rgba(70,45,28,.55)'; ctx.strokeRect(q.x + 1, q.y + 1, q.w - 2, q.h - 2);
     ctx.font = 'italic 14px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(70,45,28,.5)'; ctx.fillText('?', q.x + q.w / 2, q.y + q.h / 2);
   }
@@ -6530,6 +6574,8 @@ function drawMapStatic() {
   for (const r of RLIST) if (seen(r.key)) { const q = R(r); ctx.fillRect(q.x, q.y, q.w, q.h); }
   ctx.restore();
   for (const r of RLIST) if (seen(r.key)) inkRoom(r, R(r), sc);
+  for (const r of RLIST) if (seen(r.key)) { const D = DISTRICTS[districtOf(r.key)], q = R(r); ctx.globalAlpha = .16; ctx.fillStyle = D.col; ctx.fillRect(q.x, q.y, q.w, q.h); ctx.globalAlpha = .55; ctx.fillRect(q.x, q.y + q.h - 1.4, q.w, 1.4); ctx.globalAlpha = 1; }
+  if (goal) { const q = R(ROOMS[goal.k]); ctx.save(); ctx.setLineDash([3, 2]); ctx.strokeStyle = 'rgba(200,140,20,.95)'; ctx.lineWidth = 1.4; ctx.strokeRect(q.x - 1.5, q.y - 1.5, q.w + 3, q.h + 3); ctx.restore(); }
   { const q = R(room); ctx.fillStyle = 'rgba(214,110,40,.12)'; ctx.fillRect(q.x, q.y, q.w, q.h); ctx.strokeStyle = 'rgba(160,50,25,.85)'; ctx.lineWidth = 1; ctx.strokeRect(q.x + .5, q.y + .5, q.w - 1, q.h - 1); }
   mapMarks = [];
   for (const r of RLIST) {
@@ -6551,7 +6597,10 @@ function drawMapStatic() {
     }
     const rb = REG[r.key];
     if (rb && rb.boss && !(save.bosses || {})[r.key]) { const m = at(r, rb.bossAt[0] + .5, rb.bossAt[1] + .5); mapMarks.push({ic:'arena', x:m.x, y:m.y}); }
+    for (const c of CACHES) if (c[0] === r.key && !(save.caches || {})[c[0] + c[1] + ',' + c[2]]) { const m = at(r, c[1] + .5, c[2] + .5); mapMarks.push({ic:'ember', x:m.x, y:m.y}); }
+    if (save.grave && save.grave.k === r.key) { const m = at(r, save.grave.x / T + .5, save.grave.y / T + 1); mapMarks.push({ic:'grave', x:m.x, y:m.y}); }
   }
+  if (goal) { const m = at(ROOMS[goal.k], goal.x + .5, goal.y + .5); mapMarks.push({ic:'goal', x:m.x, y:m.y}); }
   mapMe = at(room, (p.x + p.w / 2) / T, (p.y + p.h) / T);
   ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineJoin = 'round';
   for (const r of RLIST) {
@@ -6598,6 +6647,7 @@ function drawMapStatic() {
   ctx.fillStyle = wg; ctx.beginPath(); ctx.arc(sx, sy, 7.4, 0, Math.PI * 2); ctx.fill();
   ctx.font = '10px "IM Fell English SC", Georgia, serif'; ctx.fillStyle = '#f6e2c8'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(save.notes), sx, sy + .5);
   ctx.font = 'italic 10px "IM Fell English", Georgia, serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#3e2c20'; ctx.fillText('of six notes', sx + 14, sy + 1);
+  ctx.font = 'italic 10px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#5a1a12'; ctx.fillText(goal ? 'Next: ' + goal.text : 'The city is yours. Go where you like.', VW / 2, ty0 + 31);
   const cx0 = X + W - 30, cy0 = Y + 28;
   ctx.strokeStyle = 'rgba(42,29,22,.55)'; ctx.lineWidth = .5; ctx.beginPath(); ctx.arc(cx0, cy0, 12.5, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx0, cy0, 10.5, 0, Math.PI * 2); ctx.stroke();
   for (let i = 0; i < 8; i++) {
@@ -6610,7 +6660,7 @@ function drawMapStatic() {
   const ly = Y + H - 20;
   ctx.fillStyle = 'rgba(62,44,32,.4)'; ctx.fillRect(X + 18, ly - 10, W - 36, .5);
   let lx = X + 24;
-  for (const [ic, label] of [['you', 'You'], ['note', 'Note'], ['item', 'Supplies'], ['person', 'Survivor'], ['arena', 'Fight'], ['cog', 'Cog'], ['gate', 'Gate']]) {
+  for (const [ic, label] of [['you', 'You'], ['goal', 'Next'], ['note', 'Note'], ['item', 'Supplies'], ['person', 'Survivor'], ['arena', 'Fight'], ['ember', 'Shards'], ['gate', 'Gate']]) {
     mapIcon(ic, lx + 4, ly + (ic === 'you' ? 4.5 : 0), true);
     ctx.font = '9.5px "IM Fell English", Georgia, serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#2a1d16';
     ctx.fillText(label, lx + 12, ly + .5); lx += 22 + ctx.measureText(label).width + 4;
@@ -6624,7 +6674,7 @@ function drawBigMap() {
   const dpr = Math.min(3, window.devicePixelRatio || 1);
   const W = Math.max(512, Math.round((mapc.clientWidth || 512) * dpr)), H = Math.round(W * VH / VW), s = W / VW;
   if (mapc.width !== W || mapc.height !== H) { mapc.width = W; mapc.height = H; mapKey = ''; }
-  const key = JSON.stringify([save.visited, save.found, save.items, save.gone, save.notes, save.arenas, save.gateOpen, room.key, Math.round(p.x), Math.round(p.y), W, keyOf('map'), document.fonts && document.fonts.status]);
+  const key = JSON.stringify([save.visited, save.found, save.items, save.gone, save.notes, save.arenas, save.gateOpen, save.hook, save.dbl, save.cogs, save.bossDead, save.caches, save.grave, save.lit, save.bosses, room.key, Math.round(p.x), Math.round(p.y), W, keyOf('map'), document.fonts && document.fonts.status]);
   const main = ctx;
   try {
     if (key !== mapKey || !mapStatic) {
@@ -7491,7 +7541,7 @@ function showEnding(k) {
   }
   const n = {crown:'1', low:'2', silent:'3'}[k];
   openDlg({kicker:`Ending ${n} of 3 · ${save.notes}/6 notes · ${time} · cruelty ${save.tide} · remorse ${save.ember}`, title, body,
-    opts:[{text:'Start again', tag:'Begins a new game', run:newGame}]});
+    opts:[{text:'Keep exploring', tag:'The city is still burning. Wander it.', run:() => { save.roam = true; persist(); epi = null; ending = null; mode = 'play'; startAt('T'); banner = {title:'The city is yours', sub:'Nothing is waiting for you now. Go where you like.', color:'#ff8a3d', t:260}; }}, {text:'Start again', tag:'Begins a new game', run:newGame}]});
 }
 
 /* ---------- People you can talk to ---------- */
@@ -7908,7 +7958,7 @@ function start(data) {
   if (snap && ROOMS[snap.room] && snap.v === 2) {
     save = Object.assign(fresh(), snap.save); p.max = maxHp(); p.x = snap.x; p.y = snap.y; p.hp = snap.hp || p.max; enterRoom(snap.room);
   } else {
-    if (save.won) { save = fresh(); persist(); }
+    if (save.won && !save.roam) { save = fresh(); persist(); }
     startAt('T');
   }
   if (save.worldV !== 2 && save.worldV !== 3 && save.worldV !== 4) {
