@@ -52,6 +52,15 @@ canvas:focus-visible{box-shadow:0 0 0 2px var(--ember)}
 .keys span{display:inline-flex;gap:5px;align-items:center;min-width:0}
 kbd{font-family:var(--ui);font-size:.6rem;color:#2a1d16;background:#e3d6bd;border:0;box-shadow:0 2px 0 #8a7a62, inset 0 1px 0 #fff6e6;border-radius:2px;padding:2px 6px;min-width:1.4em;text-align:center}
 .btns{display:flex;flex-wrap:wrap;gap:8px}
+.bar{display:none}   /* everything that was here now lives in the pause menu */
+.menuov[hidden]{display:none}
+.menuov{position:absolute;bottom:26px;right:12px;z-index:2;width:30px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;border:1px solid #a07a4666;border-radius:3px;background:#140d0bb0;color:#e3d6bd;opacity:.6;cursor:pointer}
+.menuov:hover,.menuov:focus-visible{opacity:1;outline:none;border-color:#ff9a5a}
+.menuov svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.card.pausecard{max-width:440px}
+.card.pausecard .opts.pgrid{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}
+.card.pausecard button.opt .t{font-size:.98rem}
+@media (max-width:420px){ .card.pausecard .opts.pgrid{grid-template-columns:1fr} }
 button{font-family:var(--ui);font-size:.64rem;letter-spacing:.06em;color:var(--ash);background:linear-gradient(180deg,#3a2e28,#241b17);border:1px solid #5a4636;border-radius:3px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:inset 0 1px 0 #ffffff14}
 button svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 button:hover{border-color:var(--ember);color:#ffd2a0}
@@ -224,7 +233,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
     <div><p class="eyebrow">A villain's metroidvania</p><h1>Wallfall</h1></div>
     <p class="tag">You opened the Outer Gate and let the Colossi in. Now you climb toward the last gate still standing. Six notes remember what you did.</p>
   </header>
-  <div class="frame"><canvas id="game" width="512" height="288" tabindex="0" aria-label="Wallfall game screen"></canvas><canvas id="mapc" class="mapc" hidden aria-label="Map of the city"></canvas><button class="fsx" id="fsx" type="button">Exit full screen</button><p class="ver" id="ver"></p><div class="dlg" id="dlg" hidden role="dialog" aria-modal="true"></div></div>
+  <div class="frame"><canvas id="game" width="512" height="288" tabindex="0" aria-label="Wallfall game screen"></canvas><canvas id="mapc" class="mapc" hidden aria-label="Map of the city"></canvas><button id="menuov" class="menuov" aria-label="Menu"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h10"/></svg></button><button class="fsx" id="fsx" type="button">Exit full screen</button><p class="ver" id="ver"></p><div class="dlg" id="dlg" hidden role="dialog" aria-modal="true"></div></div>
   <div class="touch" id="touch">
     <div class="tpad">
       <button data-k="left" aria-label="Move left">&#9664;</button>
@@ -259,7 +268,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.24';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.25';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -2293,6 +2302,7 @@ document.getElementById('fsb').addEventListener('click', toggleFull);
 document.getElementById('fsx').addEventListener('click', toggleFull);
 document.getElementById('coop').addEventListener('click', () => { audio(); if (!dlg.open && !binder.open && mode === 'play') openCoop(); });
 document.getElementById('menub').addEventListener('click', () => { audio(); openPause(); });
+document.getElementById('menuov').addEventListener('click', () => { audio(); if (dlg.open && dlg.pause) pick(0); else openPause(); });
 document.getElementById('acctb').addEventListener('click', () => { audio(); if (!dlg.open && !binder.open && mode === 'play') openAccount(); });
 addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && acct) cloudNow(true); });
 document.getElementById('mapb').addEventListener('click', () => { if (mode === 'play') { showMap = !showMap; } cv.focus(); });
@@ -6216,6 +6226,7 @@ function drawDropHint() {
 }
 const WORLD_DIM = .3;   // how far the background and walls are darkened behind the player and enemies
 function render() {
+  { const mo = document.getElementById('menuov'), hide = mode === 'title' || mode === 'cut'; if (mo && mo.hidden !== hide) mo.hidden = hide; }
   if (mode === 'cut') { drawCut(); return; }
   if (mode === 'title') { drawTitle(); return; }
   if (!room.cache) buildCache(room);
@@ -6587,8 +6598,16 @@ function drawAdminInfo() {
 // the pause menu: Escape or the Menu button
 function openPause() {
   if (dlg.open || binder.open || wardrobe.open || mode !== 'play') return;
-  openDlg({kicker:'Paused', title:ROOMS[room.key] ? room.name : 'Wallfall', body:[NET.on ? 'Co-op keeps running while this is open.' : 'The city waits.'],
-    opts:[{text:'Resume'}, {text:'Controls', run:() => openBinds()}, ...(adminOn() ? [{text:'Admin panel', run:() => openAdmin()}] : []), {text:'Quit to the title screen', tag:'Your progress is saved', run:() => { persist(); if (acct) cloudNow(); parts = []; openTitle(); }}]});
+  const click = id => () => { const b = document.getElementById(id); if (b) b.click(); };
+  const opts = [
+    {text:'Resume'}, {text:'Map', run:click('mapb')}, {text:'Full screen', run:click('fsb')}, {text:'Co-op', run:click('coop')},
+    {text:acct ? 'Account · ' + acct.name : 'Account', run:click('acctb')}, {text:'Controls', run:click('ctl')},
+    {text:'Music: ' + (musicOn ? 'on' : 'off'), run:() => { click('mus')(); openPause(); }}, {text:'Sound: ' + (soundOn ? 'on' : 'off'), run:() => { click('snd')(); openPause(); }},
+    {text:'Admin panel', run:() => openAdmin()},
+    {text:'New game', run:() => openDlg({kicker:'New game', title:'Start over?', body:['Your save on this device will be gone: notes, items, bosses, everything.'], opts:[{text:'Start over', run:() => newGame()}, {text:'Go back', run:() => openPause()}]})},
+    {text:'Quit to the title screen', run:() => { persist(); if (acct) cloudNow(); parts = []; openTitle(); }}];
+  const btns = opts.map((o, i) => `<button class="opt" id="opt${i}" data-i="${i}"><span class="t">${esc(o.text)}</span></button>`).join('');
+  openDlg({opts, html:`<div class="card pausecard"><p class="kicker">Paused${NET.on ? ' · co-op keeps running' : ''}</p><h2>${esc(room ? room.name : 'Wallfall')}</h2><div class="opts pgrid">${btns}</div></div>`});
   dlg.pause = true;
 }
 function leaveTitle() { mode = 'play'; dlgEl.classList.remove('ontitle'); }
