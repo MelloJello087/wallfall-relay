@@ -272,7 +272,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.34';
+const VERSION = '0.1.35';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1297,7 +1297,7 @@ function openClassPick() {
     document.getElementById('cnm').textContent = C.name;
     document.getElementById('cdesc').textContent = C.desc;
     document.getElementById('cstats').innerHTML = classStats(C).map(([n, v]) => `<div><span>${n}</span><b>${Array.from({length:5}, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}</b></div>`).join('');
-    const kc = a => esc(keyName((binds[a] || []).find(Boolean)) || '');
+    const kc = a => esc(keyOf(a));
     document.getElementById('cmoves').innerHTML = `<li><kbd>${kc('skill')}</kbd><b>${esc(S1.name)}</b> ${esc(D[0])}</li><li><kbd>${kc('skill2')}</kbd><b>${esc(S2.name)}</b> ${esc(D[1])}</li><li><kbd>hold ${kc('attack')}</kbd><b>Heavy strike</b> Charge it up and let go.</li>`;
     document.getElementById('cgo').textContent = 'Become the ' + C.name;
     dlgEl.querySelectorAll('.opt.cls').forEach(b => b.classList.toggle('sel', b.dataset.k === k));
@@ -2394,7 +2394,7 @@ function renderBinds(focusSel) {
     }).join('');
     return `<div class="bl">${l}</div>${slots}`;
   }).join('');
-  dlgEl.innerHTML = `<div class="card"><p class="kicker">Settings</p><h2>Controls</h2><p class="body">Click a slot, then press the key or mouse button you want. Backspace clears a slot. Esc cancels. A key can only do one thing, so binding it here removes it from anything else.</p><div class="bindgrid">${rows}</div><div class="row"><button class="act" id="bReset">Reset to defaults</button><button class="act primary" id="bDone">Done</button></div></div>`;
+  dlgEl.innerHTML = `<div class="card"><p class="kicker">Settings</p><h2>Controls</h2><p class="body">Click a slot, then press the key or mouse button you want. Backspace clears a slot. Esc cancels. A key can only do one thing, so binding it here removes it from anything else.</p><p class="body">Controller: stick or D-pad to move, A jump, X strike, B or RT dash, Y skill, RB second skill, LB or LT grapple, Back map, Start pause.</p><div class="bindgrid">${rows}</div><div class="row"><button class="act" id="bReset">Reset to defaults</button><button class="act primary" id="bDone">Done</button></div></div>`;
   dlgEl.querySelectorAll('.slot').forEach(b => b.addEventListener('click', () => { if (binder.caught) { binder.caught = false; return; } binder.cap = {a:b.dataset.a, i:+b.dataset.i}; renderBinds('#' + b.id); }));
   document.getElementById('bReset').addEventListener('click', () => { binds = JSON.parse(JSON.stringify(DEFAULT_BINDS)); binder.cap = null; rebuildKeymap(); renderBinds('#bReset'); });
   document.getElementById('bDone').addEventListener('click', closeBinds);
@@ -2426,6 +2426,68 @@ function binderKey(e) {
   }
   if (e.code === 'Escape') { e.preventDefault(); closeBinds(); }
 }
+
+/* ---------- Controller ---------- */
+const PAD_ACTS = {0:'jump', 1:'dash', 2:'attack', 3:'skill', 4:'hook', 5:'skill2', 6:'hook', 7:'dash', 8:'map', 12:'up', 13:'down', 14:'left', 15:'right'};
+const PAD_NAMES = {jump:'A', dash:'B', attack:'X', skill:'Y', hook:'LB', skill2:'RB', map:'Back'};
+const pad = {live:false, on:false, was:{}, used:{}, want:{}, dir:'', next:0};
+const padDown = (g, i) => { const b = g.buttons[i]; return !!b && (b.pressed || b.value > .5); };
+const padKey = code => dispatchEvent(new KeyboardEvent('keydown', {code, bubbles:true, cancelable:true}));
+const padControls = () => [...dlgEl.querySelectorAll('button, input, select, a[href]')].filter(b => !b.disabled && b.getClientRects().length);
+function padMove(dx, dy) {
+  const f = document.activeElement, all = padControls();
+  if (f && f.type === 'range' && dx) { const lo = +f.min || 0, hi = +f.max || 100; f.value = Math.max(lo, Math.min(hi, +f.value + dx * Math.max(+f.step || 0, (hi - lo) / 20))); f.dispatchEvent(new Event('input', {bubbles:true})); return; }
+  if (!all.length) return;
+  let best = null, bs = 1e9;
+  if (all.includes(f)) {
+    const a = f.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+    for (const o of all) {
+      if (o === f) continue;
+      const r = o.getBoundingClientRect(), ox = r.left + r.width / 2 - ax, oy = r.top + r.height / 2 - ay, along = ox * dx + oy * dy, side = Math.abs(ox * dy) + Math.abs(oy * dx);
+      if (along > 2 && along + side * 2 < bs) { bs = along + side * 2; best = o; }
+    }
+    if (!best && dy) best = all[dy > 0 ? 0 : all.length - 1];
+  } else best = all[0];
+  if (!best) return;
+  best.focus({preventScroll:true}); best.scrollIntoView({block:'nearest'});
+  if (dlg.open && best.dataset.i) dlg.idx = +best.dataset.i;
+}
+function padMenu(g, x, y, t, pressed) {
+  const dir = y < -.5 || padDown(g, 12) ? 'u' : y > .5 || padDown(g, 13) ? 'd' : x < -.5 || padDown(g, 14) ? 'l' : x > .5 || padDown(g, 15) ? 'r' : '';
+  const go = () => { if (dir) padMove(dir === 'l' ? -1 : dir === 'r' ? 1 : 0, dir === 'u' ? -1 : dir === 'd' ? 1 : 0); };
+  if (dir !== pad.dir) { pad.dir = dir; pad.next = t + 320; go(); } else if (dir && t >= pad.next) { pad.next = t + 120; go(); }
+  if (pressed(0)) {
+    if (typer) stopTyper(true);
+    else { const f = document.activeElement, all = padControls(); if (all.includes(f)) f.click(); else if (all[0]) all[0].focus({preventScroll:true}); }
+  }
+  if (pressed(1) || pressed(9)) {
+    const back = dlg.open && !dlg.pause && padControls().find(b => /^(done|close|cancel|not yet)$/i.test(b.textContent.trim()));
+    if (back) back.click(); else padKey('Escape');
+  }
+}
+function pollPad() {
+  const g = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(Boolean);
+  if (!g) { if (pad.on) { for (const k in pad.want) held[k] = false; Object.assign(pad, {on:false, was:{}, used:{}, want:{}, dir:''}); } return; }
+  pad.on = true;
+  const x = g.axes[0] || 0, y = g.axes[1] || 0, t = performance.now(), now = {};
+  g.buttons.forEach((b, i) => { now[i] = padDown(g, i); if (!now[i]) delete pad.used[i]; });
+  const pressed = i => now[i] && !pad.was[i];
+  if (Object.keys(now).some(pressed) || Math.abs(x) > .5 || Math.abs(y) > .5) { pad.live = true; audio(); }
+  if (dlg.open || binder.open || wardrobe.open) {
+    for (const i in now) if (now[i]) pad.used[i] = true;
+    pad.want = {}; padMenu(g, x, y, t, pressed); pad.was = now; return;
+  }
+  pad.dir = '';
+  const want = {};
+  for (const i in PAD_ACTS) if (now[i] && !pad.used[i]) want[PAD_ACTS[i]] = true;
+  if (x < -.45) want.left = true; if (x > .45) want.right = true; if (y < -.6) want.up = true; if (y > .6) want.down = true;
+  for (const k in want) { if (!pad.want[k]) hit[k] = true; held[k] = true; }
+  for (const k in pad.want) if (!want[k]) held[k] = false;
+  pad.want = want;
+  if (pressed(9)) padKey('Escape');
+  pad.was = now;
+}
+addEventListener('keydown', e => { if (e.isTrusted) pad.live = false; }, true);
 
 /* ---------- Enemies ---------- */
 function makeEnemy(t, x, y, spawn) {
@@ -4046,7 +4108,7 @@ function drawSkillHud() {
 }
 function skillBar(S, act, cd, flash, y) {
   if (!S) return;
-  const k = keyName((binds[act] || []).find(Boolean)) || '?', ready = !(cd > 0);
+  const k = keyOf(act), ready = !(cd > 0);
   ctx.font = '8px Silkscreen, ui-monospace, monospace';
   const tw = Math.ceil(ctx.measureText(S.name).width), w = tw + 30, x = 8;
   ctx.fillStyle = 'rgba(16,10,8,.78)'; ctx.fillRect(x, y, w, 16);
@@ -5840,7 +5902,7 @@ function panel(x, y, w, h, a = .78) {
   ctx.fillStyle = '#2a1d14'; ctx.fillRect(x + 1, y + 1, w - 2, 1);
   ctx.fillStyle = '#e8c48a'; for (const [cx, cy] of [[x, y], [x + w - 2, y], [x, y + h - 2], [x + w - 2, y + h - 2]]) ctx.fillRect(cx, cy, 2, 2);
 }
-function keyOf(a) { return keyName((binds[a] || []).find(Boolean)) || '?'; }
+function keyOf(a) { return pad.live && PAD_NAMES[a] || keyName((binds[a] || []).find(Boolean)) || '?'; }
 function keycap(label, x, y) {
   ctx.font = '8px Silkscreen, ui-monospace, monospace';
   const w = Math.max(11, Math.ceil(ctx.measureText(label).width) + 6);
@@ -7422,6 +7484,7 @@ let last = 0, acc = 0;
 function frame(t) {
   if (!last) last = t;
   acc += Math.min(100, t - last); last = t;
+  try { pollPad(); } catch (e) {}
   while (acc >= 1000/60) { update(); acc -= 1000/60; }
   try { netTick(); } catch (e) { console.warn(e); }
   render();
