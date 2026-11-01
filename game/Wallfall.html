@@ -249,7 +249,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.18';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.19';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -6483,7 +6483,7 @@ function openTitle() {
   const opts = [], btn = (text, run) => { opts.push({text, run}); return `<button class="opt" id="opt${opts.length - 1}" data-i="${opts.length - 1}"><span class="t">${esc(text)}</span></button>`; };
   let html = `<div class="titlemenu"><div class="opts">`;
   if (hasProgress()) html += btn('Continue', () => leaveTitle());
-  html += btn(hasProgress() ? 'New game' : 'Begin', () => hasProgress() ? confirmNew() : (leaveTitle(), save.seenIntro ? openClassPick() : (parts = [], startCut())));
+  html += btn(hasProgress() ? 'New game' : 'Begin', () => hasProgress() ? confirmNew() : (leaveTitle(), parts = [], startCut()));
   html += btn('Co-op', () => openCoop());
   html += btn(acct ? 'Account · ' + acct.name : 'Account', () => openAccount());
   html += `</div>${hasProgress() ? `<p class="tsub">${esc(CLASSES[save.cls] ? CLASSES[save.cls].name : '')} · ${esc(progressOf(save))}</p>` : ''}</div>`;
