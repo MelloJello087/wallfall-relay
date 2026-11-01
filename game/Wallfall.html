@@ -273,7 +273,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.42';
+const VERSION = '0.1.43';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1562,13 +1562,16 @@ function closeWardrobe() {
 }
 
 /* ---------- State ---------- */
-const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}, lit:{}, grave:null, tree:{}, roam:false});
-const SAVE_KEY = 'wallfall-save';
+const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}, lit:{}, grave:null, tree:{}, roam:false, diff:'normal'});
+const SLOTS = 5, slotKey = i => i ? 'wallfall-save-' + i : 'wallfall-save';
+let slot = 0; try { slot = Math.max(0, Math.min(SLOTS - 1, +localStorage.getItem('wallfall-slot') || 0)); } catch (e) {}
+let SAVE_KEY = slotKey(slot);
 let save = fresh();
 let bossMode = null;
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), {seenIntro:true}, s); } catch (e) {}
 const persist = () => { if (typeof bossMode !== 'undefined' && bossMode) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
-const maxHp = () => bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0) + upLv('vig') + (treeOn('defense', 0) ? 1 : 0);
+const gameDiff = () => !bossMode && DIFFS[save.diff] || DIFFS.normal;
+const maxHp = () => bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0) + upLv('vig') + (treeOn('defense', 0) ? 1 : 0) + gameDiff().hearts;
 
 let room, enemies = [], anchors = [], parts = [], entry = {x:0, y:0}, cam = {x:0, y:0};
 const DYN = new Map(); let R = null;
@@ -3339,7 +3342,7 @@ function regionEnter(key) {
   if (cfg.lever) enemies.push(makeProp('lever', cfg.lever[0], cfg.lever[1]));
   for (const [x, y, lv] of cfg.valves || []) { const v = makeProp('valve', x, y); v.level = lv; enemies.push(v); }
   for (const [x, y, x0, x1, vy] of cfg.pods || []) { const pd = makeProp('pod', x, y); pd.vine = {x0, x1, y:vy}; enemies.push(pd); }
-  if (cfg.boss && !(save.bosses || {})[key]) { R.boss = makeRBoss(cfg.boss, cfg.bossAt[0], cfg.bossAt[1]); enemies.push(R.boss); }
+  if (cfg.boss && !(save.bosses || {})[key]) { R.boss = makeRBoss(cfg.boss, cfg.bossAt[0], cfg.bossAt[1]); R.boss.life = R.boss.max = Math.round(R.boss.max * gameDiff().hp); enemies.push(R.boss); }
   p.breath = BREATH;
 }
 function setDoor(closed) { for (let y = R.door.y0; y <= R.door.y1; y++) { if (closed) DYN.set(R.door.x + ',' + y, '#'); else DYN.delete(R.door.x + ',' + y); } }
@@ -4235,6 +4238,7 @@ function enterRoom(key) {
   vents = room.ents.filter(e => e.t === 'F').map(e => ({x:e.x, y:e.y, ph:(e.x * 37) % 160}));
   arena = ARENAS[key] && !save.arenas[key] ? {key, cfg:ARENAS[key], stage:'idle', wave:0, delay:0} : null;
   boss = key === 'X' && save.gateOpen && !save.bossDead ? makeBoss() : null;
+  if (boss) boss.hp = boss.max = Math.round(BOSS_HP * gameDiff().hp);
   enemies = enemies.concat(room.ents.filter(e => 'dhx'.includes(e.t)).map(makeDummy));
   pops = [];
   shots = [];
@@ -4272,8 +4276,8 @@ function startAt(key) {
   p.x = s.x*T + 2; p.y = (s.y + 1)*T - p.h; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; p.inv = 60; p.dashT = 0; p.hook = null; p.plate = true;
   enterRoom(key);
 }
-function newGame() {
-  save = fresh(); persist(); mode = 'play'; ringT = 0; banner = null; showMap = false; ending = null;
+function newGame(diff) {
+  save = Object.assign(fresh(), {diff:diff || 'normal'}); persist(); mode = 'play'; ringT = 0; banner = null; showMap = false; ending = null;
   dlg.open = false; dlgEl.hidden = true;
   startAt('T'); parts = []; startCut();
 }
@@ -4710,7 +4714,7 @@ function drawParry() {
 }
 function hurt(fromX, dmg = 1) {
   if (p.inv > 0 || mode !== 'play' || ADMIN.god) return;
-  if (bossMode && bossMode.fighting) dmg += DIFFS[bossMode.diff || 'normal'].dmg;
+  if (bossMode && bossMode.fighting) dmg += DIFFS[bossMode.diff || 'normal'].dmg; else dmg += gameDiff().dmg;
   if (p.parryT > 0) { parried(fromX); return; }
   if (p.hold > 0) { const cx = p.x + p.w / 2, cy = p.y + p.h / 2; p.inv = 20; sfx.clang(); burst(cx + Math.sign(fromX - cx) * 8, cy, '#ffd27a', 10, 2); hitArea(inCircle(cx, cy, 30), 1, e => Math.sign(e.x + e.w / 2 - cx) * 14, '#ffd27a'); return; }
   if (cls().thorns) { const cx = p.x + p.w / 2, cy = p.y + p.h / 2; hitArea(inCircle(cx, cy, 34), 2, e => Math.sign(e.x + e.w / 2 - cx) * 9, '#7aff9a'); burst(cx, cy, '#5a8a3a', 10, 2); }
@@ -7063,8 +7067,8 @@ function openTitle() {
   mode = 'title';
   const opts = [], btn = (text, run) => { opts.push({text, run}); return `<button class="opt" id="opt${opts.length - 1}" data-i="${opts.length - 1}"><span class="t">${esc(text)}</span></button>`; };
   let html = `<div class="titlemenu"><div class="opts">`;
-  if (hasProgress()) html += btn('Continue', () => leaveTitle());
-  html += btn(hasProgress() ? 'New game' : 'Begin', () => hasProgress() ? confirmNew() : (leaveTitle(), parts = [], startCut()));
+  if (slotList().length) html += btn('Continue', () => openSaves());
+  html += btn(slotList().length ? 'New game' : 'Begin', () => confirmNew());
   if (save.clsChosen) html += btn('Boss fights', () => { leaveTitle(); startBossMode(); });
   html += btn('Co-op', () => openCoop());
   html += btn(acct ? 'Account · ' + acct.name : 'Account', () => openAccount());
@@ -7315,9 +7319,39 @@ function openPause() {
   dlg.pause = true;
 }
 function leaveTitle() { mode = 'play'; dlgEl.classList.remove('ontitle'); }
+function readSlot(i) { try { const s = JSON.parse(localStorage.getItem(slotKey(i)) || 'null'); return s && s.clsChosen && (s.frames > 300 || s.notes > 0) ? Object.assign(fresh(), s) : null; } catch (e) { return null; } }
+function slotList() { const L = []; for (let i = 0; i < SLOTS; i++) { const s = readSlot(i); if (s) L.push({i, s}); } return L; }
+function useSlot(i) { slot = i; SAVE_KEY = slotKey(i); try { localStorage.setItem('wallfall-slot', String(i)); } catch (e) {} }
+function slotLine(s) {
+  const far = Object.keys(s.districts || {}).filter(d => DISTRICTS[d]).map(d => DISTRICTS[d].name).pop() || 'The Low City';
+  return `${fmtTime(s.frames || 0)} played · ${(DIFFS[s.diff] || DIFFS.normal).name} · ${s.notes || 0}/6 notes · ${Object.keys(s.bosses || {}).length} bosses · ${far}${s.won ? ' · finished' : ''}`;
+}
+function openSaves() {
+  const L = slotList(); if (!L.length) { openTitle(); return; }
+  const opts = L.map(({i, s}) => ({text:`Save ${i + 1} · ${(CLASSES[s.cls] || CLASSES.warden).name}${i === slot && save.clsChosen ? ' · last played' : ''}`, tag:slotLine(s), run:() => openSlot(i)}));
+  opts.push({text:'Back', run:() => openTitle()});
+  openDlg({kicker:'Continue', title:'Your saves', body:['Pick a save to play it or delete it.'], opts});
+}
+function openSlot(i) {
+  const s = readSlot(i); if (!s) { openSaves(); return; }
+  openDlg({kicker:'Save ' + (i + 1), title:(CLASSES[s.cls] || CLASSES.warden).name, body:[slotLine(s)], opts:[
+    {text:'Play', run:() => loadSlot(i)},
+    {text:'Delete', tag:'Gone for good', run:() => openDlg({kicker:'Save ' + (i + 1), title:'Delete this save?', body:['Every note, item and boss in it will be gone. This cannot be undone.'], opts:[
+      {text:'Delete it', run:() => { try { localStorage.removeItem(slotKey(i)); } catch (e) {} if (i === slot) save = fresh(); slotList().length ? openSaves() : openTitle(); }},
+      {text:'Keep it', run:() => openSlot(i)}]})},
+    {text:'Back', run:() => openSaves()}]});
+}
+function loadSlot(i) {
+  const s = readSlot(i); if (!s) return;
+  useSlot(i); save = Object.assign(fresh(), {seenIntro:true}, s); if (save.won && !save.roam) { save = fresh(); persist(); }
+  boss = null; curDistrict = null; leaveTitle(); startAt('T'); p.max = maxHp(); p.hp = p.max;
+  if (acct) cloudNow();
+}
 function confirmNew() {
-  openDlg({kicker:'New game', title:'Start over?', body:['Your save on this device will be gone: notes, items, bosses, everything.'],
-    opts:[{text:'Start over', run:() => { leaveTitle(); newGame(); }}, {text:'Go back', run:() => openTitle()}]});
+  let i = -1; for (let n = 0; n < SLOTS; n++) if (!readSlot(n)) { i = n; break; }
+  if (i < 0) { openDlg({kicker:'New game', title:'Every save slot is full', body:[`You can keep ${SLOTS} saves. Delete one to start another.`], opts:[{text:'Show my saves', run:() => openSaves()}, {text:'Back', run:() => openTitle()}]}); return; }
+  openDlg({kicker:'New game · save ' + (i + 1), title:'How hard?', body:['You choose once. It cannot be changed later for this save.'],
+    opts:[...Object.keys(DIFFS).map(d => ({text:DIFFS[d].name, tag:d === 'easy' ? 'Two more hearts, weaker bosses' : d === 'hard' ? 'Tougher bosses, and every hit costs one more heart' : 'The game as it was made', run:() => { useSlot(i); leaveTitle(); newGame(d); }})), {text:'Back', run:() => openTitle()}]});
 }
 function drawTitle() {
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
