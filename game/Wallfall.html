@@ -272,7 +272,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.36';
+const VERSION = '0.1.37';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -302,7 +302,7 @@ function makeRoom(key, name, gx, gy, cw, ch, opt, build) {
 makeRoom('T', 'Training Yard', -3, 3, 3, 1, {dark:.4}, B => {
   B.solid(0, 16, 95, 17); B.clear(95, 13, 95, 15);
   B.put('M', 2, 15); B.put('P', 5, 15); B.put('W', 8, 15); B.put('S', 11, 15); B.put('&', 13, 15);
-  B.put('d', 16, 15); B.put('d', 20, 15);
+  B.put('d', 16, 15); B.put('%', 18, 15); B.put('d', 20, 15);
   B.ledge(25, 31, 9); B.put('h', 28, 10); B.put('S', 23, 15);
   B.ledge(34, 40, 12); B.ledge(37, 43, 8); B.put('S', 33, 15);
   B.put('S', 46, 15); B.put('x', 53, 15); B.solid(57, 12, 59, 15); B.put('x', 58, 11);
@@ -649,6 +649,11 @@ function drawCampProps() {
       ctx.fillStyle = gl; ctx.fillRect(x + 3, base - 24, 10, 19);
       ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(x + 4, base - 23, 1, 6); ctx.fillRect(x + 5, base - 23, 1, 2);
       ctx.fillStyle = '#c9a060'; ctx.fillRect(x + 7, base - 28, 2, 2);
+    } else if (it.t === '%') {
+      ctx.fillStyle = '#2e2622'; ctx.fillRect(x, base - 4, 16, 4); ctx.fillStyle = '#4a3e36'; ctx.fillRect(x + 3, base - 28, 10, 24); ctx.fillStyle = '#5e5044'; ctx.fillRect(x + 3, base - 28, 10, 2); ctx.fillRect(x + 5, base - 30, 6, 2);
+      const on = Object.keys(save.lit || {}).length > 0, gl = .5 + .5 * Math.sin(tick * .06);
+      ctx.fillStyle = on ? `rgba(255,${170 + 50 * gl | 0},90,1)` : '#3a302a'; ctx.fillRect(x + 7, base - 24, 2, 3); ctx.fillRect(x + 6, base - 19, 4, 1); ctx.fillRect(x + 7, base - 15, 2, 6);
+      if (on) { ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x + 8, base - 18, 0, x + 8, base - 18, 22); g.addColorStop(0, `rgba(255,170,80,${.18 + .12 * gl})`); g.addColorStop(1, 'rgba(255,120,40,0)'); ctx.fillStyle = g; ctx.fillRect(x - 14, base - 40, 44, 44); ctx.globalCompositeOperation = 'source-over'; }
     } else if (it.t === '&') {
       ctx.fillStyle = '#2e2622'; ctx.fillRect(x - 1, base - 6, 18, 6); ctx.fillStyle = '#4a3e36'; ctx.fillRect(x - 1, base - 6, 18, 1);
       ctx.fillStyle = '#3a302a'; ctx.fillRect(x + 2, base - 20, 12, 14); ctx.fillStyle = '#52463c'; ctx.fillRect(x + 2, base - 20, 12, 1);
@@ -798,19 +803,50 @@ const CACHES = [['H', 23, 4, 8], ['C', 4, 3, 8], ['D', 22, 3, 15], ['B', 19, 3, 
   ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8], ['g', 33, 5, 15], ['o', 13, 6, 8], ['s', 24, 9, 15]];
 let sparks = [], shardShow = null, shardFlash = 0;
 function shardVal(e) { return e.t === 'boss' ? 40 : e.t === 'u' ? 4 : 'ewcyl'.includes(e.t) ? 2 : 1; }
+let gems = [], wakeReq = false;
+const litHas = (k, x) => Object.keys(save.lit || {}).some(id => id.startsWith(k + ',' + x + ',')) || !!(save.cp && save.cp.k === k && save.cp.x === x);
+function litList() { const L = Object.keys(save.lit || {}).map(id => id.split(',')); if (save.cp && !L.some(([k, x]) => k === save.cp.k && +x === save.cp.x)) L.push([save.cp.k, String(save.cp.x), String(save.cp.y)]); return L.filter(([k]) => ROOMS[k]).map(([k, x, y]) => ({k, x:+x, y:+y})); }
+function nearLitLantern() { for (const it of room.ents) if (it.t === 'q' && litHas(room.key, it.x) && Math.abs(p.x + p.w / 2 - (it.x * T + 8)) < 20 && Math.abs(p.y + p.h / 2 - (it.y * T + 8)) < 24) return it; return null; }
+function openTravel() {
+  const L = litList(), opts = L.filter(c => !(c.k === room.key && Math.abs(c.x * T - p.x) < 40)).map(c => ({text:ROOMS[c.k].name, tag:DISTRICTS[districtOf(c.k)].name, run:() => travelTo(c.k, c.x, c.y)}));
+  if (room.key !== 'T') opts.unshift({text:'Training Yard', tag:'The waystone', run:() => startAt('T')});
+  opts.push({text:'Stay'});
+  openDlg({kicker:'Lanterns', title:'Where to?', body:[L.length ? 'Every lantern you light is a place you can come back to.' : 'Light lanterns out in the city and you can come back to them from here.'], opts});
+}
+function travelTo(k, x, y) { p.x = x * T + 2; p.y = (y + 1) * T - p.h; p.vx = p.vy = 0; p.dashT = 0; p.hook = null; p.inv = 60; enterRoom(k); snapCam(); sfx.raise(); burst(p.x + p.w / 2, p.y + 10, '#ffd27a', 20, 2); }
 function dropShards(e, n) {
   if (!save || mode === 'title') return;
   n = n || shardVal(e); n += Math.floor(n * .5 * upLv('greed') + (upLv('greed') ? Math.random() : 0));
+  const cx = e.x + e.w / 2, cy = e.y + e.h / 2, k = Math.min(8, Math.ceil(n / 3));
+  for (let i = 0; i < k; i++) gems.push({rk:room.key, x:cx, y:cy, vx:(Math.random() - .5) * 3.2, vy:-2 - Math.random() * 2.5, t:0, n:Math.floor(n / k) + (i < n % k ? 1 : 0)});
+}
+function gainShards(n, x, y) {
   save.shards = (save.shards || 0) + n;
-  const cx = e.x + e.w / 2, cy = e.y + e.h / 2;
-  for (let i = 0; i < Math.min(n, 12); i++) sparks.push({x:cx, y:cy, vx:(Math.random() - .5) * 3, vy:-1.5 - Math.random() * 2.5, t:0, v:i === 0 ? n : 0});
+  for (let i = 0; i < Math.min(n, 6); i++) sparks.push({x, y, vx:(Math.random() - .5) * 2, vy:-1 - Math.random() * 2, t:14, v:i === 0 ? n : 0});
 }
 function cacheLive(c) { return c[0] === room.key && !(save.caches || {})[c[0] + c[1] + ',' + c[2]]; }
 function shardTick() {
   for (const c of CACHES) if (cacheLive(c) && overlap({x:p.x, y:p.y, w:p.w, h:p.h}, {x:c[1] * T, y:c[2] * T - 4, w:T, h:T + 4})) {
     save.caches = save.caches || {}; save.caches[c[0] + c[1] + ',' + c[2]] = 1;
-    dropShards({x:c[1] * T, y:c[2] * T, w:T, h:T}, c[3]); persist(); sfx.pick(); toast = {text:'An ember cache: ' + c[3] + ' shards', t:120};
+    gainShards(c[3], c[1] * T + 8, c[2] * T + 8); persist(); sfx.pick(); toast = {text:'An ember cache: ' + c[3] + ' shards', t:120};
   }
+  if (!p.dead && mode === 'play' && p.onGround && !onSpikes()) p.safe = {k:room.key, x:p.x, y:p.y};
+  const pcx = p.x + p.w / 2, pcy = p.y + p.h / 2;
+  gems = gems.filter(g => g.rk === room.key);
+  for (const g of gems) {
+    g.t++;
+    const d = Math.hypot(pcx - g.x, pcy - g.y);
+    const mr = g.t > 150 ? 140 : 56; if (mode === 'play' && g.t > 24 && d < mr) { const sp = Math.min(7, 2 + (mr - d) * .12); g.x += (pcx - g.x) / (d || 1) * sp; g.y += (pcy - g.y) / (d || 1) * sp; if (d < 9) { g.done = true; gainShards(g.n, g.x, g.y); tone(1500 + Math.random() * 300, .05, 'triangle', .014, null, 0, 'sfx'); } continue; }
+    g.vy = Math.min(g.vy + .22, 5); g.x += g.vx; g.vx *= .98;
+    if (solid(Math.floor(g.x / T), Math.floor(g.y / T))) { g.x -= g.vx; g.vx *= -.4; }
+    g.y += g.vy;
+    const ty2 = Math.floor((g.y + 2) / T), tc = tile(Math.floor(g.x / T), ty2);
+    if (g.vy > 0 && (tc === '#' || tc === '-' || tc === '~')) { g.y = ty2 * T - 2; g.vy = Math.abs(g.vy) > 1 ? -g.vy * .35 : 0; g.vx *= .7; }
+    if (g.t > 3600) g.done = true;
+  }
+  gems = gems.filter(g => !g.done);
+  const gv = save.grave;
+  if (gv && gv.k === room.key && mode === 'play' && Math.hypot(pcx - gv.x - 6, pcy - gv.y - 10) < 22) { save.grave = null; gainShards(gv.n, pcx, pcy); persist(); sfx.pick(); toast = {text:'You take back ' + gv.n + ' shards', t:130}; }
   const tx = cam.x + 14, ty = cam.y + 56;
   for (const m of sparks) {
     m.t++;
@@ -828,6 +864,15 @@ function drawShards() {
     ctx.fillStyle = '#c43a14'; ctx.fillRect(x + 6, b - 12 + bob, 4, 5); ctx.fillStyle = '#ff8a2a'; ctx.fillRect(x + 7, b - 13 + bob, 2, 5); ctx.fillStyle = '#fff0b8'; ctx.fillRect(x + 7, b - 11 + bob, 1, 2);
     ctx.globalCompositeOperation = 'lighter'; const gr = ctx.createRadialGradient(x + 8, b - 10, 0, x + 8, b - 10, 18); gr.addColorStop(0, 'rgba(255,130,50,.35)'); gr.addColorStop(1, 'rgba(255,90,30,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 10, b - 28, 36, 36); ctx.globalCompositeOperation = 'source-over';
     if (tick % 14 === 0) parts.push({x:x + 8, y:b - 12, vx:(Math.random() - .5) * .4, vy:-.5, life:24, color:'#ffb04a', size:1});
+  }
+  for (const g of gems) { const b = Math.round(Math.sin(g.t * .15 + g.x) * 1); ctx.fillStyle = '#c43a14'; ctx.fillRect(Math.round(g.x) - 2, Math.round(g.y) - 4 + b, 4, 4); ctx.fillStyle = (g.t >> 3) % 2 ? '#ffb04a' : '#ffd27a'; ctx.fillRect(Math.round(g.x) - 1, Math.round(g.y) - 5 + b, 2, 4); ctx.fillStyle = '#fff0b8'; ctx.fillRect(Math.round(g.x) - 1, Math.round(g.y) - 4 + b, 1, 1); }
+  const gv = save.grave;
+  if (gv && gv.k === room.key) {
+    const x = gv.x + 6, y = gv.y + p.h;
+    ctx.globalCompositeOperation = 'lighter'; const gr = ctx.createRadialGradient(x, y - 8, 0, x, y - 8, 26 + Math.sin(tick * .1) * 3); gr.addColorStop(0, 'rgba(255,120,40,.45)'); gr.addColorStop(1, 'rgba(255,80,20,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 30, y - 38, 60, 60); ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#2a1a12'; ctx.fillRect(x - 7, y - 3, 14, 3); ctx.fillStyle = '#c43a14'; ctx.fillRect(x - 5, y - 7, 10, 4); ctx.fillStyle = '#ffb04a'; ctx.fillRect(x - 3, y - 10, 6, 4); ctx.fillStyle = '#fff0b8'; ctx.fillRect(x - 1, y - 9, 2, 2);
+    if (tick % 7 === 0) parts.push({x:x + (Math.random() - .5) * 10, y:y - 8, vx:0, vy:-.6, life:30, color:'#ff8a2a', size:1});
+    txt(String(gv.n), x, y - 24, 8, '#ffd27a', 'center');
   }
   for (const m of sparks) { ctx.fillStyle = m.t % 6 < 3 ? '#ffb04a' : '#fff0b8'; ctx.fillRect(Math.round(m.x) - 1, Math.round(m.y) - 1, 2, 2); }
 }
@@ -1466,7 +1511,7 @@ function closeWardrobe() {
 }
 
 /* ---------- State ---------- */
-const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}});
+const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}, lit:{}, grave:null});
 const SAVE_KEY = 'wallfall-save';
 let save = fresh();
 let bossMode = null;
@@ -2379,7 +2424,7 @@ document.querySelectorAll('#touch button').forEach(b => {
   b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('lostpointercapture', off);
   b.addEventListener('contextmenu', e => e.preventDefault());
 });
-cv.addEventListener('pointerdown', () => { audio(); cv.focus(); if (mode === 'cut' && cutT > 20 && !cutSkip) cutSkip = 1; });
+cv.addEventListener('pointerdown', () => { audio(); cv.focus(); wakeReq = true; if (mode === 'cut' && cutT > 20 && !cutSkip) cutSkip = 1; });
 const musBtn = document.getElementById('mus');
 musBtn.querySelector('span').textContent = 'Music: ' + (musicOn ? 'on' : 'off');
 musBtn.addEventListener('click', () => { musicOn = !musicOn; musBtn.querySelector('span').textContent = 'Music: ' + (musicOn ? 'on' : 'off'); try { localStorage.setItem('wallfall-music', musicOn ? 'on' : 'off'); } catch (e) {} audio(); });
@@ -4009,7 +4054,7 @@ function snapCam() {
   cam.y = Math.max(0, Math.min(room.ph - VH, p.y + p.h/2 - VH/2));
 }
 function drawLantern(it) {
-  const lit = save.cp && save.cp.k === room.key && save.cp.x === it.x, x = it.x*T + 8, base = (it.y + 1)*T;
+  const lit = litHas(room.key, it.x), x = it.x*T + 8, base = (it.y + 1)*T;
   ctx.fillStyle = '#2a2420'; ctx.fillRect(x - 1, base - 30, 3, 30); ctx.fillRect(x - 5, base - 2, 11, 2);
   ctx.fillStyle = '#4a4440'; ctx.fillRect(x - 1, base - 30, 1, 30); ctx.fillRect(x - 1, base - 31, 9, 2); ctx.fillRect(x + 6, base - 30, 1, 4);
   const cx = x + 6, cy = base - 22;
@@ -4426,7 +4471,13 @@ function applyAid(kind, amt) {
 }
 function die() {
   p.downed = NET.on && NET.peers.some(q => q.s.rk === room.key && q.s.md === 'play' && (CLASSES[q.s.c] || {}).group === 'support');
-  mode = 'dead'; modeT = p.downed ? 600 : 100; save.deaths++; persist();
+  mode = 'dead'; modeT = p.downed ? 600 : 100; save.deaths++; wakeReq = false;
+  if (!p.downed) fallFully(); persist();
+}
+function fallFully() {
+  if (bossMode || !(save.shards > 0)) return;
+  const sp = p.safe && p.safe.k === room.key ? p.safe : {x:entry.x, y:entry.y};
+  save.grave = {k:room.key, x:Math.round(sp.x), y:Math.round(sp.y), n:save.shards}; save.shards = 0; sparks = [];
 }
 function supportTick() {
   if (p.shield > 0) p.shield--;
@@ -4495,7 +4546,12 @@ function update() {
   if (mode === 'bintro') { bintroTick(); clearHits(); return; }
   if (mode === 'title') { updateParts(); if (!dlg.open && !binder.open && !wardrobe.open) openTitle(); clearHits(); return; }
   if (mode === 'won') { ringT++; if (hit.restart) newGame(); clearHits(); updateParts(); return; }
-  if (mode === 'dead') { if (--modeT <= 0 && bossMode) { mode = 'play'; bossHall('You fell. Try again.'); clearHits(); return; } if (modeT <= 0) { mode = 'play'; p.downed = false; if (!respawnAtCheckpoint()) startAt(save.gateOpen && !save.bossDead ? 'G' : 'T'); } clearHits(); updateParts(); return; }
+  if (mode === 'dead') {
+    if (modeT > 0) modeT--;
+    if (p.downed && modeT <= 0) { p.downed = false; fallFully(); persist(); modeT = 100; wakeReq = false; }
+    else if (!p.downed && modeT <= 40 && (wakeReq || Object.keys(hit).some(q => hit[q]))) { mode = 'play'; wakeReq = false; if (bossMode) bossHall('You fell. Try again.'); else { startAt('T'); toast = {text:save.grave ? 'Your shards wait where you fell' : 'You wake in the Training Yard', t:150}; } }
+    clearHits(); updateParts(); return;
+  }
   if (mode === 'respawn') { if (--modeT <= 0) mode = 'play'; clearHits(); return; }
   save.frames++;
   p.calm = (p.calm || 0) + 1;
@@ -4529,6 +4585,7 @@ function update() {
   const npcNear = nearNpc();
   if (hit.attack && npcNear && p.onGround) { hit.attack = false; p.vx = 0; talk(npcNear); }
   if (hit.attack && p.onGround && nearEnt('W')) { hit.attack = false; p.vx = 0; openClassPick(); }
+  if (hit.up && p.onGround && (nearEnt('%') || nearLitLantern())) { hit.up = false; p.vx = 0; openTravel(); }
   if (hit.attack && p.onGround && nearEnt('&')) { hit.attack = false; p.vx = 0; openShrine(); }
   if (hit.attack && p.onGround && nearEnt('M')) { hit.attack = false; p.vx = 0; openWardrobe(); }
   if (hit.attack && p.atkCd === 0) {
@@ -4668,10 +4725,10 @@ function update() {
       tone(660, .3, 'triangle', .04); tone(990, .4, 'triangle', .03, null, .1); openNote();
     }
     if (it.t === 'q' && mode === 'play' && overlap(p, {x:it.x*T - 4, y:it.y*T - 12, w:24, h:28})) {
-      const here = save.cp && save.cp.k === room.key && save.cp.x === it.x;
+      const here = litHas(room.key, it.x);
       if (!here) {
-        save.cp = {k:room.key, x:it.x, y:it.y}; persist(); p.hp = p.max; p.calm = 0;
-        toast = {text:'Lantern lit. You will wake here.', t:150}; sfx.raise(); sfx.heal(); burst(it.x*T + 8, it.y*T + 2, '#ffd27a', 24, 2);
+        save.cp = {k:room.key, x:it.x, y:it.y}; save.lit = save.lit || {}; save.lit[room.key + ',' + it.x + ',' + it.y] = 1; persist(); p.hp = p.max; p.calm = 0;
+        toast = {text:'Lantern lit. Travel here from any lit lantern or the waystone in the Training Yard.', t:200}; sfx.raise(); sfx.heal(); burst(it.x*T + 8, it.y*T + 2, '#ffd27a', 24, 2);
       }
     }
     if (it.t === 'B' && mode === 'play') {
@@ -6304,7 +6361,7 @@ function drawMapStatic() {
       else if (NPCS[e.t] && !save.gone[e.t]) ic = 'person';
       else if (e.t === 'B') ic = 'gate';
       else if (e.t === 'W') ic = 'camp';
-      else if (e.t === 'q' && save.cp && save.cp.k === r.key && save.cp.x === e.x) ic = 'camp';
+      else if (e.t === 'q' && litHas(r.key, e.x)) ic = 'camp';
       if (!ic) continue;
       const m = at(r, e.x + .5, e.y + .5);
       for (let n = 0; n < 4 && mapMarks.some(q => Math.abs(q.x - m.x) < 10 && Math.abs(q.y - m.y) < 10); n++) m.x += 10;
@@ -6567,6 +6624,8 @@ function render() {
   if (mode === 'play') {
     const rk = nearEnt('W');
     if (rk) promptBubble(keyOf('attack'), 'Change class', rk.x*T + 8 - cx, rk.y*T - 22 - cy, '#ff8a3d');
+    const ws = nearEnt('%') || nearLitLantern();
+    if (ws) promptBubble(keyOf('up'), 'Travel', ws.x*T + 8 - cx, ws.y*T - 34 - cy, '#ff8a3d');
     const sh = nearEnt('&');
     if (sh) promptBubble(keyOf('attack'), 'Ember Shrine', sh.x*T + 8 - cx, sh.y*T - 30 - cy, '#ff8a3d');
     const mr = nearEnt('M');
@@ -6595,7 +6654,9 @@ function render() {
     ctx.font = '30px "IM Fell English SC", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#000'; ctx.fillText('You fall in the rubble', VW/2 + 1, VH/2 - 11); ctx.fillStyle = '#e8503a'; ctx.fillText('You fall in the rubble', VW/2, VH/2 - 12);
     ctx.fillStyle = '#a07a46'; ctx.fillRect(VW/2 - 60, VH/2 + 6, 120, 1);
-    txt(save.cp && ROOMS[save.cp.k] ? 'You wake at the lantern in ' + ROOMS[save.cp.k].name + '.' : save.gateOpen && !save.bossDead ? 'You wake at the open gate. It is still waiting.' : 'You wake at the camp. Your gear stays with you.', VW/2, VH/2 + 14, 8, '#c9b8a8', 'center');
+    if (save.grave && !bossMode) txt('Your ' + save.grave.n + ' shards lie where you fell. Die again first and they are gone.', VW/2, VH/2 + 28, 8, '#ffb04a', 'center');
+    if (modeT <= 40) { ctx.globalAlpha = .55 + .45 * Math.sin(tick * .08); txt(bossMode ? 'Click to go back to the hall' : 'Click to wake in the Training Yard', VW/2, VH/2 + 44, 8, '#fff0d8', 'center'); ctx.globalAlpha = da; }
+    txt(bossMode ? 'The statue waits.' : 'You fall, and the city keeps burning.', VW/2, VH/2 + 14, 8, '#c9b8a8', 'center');
     ctx.globalAlpha = 1;
   }
   mapc.hidden = !showMap;
@@ -6861,12 +6922,12 @@ function openSound(back) {
 }
 /* ---------- Boss fights ---------- */
 const BOSS_LIST = [
-  {k:'forge', room:'Z', name:'The Forgemaster', sub:'He made the chains. Then he made more.', from:'left'},
-  {k:'eel', room:'N', name:'The Eel-Mother', sub:'She slept under the dams until you broke them.', from:'left'},
-  {k:'thorn', room:'R', name:'The Thorn Queen', sub:'She bargained for her garden. It kept her.', from:'right'},
-  {k:'choir', room:'c', name:'The Bone Choir', sub:'They sang for the city once. Now they sing for you.', from:'left'},
-  {k:'bell', room:'b', name:'The Bellwright', sub:'He rang it until his hands bled. Nobody came.', from:'left'},
-  {k:'ash', room:'X', name:'The Ash-King', sub:'We had a deal, warden.', from:'left'}];
+  {k:'forge', say:'Chains, warden. I made them for your kind first.', room:'Z', name:'The Forgemaster', sub:'He made the chains. Then he made more.', from:'left'},
+  {k:'eel', say:'You let the water in. Stay with it.', room:'N', name:'The Eel-Mother', sub:'She slept under the dams until you broke them.', from:'left'},
+  {k:'thorn', say:'They promised me a garden. Look what grew.', room:'R', name:'The Thorn Queen', sub:'She bargained for her garden. It kept her.', from:'right'},
+  {k:'choir', say:'Who opened the gate? A hundred mouths answer: you.', room:'c', name:'The Bone Choir', sub:'They sang for the city once. Now they sing for you.', from:'left'},
+  {k:'bell', say:'I rang until my hands bled. You heard it. You stayed home.', room:'b', name:'The Bellwright', sub:'He rang it until his hands bled. Nobody came.', from:'left'},
+  {k:'ash', say:'Your sister is behind me. Come and take her.', room:'X', name:'The Ash-King', sub:'We had a deal, warden.', from:'left'}];
 makeRoom('BH', 'Hall of Statues', 40, 12, 3, 1, {indoor:true, dark:.6}, B => { B.solid(0, 16, 95, 17); for (let i = 0; i < 6; i++) B.solid(10 + i * 13, 14, 14 + i * 13, 15); B.put('P', 4, 15); });
 let bintro = null;
 const DIFFS = {easy:{name:'Easy', hp:.6, dmg:0, hearts:2}, normal:{name:'Normal', hp:1, dmg:0, hearts:0}, hard:{name:'Hard', hp:1.5, dmg:1, hearts:0}};
@@ -6984,20 +7045,23 @@ function bintroTick() {
   const b = bintro; if (!b) { mode = 'play'; return; }
   b.t++;
   const tx = Math.max(0, Math.min(room.pw - VW, b.at.x - VW / 2)), ty = Math.max(0, Math.min(room.ph - VH, b.at.y - VH / 2));
-  const k = b.t < 200 ? Math.min(1, b.t / 50) : Math.max(0, 1 - (b.t - 200) / 40), e = k * k * (3 - 2 * k);
+  const k = b.t < 280 ? Math.min(1, b.t / 50) : Math.max(0, 1 - (b.t - 280) / 40), e = k * k * (3 - 2 * k);
   cam.x = b.from.x + (tx - b.from.x) * e; cam.y = b.from.y + (ty - b.from.y) * e;
   if (b.t === 70) { sfx.roar ? sfx.roar() : sfx.boom(); shake = 10; }
   updateParts();
-  if (b.t > 30 && Object.keys(hit).some(q => hit[q]) && b.t < 200) b.t = 200;
+  if (b.t > 20 && (wakeReq || Object.keys(hit).some(q => hit[q])) && b.t < 280) b.t = 280;
+  wakeReq = false;
   if (banner) { b.banner = b.banner || banner; banner = null; }
-  if (b.t >= 240) { banner = b.banner; bintro = null; mode = 'play'; }
+  if (b.t >= 320) { banner = b.banner; bintro = null; mode = 'play'; }
 }
 function drawBintro() {
   const b = bintro; if (!b || mode !== 'bintro') return;
-  const bar = Math.min(1, b.t / 30, (240 - b.t) / 30) * 30;
+  const bar = Math.min(1, b.t / 30, (320 - b.t) / 30) * 30;
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, bar); ctx.fillRect(0, VH - bar, VW, bar);
-  const a = Math.max(0, Math.min(1, (b.t - 60) / 30, (210 - b.t) / 30));
+  if (b.t < 280) { ctx.globalAlpha = .45 + .25 * Math.sin(tick * .1); txt('Any key to skip', VW - 10, VH - 22, 8, '#c9b8a8', 'right'); ctx.globalAlpha = 1; }
+  const a = Math.max(0, Math.min(1, (b.t - 60) / 30, (290 - b.t) / 30));
   if (a <= 0) return;
+  if (b.B.say && b.t > 120) { const n = Math.min(b.B.say.length, Math.floor((b.t - 120) * .8)); ctx.save(); ctx.globalAlpha = a; ctx.font = 'italic 12px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText('“' + b.B.say.slice(0, n) + (n >= b.B.say.length ? '”' : ''), VW / 2 + 1, VH - 47); ctx.fillStyle = '#f2e2c4'; ctx.fillText('“' + b.B.say.slice(0, n) + (n >= b.B.say.length ? '”' : ''), VW / 2, VH - 48); ctx.restore(); if (n < b.B.say.length && tick % 3 === 0 && /[a-z]/i.test(b.B.say[n])) blip({f:70, type:'sawtooth', vol:.022, var:.25}, b.B.say[n]); }
   ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = '30px "IM Fell English SC", "IM Fell English", Georgia, serif'; ctx.fillStyle = '#000'; ctx.fillText(b.B.name, VW / 2 + 1, 59); ctx.fillStyle = '#f2e2c4'; ctx.fillText(b.B.name, VW / 2, 58);
   ctx.fillStyle = '#a07a46'; ctx.fillRect(VW / 2 - 70, 76, 140, 1);
