@@ -246,6 +246,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
       <button data-k="down" aria-label="Drop through ledge">&#9660;</button>
     </div>
     <div class="tact">
+      <button data-k="interact">Use</button>
       <button data-k="hook">Hook</button>
       <button data-k="skill">Skill</button>
       <button data-k="skill2">Skill 2</button>
@@ -272,7 +273,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.38';
+const VERSION = '0.1.39';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -610,6 +611,8 @@ function dummyHit(e, dmg) {
   e.hp = 999; e.wob = 18;
   pops.push({x:e.x + e.w / 2, y:e.y - 4, v:dmg, life:45});
 }
+const useHit = () => !!(hit.interact || pad.live && hit.up);
+const useDone = () => { hit.interact = false; if (pad.live) hit.up = false; };
 function nearEnt(t) {
   for (const it of room.ents) if (it.t === t) {
     const nx = it.x*T + 8, ny = it.y*T + 8;
@@ -812,6 +815,13 @@ const UPS = {
   greed:{name:'Greed', sub:'Half again as many shards from every kill.', cost:[20, 60]},
 };
 const upLv = k => (save && save.ups && save.ups[k]) || 0;
+const TREE = {
+  attack:[{name:'Swift Hands', sub:'Basic attacks come back 15% faster.'}, {name:'Second Wind', sub:'Every eighth kill gives back a heart.'}, {name:'Overcharge', sub:'Heavy strikes charge 40% faster.'}, {name:'Wrath', sub:'Everything you do hits one point harder.'}],
+  defense:[{name:'Thick Skin', sub:'One more heart.'}, {name:'Ember Ward', sub:'Stay untouchable longer after a hit.'}, {name:'Bulwark', sub:'Enter every room with a shield that eats one hit.'}, {name:'Retribution', sub:'Taking a hit burns everything close for 2.'}]  ,
+  support:[{name:'Kindle', sub:'Your first skill comes back 20% sooner.'}, {name:'Wide Light', sub:'Heals, shields and rallies reach half again as far.'}, {name:'Lifeline', sub:'Allies you raise come back with every heart.'}, {name:'Undying', sub:'Once a room, a killing blow leaves you on one heart.'}]};
+const TREE_COST = [40, 80, 140, 220];
+const treeHas = (g, i) => !!(save && save.tree && save.tree[g + i]);
+const treeOn = (g, i) => treeHas(g, i) && cls().group === g;
 const hasteK = () => 1 - .12 * upLv('haste');
 const CACHES = [['H', 23, 4, 8], ['C', 4, 3, 8], ['D', 22, 3, 15], ['B', 19, 3, 8], ['I', 150, 3, 8], ['F', 119, 7, 15], ['O', 56, 2, 8], ['W', 89, 3, 8], ['Q', 86, 5, 15],
   ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8], ['g', 33, 5, 15], ['o', 13, 6, 8], ['s', 24, 9, 15]];
@@ -898,11 +908,24 @@ function shardHud(x, y) {
   txt(String(show), x + 13, y + 3, 8, '#e3d6bd');
 }
 function openShrine() {
+  const n = save.shards || 0, g = cls().group;
+  const opts = [{text:'Ember upgrades', tag:'For every class', run:() => shrineUps()}, ...GROUPS.map(([k, label]) => ({text:label + ' branch', tag:(k === g ? 'Yours now · ' : 'Works when you play a ' + label.toLowerCase() + ' class · ') + TREE[k].filter((_, i) => treeHas(k, i)).length + '/4', run:() => shrineTree(k)})), {text:'Leave'}];
+  openDlg({kicker:'Ember Shrine', title:`${n} shards`, body:['The fire in it is the same fire as the city. Feed it what you take from them.'], opts});
+}
+function shrineTree(k) {
+  const n = save.shards || 0, label = GROUPS.find(q => q[0] === k)[1];
+  const opts = TREE[k].map((N, i) => { const has = treeHas(k, i), c = TREE_COST[i], prev = i === 0 || treeHas(k, i - 1);
+    return {text:(has ? '● ' : '○ ') + N.name, tag:has ? 'Learned · ' + N.sub : !prev ? 'Learn ' + TREE[k][i - 1].name + ' first' : `${c} shards · ${N.sub}`, disabled:has || !prev || n < c,
+      run:() => { save.shards -= c; save.tree = save.tree || {}; save.tree[k + i] = 1; p.max = maxHp(); persist(); sfx.pick(); burst(p.x + p.w / 2, p.y + 8, ROLECOL[k], 20, 2.2); shrineTree(k); }}; });
+  opts.push({text:'Back', run:() => openShrine()});
+  openDlg({kicker:'Ember Shrine · ' + label + ' branch', title:`${n} shards`, body:[cls().group === k ? 'This branch works for the class you play now.' : 'This branch only works while you play a ' + label.toLowerCase() + ' class.'], opts});
+}
+function shrineUps() {
   const n = save.shards || 0;
   const opts = Object.keys(UPS).map(k => { const U = UPS[k], lv = upLv(k), max = lv >= U.cost.length, c = U.cost[lv];
     return {text:`${U.name} ${'●'.repeat(lv)}${'○'.repeat(U.cost.length - lv)}`, tag:max ? 'Done' : `${c} shards · ${U.sub}`, disabled:max || n < c,
-      run:() => { save.shards -= c; save.ups = save.ups || {}; save.ups[k] = lv + 1; p.max = maxHp(); if (k === 'vig') p.hp = p.max; persist(); sfx.pick(); burst(p.x + p.w / 2, p.y + 8, '#ffb04a', 20, 2.2); openShrine(); }}; });
-  opts.push({text:'Leave'});
+      run:() => { save.shards -= c; save.ups = save.ups || {}; save.ups[k] = lv + 1; p.max = maxHp(); if (k === 'vig') p.hp = p.max; persist(); sfx.pick(); burst(p.x + p.w / 2, p.y + 8, '#ffb04a', 20, 2.2); shrineUps(); }}; });
+  opts.push({text:'Back', run:() => openShrine()});
   openDlg({kicker:'Ember Shrine', title:`${n} shards`, body:['The fire in it is the same fire as the city. Feed it what you take from them.'], opts});
 }
 
@@ -915,7 +938,7 @@ function airLaunch(A) {
 }
 function playerDmg(A) {
   const C = cls();
-  return A.dmg + (save.str || 1) - 1 + (save.whet ? 1 : 0) + (p.lunge ? 1 : 0) + (p.dive ? 1 : 0) + (C.frenzy && p.hp <= p.max / 2 ? 1 : 0) + (C.crit && p.critSwing && p.atkT > 0 ? 2 : 0) + (p.song > 0 ? 1 : 0) + upLv('edge');
+  return A.dmg + (save.str || 1) - 1 + (save.whet ? 1 : 0) + (p.lunge ? 1 : 0) + (p.dive ? 1 : 0) + (C.frenzy && p.hp <= p.max / 2 ? 1 : 0) + (C.crit && p.critSwing && p.atkT > 0 ? 2 : 0) + (p.song > 0 ? 1 : 0) + upLv('edge') + (treeOn('attack', 3) ? 1 : 0);
 }
 function hitEnemy(e, dmg, kx) {
   e.hp -= dmg; e.flash = 12; if (e.dummy) dummyHit(e, dmg);
@@ -1525,13 +1548,13 @@ function closeWardrobe() {
 }
 
 /* ---------- State ---------- */
-const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}, lit:{}, grave:null});
+const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}, lit:{}, grave:null, tree:{}});
 const SAVE_KEY = 'wallfall-save';
 let save = fresh();
 let bossMode = null;
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), {seenIntro:true}, s); } catch (e) {}
 const persist = () => { if (typeof bossMode !== 'undefined' && bossMode) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
-const maxHp = () => bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0) + upLv('vig');
+const maxHp = () => bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0) + upLv('vig') + (treeOn('defense', 0) ? 1 : 0);
 
 let room, enemies = [], anchors = [], parts = [], entry = {x:0, y:0}, cam = {x:0, y:0};
 const DYN = new Map(); let R = null;
@@ -2375,9 +2398,9 @@ function musSting(kind) {
 
 /* ---------- Input ---------- */
 const held = {}, hit = {};
-const ACTIONS = [['left', 'Move left'], ['right', 'Move right'], ['up', 'Aim up'], ['jump', 'Jump'], ['attack', 'Strike / talk'], ['dash', 'Dash'], ['skill', 'Class skill'], ['skill2', 'Second skill'], ['hook', 'Grapple'], ['down', 'Drop through ledges'], ['map', 'Map']];
+const ACTIONS = [['left', 'Move left'], ['right', 'Move right'], ['up', 'Aim up'], ['jump', 'Jump'], ['attack', 'Strike'], ['interact', 'Talk / use'], ['dash', 'Dash'], ['skill', 'Class skill'], ['skill2', 'Second skill'], ['hook', 'Grapple'], ['down', 'Drop through ledges'], ['map', 'Map']];
 const DEFAULT_BINDS = {left:['ArrowLeft', 'KeyA', null], right:['ArrowRight', 'KeyD', null], up:['KeyW', 'ArrowUp', null], jump:['KeyZ', 'Space', 'ArrowUp'],
-  attack:['KeyX', 'KeyJ', null], dash:['KeyC', 'ShiftLeft', 'ShiftRight'], skill:['KeyQ', 'KeyL', null], skill2:['KeyR', 'KeyI', null], hook:['KeyV', 'KeyF', null], down:['ArrowDown', 'KeyS', null], map:['KeyM', null, null]};
+  attack:['KeyX', 'KeyJ', null], dash:['KeyC', 'ShiftLeft', 'ShiftRight'], skill:['KeyQ', 'KeyL', null], skill2:['KeyR', 'KeyI', null], hook:['KeyV', 'KeyF', null], down:['ArrowDown', 'KeyS', null], map:['KeyM', null, null], interact:['KeyE', null, null]};
 let binds = JSON.parse(JSON.stringify(DEFAULT_BINDS));
 try { const b = JSON.parse(localStorage.getItem('wallfall-binds') || 'null'); if (b) for (const [a] of ACTIONS) if (Array.isArray(b[a])) binds[a] = [0, 1, 2].map(i => b[a][i] || null); } catch (e) {}
 if (!binds.up.some(Boolean)) binds.up = ['KeyW', 'ArrowUp', null];
@@ -2519,7 +2542,7 @@ function binderKey(e) {
 
 /* ---------- Controller ---------- */
 const PAD_ACTS = {0:'jump', 1:'dash', 2:'attack', 3:'skill', 4:'hook', 5:'skill2', 6:'hook', 7:'dash', 8:'map', 12:'up', 13:'down', 14:'left', 15:'right'};
-const PAD_NAMES = {jump:'A', dash:'B', attack:'X', skill:'Y', hook:'LB', skill2:'RB', map:'Back'};
+const PAD_NAMES = {jump:'A', dash:'B', attack:'X', skill:'Y', hook:'LB', skill2:'RB', map:'Back', interact:'Up'};
 const pad = {live:false, on:false, was:{}, used:{}, want:{}, dir:'', next:0};
 const padDown = (g, i) => { const b = g.buttons[i]; return !!b && (b.pressed || b.value > .5); };
 const padKey = code => dispatchEvent(new KeyboardEvent('keydown', {code, bubbles:true, cancelable:true}));
@@ -2608,6 +2631,7 @@ function killCheck(e) { if (e.hp <= 0 && !e.dead) { e.dead = true;
   if (e.crate) { crateBroken(e); return; }
   if (!e.dummy && !e.prop) dropShards(e);
   if (!e.dummy && !e.crate && cls().atk.type === 'summon' && Math.random() < .2) summonThrall(e.x + e.w/2, e.y + e.h);
+  if (!e.dummy && treeOn('attack', 1) && (p.kills8 = (p.kills8 || 0) + 1) % 8 === 0 && p.hp < p.max) { p.hp++; sfx.heal(); pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'+1'}); }
   if (!e.dummy && cls().souls && (p.souls || 0) < 6) p.souls = (p.souls || 0) + 1;
   if (!e.dummy && cls().frenzy && (p.kills = (p.kills || 0) + 1) % 3 === 0 && p.hp < p.max) { p.hp++; burst(p.x + p.w/2, p.y + 6, '#ff5a4a', 12, 1.5); sfx.heal(); } burst(e.x + e.w/2, e.y + e.h/2, DEATHCOL[e.t] || '#ff7a2e', e.t === 'u' ? 30 : 18, 2.5); if (e.t === 'u') shake = 6; } }
 function upStrike(e) {
@@ -4086,6 +4110,7 @@ function drawDistrictCard() {
 }
 function enterRoom(key) {
   room = ROOMS[key];
+  if (save && treeOn('defense', 2) && !bossMode) p.shield = Math.max(p.shield || 0, 99999);
   if (!save.visited[key]) { save.visited[key] = true; persist(); }
   if (!districtEnter(key)) toast = {text:room.name, t:150}; else toast = null;
   enemies = room.ents.filter(e => 'gjukOerwlcby'.includes(e.t)).map(e => makeEnemy(e.t, e.x, e.y));
@@ -4216,7 +4241,7 @@ const SKILLS = {
   chaplain:{name:'Benediction', cd:420}, lightbearer:{name:'Aegis', cd:420},
   reaper:{name:'Reap', cd:170}, ringdancer:{name:'Twin Rings', cd:110}, juggernaut:{name:'Bull Rush', cd:200}, sentinel:{name:'Leg Sweep', cd:160}, drummer:{name:'War Song', cd:480}, alchemist:{name:'Elixir', cd:330}};
 let pwaves = [];
-const skillDmg = d => d + (save.whet ? 1 : 0) + upLv('edge');
+const skillDmg = d => d + (save.whet ? 1 : 0) + upLv('edge') + (treeOn('attack', 3) ? 1 : 0);
 function hitArea(test, dmg, kx, col = '#ffcf8a', hitSet) {
   let n = 0;
   for (const e of enemies) {
@@ -4235,7 +4260,7 @@ function floorBelow(x, y) { const cx = Math.floor(x / T); let cy = Math.floor(y 
 function useSkill() {
   const k = clsKey(), S = SKILLS[k]; if (!S || p.skillCd > 0 || p.hook) return;
   const cx = p.x + p.w / 2, cy = p.y + p.h / 2, f = p.face, A = cls().atk;
-  p.skillCd = Math.round(S.cd * hasteK()); p.skillFlash = 20;
+  p.skillCd = Math.round(S.cd * hasteK() * (treeOn('support', 0) ? .8 : 1)); p.skillFlash = 20;
   if (k === 'warden') { hitArea(inCircle(cx, cy, 42), skillDmg(2), e => Math.sign(e.x + e.w / 2 - cx) * 10); p.spin = Math.max(p.spin || 0, 16); blasts.push({x:cx, y:cy, r:42, life:14}); sfx.heavy(); }
   else if (k === 'mage') { for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; shots.push({x:cx, y:cy, vx:Math.cos(a) * 3.4, vy:Math.sin(a) * 3.4, life:30, dmg:skillDmg(1), kind:'fire', hit:[]}); } sfx.fire(); sfx.boom(); }
   else if (k === 'breaker') { if (p.onGround) spawnQuake(); else { p.vy = 9; p.pendingQuake = true; p.noCut = 0; } sfx.heavy(); }
@@ -4366,6 +4391,7 @@ function skillBar(S, act, cd, flash, y) {
 
 /* ---------- More moves ---------- */
 const CHG = 34;
+const chgNeed = () => treeOn('attack', 2) ? 21 : CHG;
 function attackVariant(C, A) {
   if (p.hook || A.type === 'summon') return null;
   const air = !p.onGround, down = !!held.down && !held.up;
@@ -4395,8 +4421,8 @@ function aimVariant(A) {
 }
 function chargeTick() {
   if (mode !== 'play' || p.hook) { p.chg = 0; return; }
-  if (held.attack && !nearNpc()) { p.chg = (p.chg || 0) + 1; if (p.chg === CHG) { sfx.clang(); burst(p.x + p.w / 2 + p.face * 8, p.y + 10, '#ffe08a', 10, 1.4); } }
-  else { if (p.chg >= CHG) heavyStrike(); p.chg = 0; }
+  if (held.attack && !nearNpc()) { p.chg = (p.chg || 0) + 1; if (p.chg === chgNeed()) { sfx.clang(); burst(p.x + p.w / 2 + p.face * 8, p.y + 10, '#ffe08a', 10, 1.4); } }
+  else { if (p.chg >= chgNeed()) heavyStrike(); p.chg = 0; }
 }
 function heavyStrike() {
   const C = cls(), A = C.atk, cx = p.x + p.w / 2, f = p.face;
@@ -4421,7 +4447,7 @@ function heavyStrike() {
 }
 function drawCharge() {
   if (!(p.chg > 10) || mode !== 'play') return;
-  const cx = p.x + p.w / 2, cy = p.y + 11, k = Math.min(1, (p.chg - 10) / (CHG - 10));
+  const cx = p.x + p.w / 2, cy = p.y + 11, k = Math.min(1, (p.chg - 10) / (chgNeed() - 10));
   if (k < 1) { ctx.fillStyle = `rgba(255,224,140,${.3 + .5 * k})`; for (let i = 0; i < 3; i++) { const a = tick * .3 + i * 2.1; ctx.fillRect(Math.round(cx + Math.cos(a) * (14 - k * 8)), Math.round(cy + Math.sin(a) * (14 - k * 8)), 2, 2); } }
   else { ctx.strokeStyle = `rgba(255,224,140,${.55 + .35 * Math.sin(tick * .4)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 15, 0, Math.PI * 2); ctx.stroke(); }
 }
@@ -4506,6 +4532,8 @@ function drawMoveFx() {
 const AID_R = 120;
 function aid(kind, amt, r = AID_R) {
   const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+  if (treeOn('support', 1)) r = Math.round(r * 1.5);
+  if (kind === 'v' && treeOn('support', 2)) amt = 1;
   applyAid(kind, amt);
   if (NET.on) { NET.aids.push([++NET.aidSeq, kind, Math.round(cx), Math.round(cy), r, amt]); if (NET.aids.length > 8) NET.aids.shift(); }
 }
@@ -4515,7 +4543,7 @@ function aidAt(kind, amt, x, y, r, noSelf) {
 }
 function applyAid(kind, amt) {
   const cx = p.x + p.w / 2;
-  if (kind === 'v') { if (mode === 'dead' && p.downed) { mode = 'play'; p.downed = false; p.hp = Math.min(p.max, 2); p.inv = 90; burst(cx, p.y + 8, '#fff0b8', 24, 2.6); sfx.heal(); toast = {text:'Raised by an ally', t:110}; } return; }
+  if (kind === 'v') { if (mode === 'dead' && p.downed) { mode = 'play'; p.downed = false; p.hp = amt ? p.max : Math.min(p.max, 2); p.inv = 90; burst(cx, p.y + 8, '#fff0b8', 24, 2.6); sfx.heal(); toast = {text:'Raised by an ally', t:110}; } return; }
   if (mode !== 'play' || p.hp <= 0) return;
   if (kind === 'h' && p.hp < p.max) { p.hp = Math.min(p.max, p.hp + amt); sfx.heal(); burst(cx, p.y + 8, '#ff8a7a', 14, 1.6); pops.push({x:cx, y:p.y - 6, v:0, life:30, txt:'+' + amt}); }
   if (kind === 's') { p.shield = amt; burst(cx, p.y + 10, '#fff0b8', 12, 1.8); }
@@ -4575,7 +4603,9 @@ function hurt(fromX, dmg = 1) {
     dmg -= 1; sfx.clang(); burst(p.x + p.w/2 + p.face * 10, p.y + 8, '#ffe0a0', 10, 2); p.vx = -p.face * 2.6; p.lock = 6;
     if (dmg <= 0) { p.inv = 24; return; }
   }
-  p.hp -= dmg; p.inv = 70; shake = 8; sfx.hurt(); p.hook = null; p.calm = 0; p.regen = 0;
+  p.hp -= dmg; p.inv = treeOn('defense', 1) ? 115 : 70; shake = 8; sfx.hurt(); p.hook = null; p.calm = 0; p.regen = 0;
+  if (treeOn('defense', 3)) { const cx = p.x + p.w / 2, cy = p.y + p.h / 2; hitArea(inCircle(cx, cy, 40), 2, e => Math.sign(e.x + e.w / 2 - cx) * 10, '#ff8a2a'); burst(cx, cy, '#ff8a2a', 14, 2.4); }
+  if (p.hp <= 0 && treeOn('support', 3) && p.undying !== room.key) { p.hp = 1; p.undying = room.key; p.inv = 120; pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:40, txt:'UNDYING'}); burst(p.x + p.w / 2, p.y + 8, '#fff0b8', 20, 2.4); sfx.heal(); }
   if (!cls().steady) { p.vx = (p.x + p.w/2 < fromX ? -1 : 1) * 3; p.vy = -4; p.dashT = 0; p.lock = 8; }
   burst(p.x + p.w/2, p.y + p.h/2, '#ff6a4a', 12);
   if (p.hp <= 0) die();
@@ -4635,13 +4665,14 @@ function update() {
     burst(p.x + p.w/2, p.y + p.h/2, '#ffb36a', 8, 1.5);
   }
   const npcNear = nearNpc();
-  if (hit.attack && npcNear && p.onGround) { hit.attack = false; p.vx = 0; talk(npcNear); }
-  if (hit.attack && p.onGround && nearEnt('W')) { hit.attack = false; p.vx = 0; openClassPick(); }
-  if (hit.up && p.onGround && (nearEnt('%') || nearLitLantern())) { hit.up = false; p.vx = 0; openTravel(); }
-  if (hit.attack && p.onGround && nearEnt('&')) { hit.attack = false; p.vx = 0; openShrine(); }
-  if (hit.attack && p.onGround && nearEnt('M')) { hit.attack = false; p.vx = 0; openWardrobe(); }
+  const use = useHit();
+  if (use && npcNear && p.onGround) { useDone(); p.vx = 0; talk(npcNear); }
+  else if (use && p.onGround && nearEnt('W')) { useDone(); p.vx = 0; openClassPick(); }
+  else if (use && p.onGround && (nearEnt('%') || nearLitLantern())) { useDone(); p.vx = 0; openTravel(); }
+  else if (use && p.onGround && nearEnt('&')) { useDone(); p.vx = 0; openShrine(); }
+  else if (use && p.onGround && nearEnt('M')) { useDone(); p.vx = 0; openWardrobe(); }
   if (hit.attack && p.atkCd === 0) {
-    const C = cls(), A = C.atk; p.atkT = A.dur; p.atkCd = A.cd; p.lash = false; p.lunge = false; p.up = !!held.up && !held.down;
+    const C = cls(), A = C.atk; p.atkT = A.dur; p.atkCd = Math.round(A.cd * (treeOn('attack', 0) ? .85 : 1)); p.lash = false; p.lunge = false; p.up = !!held.up && !held.down;
     if (C.crit) { p.swingN = (p.swingN || 0) + 1; p.critSwing = p.swingN % 3 === 0; }
     p.atkOv = null; p.variant = attackVariant(C, A);
     if (A.type === 'melee' && p.variant) { p.atkOv = meleeVariant(A, p.variant); p.atkT = p.atkOv.dur; }
@@ -6275,7 +6306,7 @@ function drawHUD() {
   drawRBossBar();
   drawCoopChip();
   if (room.key === 'T' && save.frames < 1200 && !banner && mode === 'play' && p.x < 200) {
-    const items = [[keyOf('left') + ' ' + keyOf('right'), 'move'], [keyOf('jump'), 'jump'], [keyOf('attack'), 'strike / talk'], [keyOf('dash'), 'dash']];
+    const items = [[keyOf('left') + ' ' + keyOf('right'), 'move'], [keyOf('jump'), 'jump'], [keyOf('attack'), 'strike'], [keyOf('interact'), 'talk / use'], [keyOf('dash'), 'dash']];
     ctx.font = '8px Silkscreen, ui-monospace, monospace';
     let total = 0; const ws = items.map(([k, v]) => { const kw = Math.max(11, Math.ceil(ctx.measureText(k).width) + 6), vw = Math.ceil(ctx.measureText(v).width); total += kw + vw + 18; return [kw, vw]; });
     let x = Math.round((VW - total) / 2) + 4; const y = VH - 26;
@@ -6675,18 +6706,18 @@ function render() {
   }
   if (mode === 'play') {
     const rk = nearEnt('W');
-    if (rk) promptBubble(keyOf('attack'), 'Change class', rk.x*T + 8 - cx, rk.y*T - 22 - cy, '#ff8a3d');
+    if (rk) promptBubble(keyOf('interact'), 'Change class', rk.x*T + 8 - cx, rk.y*T - 22 - cy, '#ff8a3d');
     const ws = nearEnt('%') || nearLitLantern();
-    if (ws) promptBubble(keyOf('up'), 'Travel', ws.x*T + 8 - cx, ws.y*T - 34 - cy, '#ff8a3d');
+    if (ws) promptBubble(keyOf('interact'), 'Travel', ws.x*T + 8 - cx, ws.y*T - 34 - cy, '#ff8a3d');
     const sh = nearEnt('&');
-    if (sh) promptBubble(keyOf('attack'), 'Ember Shrine', sh.x*T + 8 - cx, sh.y*T - 30 - cy, '#ff8a3d');
+    if (sh) promptBubble(keyOf('interact'), 'Ember Shrine', sh.x*T + 8 - cx, sh.y*T - 30 - cy, '#ff8a3d');
     const mr = nearEnt('M');
-    if (mr) promptBubble(keyOf('attack'), 'Change look', mr.x*T + 8 - cx, mr.y*T - 30 - cy, '#ff8a3d');
+    if (mr) promptBubble(keyOf('interact'), 'Change look', mr.x*T + 8 - cx, mr.y*T - 30 - cy, '#ff8a3d');
     const sg = nearEnt('S');
     if (sg) { const i = room.ents.filter(e => e.t === 'S').indexOf(sg); signBubble((SIGNS[room.key] || TIPS())[i] || '', sg.x*T + 8 - cx, sg.y*T - 26 - cy); }
   }
   const nn = mode === 'play' && nearNpc();
-  if (nn) promptBubble(keyOf('attack'), save.talked[nn.t] ? 'Talk' : 'Talk', nn.x*T + 8 - cx, nn.y*T + 16 - ({f:24, t:19, s:21, v:23, i:21, n:20, p:19, o:save.flags.forgive ? 24 : 7}[nn.t] || 20) - 22 - cy, save.talked[nn.t] ? null : '#ff8a3d');
+  if (nn) promptBubble(keyOf('interact'), save.talked[nn.t] ? 'Talk' : 'Talk', nn.x*T + 8 - cx, nn.y*T + 16 - ({f:24, t:19, s:21, v:23, i:21, n:20, p:19, o:save.flags.forgive ? 24 : 7}[nn.t] || 20) - 22 - cy, save.talked[nn.t] ? null : '#ff8a3d');
   if (target && !p.hook) keycap(keyOf('hook'), target.x + 8 - cx, target.y - 18 - cy);
   ctx.restore();
 
@@ -6995,7 +7026,7 @@ function startBossMode() {
 }
 function bossSave(k) {
   const r = bossMode.real;
-  save = Object.assign(fresh(), {worldV:4, clsChosen:true, cls:r.cls, look:r.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:r.whet, rations:r.rations || 0, ups:r.ups || {},
+  save = Object.assign(fresh(), {worldV:4, clsChosen:true, cls:r.cls, look:r.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:r.whet, rations:r.rations || 0, ups:r.ups || {}, tree:r.tree || {},
     districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true])), visited:{BH:true}, gateOpen:k === 'ash', cogs:3, seenBoss:{forge:1, eel:1, thorn:1, choir:1, bell:1, ash:1}});
   save.hearts = Object.keys(r.bosses || {}).length; save.bosses = {};
 }
@@ -7035,7 +7066,7 @@ function bossTick() {
   if (bossMode.done > 0 && --bossMode.done === 0) { const b = banner; bossHall(); banner = b; }
   if (room.key !== 'BH' || mode !== 'play') return;
   const B = nearStatue();
-  if (B && hit.attack) { hit.attack = false; bossPick(B); }
+  if (B && useHit()) { useDone(); bossPick(B); }
 }
 function endBossMode() { if (!bossMode) return; const b = bossMode.back; save = bossMode.real; bossMode = null; enterRoom(b.k); p.x = b.x; p.y = b.y; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; snapCam(); }
 const statueX = i => (12 + i * 13) * T + 8;
@@ -7086,7 +7117,7 @@ function drawStatues() {
     txt(B.name, x, base + 6, 8, gold ? '#ffd84a' : '#d8ccc0', 'center');
     txt(lab, x, base + 16, 8, mine ? '#ffd27a' : '#8a7a6a', 'center');
   });
-  const B = nearStatue(); if (B && mode === 'play') promptBubble(keyOf('attack'), 'Fight', statueX(BOSS_LIST.indexOf(B)), 14 * T - 150, '#ff8a3d');
+  const B = nearStatue(); if (B && mode === 'play') promptBubble(keyOf('interact'), 'Fight', statueX(BOSS_LIST.indexOf(B)), 14 * T - 150, '#ff8a3d');
 }
 function bossIntro(k, at) {
   if (bossMode || (save.seenBoss || {})[k]) return;
