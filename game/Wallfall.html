@@ -272,7 +272,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.35';
+const VERSION = '0.1.36';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -486,7 +486,7 @@ makeRoom('S', 'The Sluice Gates', 3, 6, 2, 1, {indoor:true, biome:'drowned'}, B 
   B.solid(0, 16, 63, 17); B.clear(0, 13, 0, 15);
   B.solid(12, 1, 53, 12);
   B.solid(63, 5, 63, 15); B.clear(63, 2, 63, 4);
-  B.ledge(2, 8, 8); B.ledge(55, 62, 5);
+  B.ledge(2, 8, 8); B.ledge(55, 62, 5); B.clear(5, 16, 7, 17);
   B.put('e', 30, 14); B.put('e', 45, 14); B.put('S', 4, 7);
 });
 makeRoom('N', 'The Cistern', 5, 6, 2, 1, {indoor:true, biome:'drowned'}, B => {
@@ -499,7 +499,7 @@ makeRoom('Q', "The Queen's Garden", 1, 0, 3, 1, {biome:'garden', noGiants:true},
   B.thorns(70, 76, 15); B.put('*', 78, 15); B.put('*', 68, 15);
   B.solid(60, 9, 66, 15);
   B.solid(40, 12, 46, 15); B.thorns(48, 51, 15); B.put('*', 37, 15);
-  B.ledge(24, 30, 6); B.put('R', 27, 5); B.put('*', 30, 15); B.put('*', 58, 15); B.ledge(8, 14, 10);
+  B.ledge(24, 30, 6); B.put('R', 27, 5); B.ledge(32, 38, 3); B.put('*', 30, 15); B.put('*', 58, 15); B.ledge(8, 14, 10);
   B.put('g', 55, 15); B.put('g', 20, 15); B.put('k', 43, 11); B.put('k', 11, 9); B.put('j', 50, 4); B.put('j', 16, 5);
 });
 makeRoom('M', 'The Glasshouse', -1, 0, 2, 1, {indoor:true, biome:'garden'}, B => {
@@ -510,6 +510,36 @@ makeRoom('M', 'The Glasshouse', -1, 0, 2, 1, {indoor:true, biome:'garden'}, B =>
 makeRoom('R', 'The Thorn Throne', -3, 0, 2, 1, {indoor:true, biome:'garden'}, B => {
   B.solid(0, 16, 63, 17); B.solid(63, 5, 63, 15); B.clear(63, 2, 63, 4);
   B.ledge(55, 62, 5); B.ledge(40, 46, 10); B.ledge(24, 30, 10); B.ledge(32, 38, 6);
+});
+makeRoom('g', 'The Bone Galleries', 0, 7, 3, 1, {indoor:true, biome:'crypt'}, B => {
+  B.solid(0, 16, 95, 17); B.clear(95, 13, 95, 15);
+  B.solid(84, 13, 88, 15); B.stakes(70, 83, 15); B.crumble(72, 81, 12);
+  B.ledge(55, 59, 12); B.solid(60, 10, 64, 15); B.ledge(46, 52, 12); B.ledge(38, 44, 9); B.ledge(30, 36, 6); B.ledge(20, 26, 9); B.ledge(12, 18, 12);
+  B.solid(1, 11, 8, 15);
+  B.put('g', 66, 15); B.put('u', 50, 15); B.put('w', 36, 15); B.put('c', 40, 1); B.put('b', 22, 15); B.put('y', 14, 11); B.put('j', 30, 3); B.put('k', 5, 10);
+});
+makeRoom('o', 'The Ossuary', 3, 7, 2, 1, {indoor:true, biome:'crypt'}, B => {
+  B.solid(0, 16, 63, 17); B.clear(5, 0, 7, 0); B.clear(0, 13, 0, 15); B.clear(63, 13, 63, 15);
+  B.ledge(3, 9, 4); B.ledge(10, 15, 7); B.ledge(3, 8, 10); B.ledge(10, 15, 13);
+  B.solid(20, 12, 23, 15); B.stakes(24, 33, 15); B.crumble(25, 32, 12); B.solid(34, 12, 37, 15);
+  B.ledge(44, 50, 11); B.ledge(52, 58, 8); B.put('R', 55, 7);
+  B.put('g', 42, 15); B.put('u', 50, 15); B.put('c', 28, 1); B.put('l', 12, 9); B.put('g', 8, 15);
+});
+makeRoom('c', 'The Choir Pit', 5, 7, 2, 1, {indoor:true, biome:'crypt'}, B => {
+  B.solid(0, 16, 63, 17); B.clear(0, 13, 0, 15);
+  B.ledge(8, 14, 11); B.ledge(49, 55, 11); B.ledge(26, 37, 7);
+});
+makeRoom('s', 'The Bell Stair', 2, -2, 1, 2, {indoor:true, biome:'spire'}, B => {
+  B.clear(12, 0, 19, 0); B.clear(2, 35, 5, 35);
+  B.ledge(1, 8, 32); B.ledge(5, 9, 28); B.ledge(1, 4, 25); B.ledge(5, 9, 22); B.ledge(1, 4, 19);
+  B.solid(10, 6, 21, 30); B.solid(4, 6, 9, 17); B.solid(22, 5, 30, 5);
+  B.ledge(22, 26, 28); B.ledge(26, 30, 25); B.ledge(22, 26, 22); B.ledge(26, 30, 19); B.ledge(22, 26, 16); B.ledge(26, 30, 13); B.ledge(22, 26, 10);
+  B.ledge(11, 20, 2);
+  B.put('l', 6, 26); B.put('j', 25, 14); B.put('l', 27, 22);
+});
+makeRoom('b', 'The Bell Chamber', 2, -3, 2, 1, {indoor:true, biome:'spire'}, B => {
+  B.solid(0, 16, 63, 17); B.clear(12, 16, 19, 17);
+  B.ledge(10, 21, 13); B.ledge(3, 8, 10); B.ledge(52, 58, 10); B.ledge(28, 35, 8);
 });
 
 const EXTRA = [
@@ -765,7 +795,7 @@ const UPS = {
 const upLv = k => (save && save.ups && save.ups[k]) || 0;
 const hasteK = () => 1 - .12 * upLv('haste');
 const CACHES = [['H', 23, 4, 8], ['C', 4, 3, 8], ['D', 22, 3, 15], ['B', 19, 3, 8], ['I', 150, 3, 8], ['F', 119, 7, 15], ['O', 56, 2, 8], ['W', 89, 3, 8], ['Q', 86, 5, 15],
-  ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8]];
+  ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8], ['g', 33, 5, 15], ['o', 13, 6, 8], ['s', 24, 9, 15]];
 let sparks = [], shardShow = null, shardFlash = 0;
 function shardVal(e) { return e.t === 'boss' ? 40 : e.t === 'u' ? 4 : 'ewcyl'.includes(e.t) ? 2 : 1; }
 function dropShards(e, n) {
@@ -1641,7 +1671,7 @@ async function netLeave(quiet) {
   if (wasProxy && room) enterRoom(room.key);
   if (!quiet) toast = {text:'Left co-op', t:100};
 }
-const EKEYS = ['upT', 't', 'x', 'y', 'w', 'h', 'face', 'flash', 'spawn', 'st', 'stT', 'mode', 'mouth', 'ph', 'kind', 'on', 'cd', 't2', 'level', 'tx', 'ty', 'life', 'max', 'open', 'ghost', 'hx', 'hy', 'arm', 'anim', 'phase', 'vx', 'wob', 'ang', 'len', 'dummy', 'crate', 'prop', 'sq', 'aimY', 'onGround', 'fdir', 'mt'];
+const EKEYS = ['upT', 'sing', 't', 'x', 'y', 'w', 'h', 'face', 'flash', 'spawn', 'st', 'stT', 'mode', 'mouth', 'ph', 'kind', 'on', 'cd', 't2', 'level', 'tx', 'ty', 'life', 'max', 'open', 'ghost', 'hx', 'hy', 'arm', 'anim', 'phase', 'vx', 'wob', 'ang', 'len', 'dummy', 'crate', 'prop', 'sq', 'aimY', 'onGround', 'fdir', 'mt'];
 const r1 = v => Math.round(v * 10) / 10;
 function snapEnemy(e) {
   if (!e.nid) e.nid = NET.nid++;
@@ -1651,7 +1681,7 @@ function snapEnemy(e) {
   return o;
 }
 function worldSnap() {
-  const w = {en:enemies.filter(e => !e.dead).slice(0, 18).map(snapEnemy), es:eshots.slice(0, 12).map(s => [Math.round(s.x), Math.round(s.y), r1(s.vx), r1(s.vy), r1(s.g || 0), s.r, s.seed ? 1 : s.water ? 2 : 0])};
+  const w = {en:enemies.filter(e => !e.dead).slice(0, 18).map(snapEnemy), es:eshots.slice(0, 12).map(s => [Math.round(s.x), Math.round(s.y), r1(s.vx), r1(s.vy), r1(s.g || 0), s.r, s.seed ? 1 : s.water ? 2 : s.bone ? 3 : s.note ? 4 : 0])};
   if (arena) w.ar = [arena.stage, arena.wave];
   if (R) w.rg = {b:R.belts.map(b => b.dir), w:R.water ? [Math.round(R.water.y), Math.round(R.water.target)] : 0, c:R.crushers.map(c => Math.round(c.y)),
     cr:R.crates.map(c => [c.x, c.y]), v:R.vines.map(v => [v.x0, v.x1, v.y, v.t]), d:R.door ? [r1(R.door.open), R.plateDown ? 1 : 0] : 0, f:R.fight,
@@ -1715,7 +1745,7 @@ function applyWorld(w, fresh) {
   }
   for (const [id, e] of NET.prox) if (!seen.has(id)) { if (!e.prop && !e.dummy && !e.crate && e.t !== 'boss') dropShards(e); if (!e.prop && !e.dummy) burst(e.x + e.w / 2, e.y + e.h / 2, DEATHCOL[e.t] || '#ff7a2e', 14, 2.2); NET.prox.delete(id); }
   enemies = [...NET.prox.values()];
-  eshots = (w.es || []).map(([x, y, vx, vy, g, r, k]) => ({x, y, vx, vy, g, r, life:60, dmg:1, seed:k === 1, water:k === 2}));
+  eshots = (w.es || []).map(([x, y, vx, vy, g, r, k]) => ({x, y, vx, vy, g, r, life:60, dmg:1, seed:k === 1, water:k === 2, bone:k === 3, note:k === 4}));
   if (w.ar && arena) {
     const [stage] = w.ar;
     if (stage === 'fight' && !barSpec.length) { setBars(arena.cfg.bars); arena.stage = 'fight'; }
@@ -2264,7 +2294,8 @@ Object.assign(TRACKS, {
   }},
 });
 for (const k of ['forgeboss', 'eelboss', 'thornboss']) FIGHT.add(k);
-Object.assign(ROOM_MUSIC, {O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
+TRACKS.choirboss = TRACKS.eelboss; TRACKS.bellboss = TRACKS.forgeboss; FIGHT.add('choirboss'); FIGHT.add('bellboss');
+Object.assign(ROOM_MUSIC, {g:'under', o:'under', c:'under', s:'belfry', b:'belfry', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
 
 function musSting(kind) {
   if (!ac || !soundOn || !musicOn) return;
@@ -2624,7 +2655,7 @@ function updateEnemy(e) {
 function updateEShots(atkBox) {
   for (const s of eshots) {
     s.vy += s.g || 0; s.x += s.vx; s.y += s.vy; s.life--;
-    if (tick % 2) parts.push({x:s.x, y:s.y, vx:(Math.random() - .5) * .3, vy:-.2, life:14, color:Math.random() < .5 ? '#ffb04a' : '#e04a14', size:1});
+    if (tick % 2 && !s.bone && !s.note) parts.push({x:s.x, y:s.y, vx:(Math.random() - .5) * .3, vy:-.2, life:14, color:Math.random() < .5 ? '#ffb04a' : '#e04a14', size:1});
     if (atkBox && s.x > atkBox.x && s.x < atkBox.x + atkBox.w && s.y > atkBox.y && s.y < atkBox.y + atkBox.h) { s.life = 0; burst(s.x, s.y, '#ffcf8a', 8, 1.5); sfx.hit(); continue; }
     if (!s.ghost && solid(Math.floor(s.x / T), Math.floor(s.y / T))) { s.life = 0; burst(s.x, s.y, '#ff8a2a', 10, 1.6); continue; }
     if (!(p.spin > 0) && Math.abs(s.x - (p.x + p.w/2)) < p.w/2 + s.r && Math.abs(s.y - (p.y + p.h/2)) < p.h/2 + s.r) {
@@ -2637,6 +2668,8 @@ function updateEShots(atkBox) {
 function drawEShots() {
   for (const s of eshots) {
     const x = Math.round(s.x), y = Math.round(s.y), r = s.r || 3;
+    if (s.bone) { ctx.fillStyle = '#e8e2d0'; ctx.fillRect(x - 3, y - 1, 6, 2); ctx.fillRect(x - 4, y - 2, 2, 4); ctx.fillRect(x + 2, y - 2, 2, 4); ctx.fillStyle = 'rgba(200,180,255,.35)'; ctx.fillRect(x - 5, y - 3, 10, 6); continue; }
+    if (s.note) { ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x, y, 0, x, y, 12); g.addColorStop(0, 'rgba(200,180,255,.55)'); g.addColorStop(1, 'rgba(140,110,255,0)'); ctx.fillStyle = g; ctx.fillRect(x - 12, y - 12, 24, 24); ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#e8e0ff'; ctx.fillRect(x - 3, y, 4, 3); ctx.fillRect(x, y - 6, 1, 7); ctx.fillRect(x + 1, y - 6, 3, 1); continue; }
     if (s.arrow) { const d = Math.sign(s.vx) || 1; ctx.fillStyle = '#c9ccd2'; ctx.fillRect(d > 0 ? x - 9 : x, y, 10, 1); ctx.fillStyle = '#eef0f2'; ctx.fillRect(d > 0 ? x : x - 1, y - 1, 2, 3); ctx.fillStyle = '#6a8a3a'; ctx.fillRect(d > 0 ? x - 10 : x + 8, y - 1, 2, 3); continue; }
     if (s.wisp) { ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x, y, 0, x, y, 10); g.addColorStop(0, 'rgba(160,220,255,.7)'); g.addColorStop(1, 'rgba(80,140,255,0)'); ctx.fillStyle = g; ctx.fillRect(x - 10, y - 10, 20, 20); ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#e8f6ff'; ctx.fillRect(x - 2, y - 2, 4, 4); continue; }
     ctx.globalCompositeOperation = 'lighter';
@@ -3044,6 +3077,8 @@ const REG = {
   Q:{},
   M:{pods:[[54, 15, 44, 49, 12], [43, 11, 32, 38, 9], [31, 8, 20, 26, 6], [19, 5, 9, 18, 5]]},
   R:{boss:'thorn', bossAt:[9, 15], trigger:() => p.x < 52 * T && p.y > 7 * T, bars:[[63, 63, 2, 4]]},
+  c:{boss:'choir', bossAt:[40, 8], trigger:() => p.x > 8 * T, bars:[[0, 0, 13, 15]]},
+  b:{boss:'bell', bossAt:[44, 15], trigger:() => p.onGround, bars:[[12, 19, 16, 16]]},
 };
 const SIGNS = {
   U:['A door opens while something heavy sits on the plate'],
@@ -3055,6 +3090,8 @@ const BOSSES = {
   forge:{name:'The Forgemaster', heart:'Heart of the Forge', color:'#ff8a3d', hp:70},
   eel:{name:'The Eel-Mother', heart:'Heart of the Deep', color:'#7ad8d0', hp:50},
   thorn:{name:'The Thorn Queen', heart:'Heart of Thorns', color:'#b8e07a', hp:60},
+  choir:{name:'The Bone Choir', heart:'Heart of the Choir', color:'#cfc4f0', hp:65},
+  bell:{name:'The Bellwright', heart:'Heart of the Bell', color:'#e8c070', hp:75},
 };
 function regionEnter(key) {
   DYN.clear(); R = null;
@@ -3198,7 +3235,7 @@ function regionUpdate(ax, atkBox) {
     if (R.fight === 'idle' && R.cfg.trigger()) {
       R.fight = 'on'; setBars(R.cfg.bars); sfx.slam(); shake = 10;
       const B = BOSSES[R.boss.kind]; bossIntro(R.boss.kind, R.boss.kind === 'eel' ? {x:R.boss.hx || R.boss.x, y:R.water.y} : {x:R.boss.x + R.boss.w / 2, y:R.boss.y + R.boss.h / 2});
-      banner = {title:B.name, sub:{forge:'He sets down the crucible and lifts his hammer.', eel:'Something long moves under the black water.', thorn:'The briars around the throne begin to turn toward you.'}[R.boss.kind], color:B.color, t:200};
+      banner = {title:B.name, sub:{choir:'A hundred jaws open at once.', bell:'He lifts the great bell off its hook.', forge:'He sets down the crucible and lifts his hammer.', eel:'Something long moves under the black water.', thorn:'The briars around the throne begin to turn toward you.'}[R.boss.kind], color:B.color, t:200};
     }
   }
   regionFx(sim);
@@ -3254,6 +3291,8 @@ function makeRBoss(kind, tx, ty) {
   const e = {t:'boss', kind, x:tx * T, y:(ty + 1) * T - 62, w:44, h:62, hp:9999, life:B.hp, max:B.hp, flash:0, spawn:0, st:'idle', stT:60, face:-1, phase:1, atks:0, anim:0, arm:0, dyingT:0};
   if (kind === 'eel') { Object.assign(e, {w:24, h:18, ghost:true, hx:tx * T, hy:room.ph + 40, hist:[], st:'lurk', stT:90}); }
   if (kind === 'thorn') { Object.assign(e, {w:44, h:64, y:(ty + 1) * T - 64, st:'guard', stT:90, open:0, face:1}); }
+  if (kind === 'choir') { Object.assign(e, {w:54, h:60, y:ty * T - 60, st:'float', stT:90, sing:0}); }
+  if (kind === 'bell') { Object.assign(e, {w:52, h:74, y:(ty + 1) * T - 74, gy:(ty + 1) * T - 74, st:'walk', stT:90}); }
   return e;
 }
 function bossHit(e) {
@@ -3263,7 +3302,7 @@ function bossHit(e) {
   e.life -= dmg; pops.push({x:e.x + e.w / 2, y:e.y - 4, v:dmg, life:45});
   if (e.life <= e.max / 2 && e.phase === 1) {
     e.phase = 2; sfx.roar(); shake = 14;
-    banner = {title:{forge:'The forge roars', eel:'The cistern floods', thorn:'The thorns grow wild'}[e.kind], sub:{forge:'He moves faster now, and his hammer throws sparks.', eel:'The water climbs. She strikes twice.', thorn:'She calls her children up from the soil.'}[e.kind], color:BOSSES[e.kind].color, t:170};
+    banner = {title:{forge:'The forge roars', eel:'The cistern floods', thorn:'The thorns grow wild', choir:'The choir swells', bell:'The bell cracks'}[e.kind], sub:{choir:'More voices join. They sing faster.', bell:'He swings it now, and the tower shakes.', forge:'He moves faster now, and his hammer throws sparks.', eel:'The water climbs. She strikes twice.', thorn:'She calls her children up from the soil.'}[e.kind], color:BOSSES[e.kind].color, t:170};
     if (e.kind === 'eel') R.water.target = 7 * T;
   }
   if (e.life <= 0) {
@@ -3291,7 +3330,7 @@ function updateRBoss(e) {
     return;
   }
   if (R.fight !== 'on') { if (e.kind === 'eel') eelIdle(e); return; }
-  if (e.kind === 'forge') forgeAI(e); else if (e.kind === 'eel') eelAI(e); else thornAI(e);
+  if (e.kind === 'forge') forgeAI(e); else if (e.kind === 'eel') eelAI(e); else if (e.kind === 'choir') choirAI(e); else if (e.kind === 'bell') bellAI(e); else thornAI(e);
 }
 const floorUnder = x => { let y = 1; const cx = Math.floor(x / T); while (y < room.h && tile(cx, y) !== '#') y++; return y * T; };
 function forgeAI(e) {
@@ -3379,6 +3418,98 @@ function thornAI(e) {
     e.open = Math.min(1, e.open + .06);
     if (e.stT <= 0) { e.st = 'guard'; e.stT = 60; sfx.clang(); }
   }
+}
+function choirAI(e) {
+  const F = foeFor(e), pcx = F.x + F.w / 2, cx = e.x + e.w / 2, sp = e.phase === 2 ? 1.4 : 1, fl = floorUnder(cx);
+  e.stT--; if (e.sing > 0) e.sing--;
+  const hov = e.st === 'low' ? fl - e.h - 2 : 3 * T + Math.sin(e.anim * .03) * 12;
+  e.y += (hov - e.y) * .05;
+  if (e.st !== 'low') { const tx = Math.max(2 * T, Math.min(room.pw - 2 * T - e.w, pcx - e.w / 2 + Math.sin(e.anim * .013) * 90)); e.x += Math.sign(tx - e.x) * Math.min(Math.abs(tx - e.x), .9 * sp); e.face = Math.sign(pcx - cx) || e.face; }
+  if (e.st === 'low' && e.stT % 50 === 25) { for (const d of [-1, 1]) eshots.push({x:cx + d * 22, y:fl - 7, vx:d * 2, vy:0, life:200, r:4, dmg:1, note:true}); e.sing = 20; }
+  if (e.stT > 0) return;
+  e.atks++;
+  if (e.st === 'low') { e.st = 'float'; e.stT = 70; return; }
+  if (e.atks % 4 === 0) { e.st = 'low'; e.stT = 160; sfx.creak(); toast = {text:'The choir sinks low', t:80}; return; }
+  const r = Math.random(); e.sing = 26;
+  if (r < .4) { for (const d of [-1, 1]) for (let i = 0; i < (e.phase === 2 ? 2 : 1); i++) eshots.push({x:cx, y:fl - 7, vx:d * (2.1 + i * 1.1), vy:0, life:260, r:4, dmg:1, note:true}); tone(330, .5, 'triangle', .04, 220, 0, 'sfx'); }
+  else if (r < .75) { const n = e.phase === 2 ? 7 : 5; for (let i = 0; i < n; i++) { const x = pcx + (i - (n - 1) / 2) * 34 + (Math.random() - .5) * 10; if (x > T && x < room.pw - T) eshots.push({x, y:T + 8, vx:0, vy:0, g:.07 + (i % 3) * .025, life:240, r:3, dmg:1, bone:true}); } sfx.creak(); }
+  else { for (let i = -1; i <= 1; i++) { const a = Math.atan2(F.y + 10 - (e.y + 20), pcx - cx) + i * .25; eshots.push({x:cx, y:e.y + 20, vx:Math.cos(a) * 2.6, vy:Math.sin(a) * 2.6, life:160, r:3, dmg:1, ghost:true, bone:true}); } tone(180, .6, 'sawtooth', .03, 120, 0, 'sfx'); }
+  if (e.phase === 2 && e.atks % 3 === 1 && enemies.filter(o => o.t === 'g' && !o.dead).length < 2) { enemies.push(makeEnemy('g', 10, 15, true)); enemies.push(makeEnemy('g', 52, 15, true)); }
+  e.st = 'float'; e.stT = Math.round(100 / sp);
+}
+function bellAI(e) {
+  const F = foeFor(e), pcx = F.x + F.w / 2, cx = e.x + e.w / 2, dx = pcx - cx, sp = e.phase === 2 ? 1.35 : 1, fl = e.gy + e.h;
+  e.stT--;
+  if (e.st === 'idle' || e.st === 'walk') {
+    e.st = 'walk'; e.face = Math.sign(dx) || e.face; e.arm = Math.max(0, (e.arm || 0) - .05);
+    if (Math.abs(dx) > 40) { const ov = e.x; e.x += e.face * .7 * sp; if (solid(Math.floor((e.face > 0 ? e.x + e.w : e.x) / T), Math.floor((e.y + e.h - 4) / T))) e.x = ov; }
+    if (e.stT <= 0) {
+      e.atks++; const r = Math.random();
+      if (Math.abs(dx) < 70 && r < .45) { e.st = 'swing'; e.stT = 42; }
+      else if (r < .72) { e.st = 'leap'; e.stT = 60; e.lx = e.x; e.tx = Math.max(T, Math.min(room.pw - T - e.w, pcx - e.w / 2)); }
+      else { e.st = 'toll'; e.stT = 56; if (!e.told) { e.told = 1; toast = {text:'Get off the ground when the bell rings', t:110}; } }
+    }
+  } else if (e.st === 'swing') {
+    e.arm = e.stT > 14 ? -(1 - (e.stT - 14) / 28) : 1;
+    if (e.stT === 14) { const bx = e.face > 0 ? e.x + e.w - 6 : e.x - 44; if (overlap({x:p.x, y:p.y, w:p.w, h:p.h}, {x:bx, y:e.y + 8, w:50, h:e.h - 8})) hurt(cx, 2); shake = 7; sfx.clang(); burst(bx + 25, fl - 10, '#e8c070', 14, 2.2); }
+    if (e.stT <= 0) { e.st = 'walk'; e.stT = Math.round(60 / sp); }
+  } else if (e.st === 'leap') {
+    const k = 1 - Math.max(0, e.stT) / 60; e.arm = -.6;
+    e.x = e.lx + (e.tx - e.lx) * k; e.y = e.gy - Math.sin(k * Math.PI) * 96;
+    if (e.stT <= 0) {
+      e.y = e.gy; e.st = 'land'; e.stT = 40; shake = 12; sfx.slam(); burst(cx, fl - 2, '#c9b08a', 22, 2.8);
+      if (overlap({x:p.x, y:p.y, w:p.w, h:p.h}, {x:e.x - 14, y:fl - 30, w:e.w + 28, h:30})) hurt(cx, 2);
+      for (const d of [-1, 1]) eshots.push({x:cx + d * 24, y:fl - 6, vx:d * (e.phase === 2 ? 3.4 : 2.8), vy:0, life:200, r:4, dmg:1, note:true});
+    }
+  } else if (e.st === 'land') { e.arm = 0; if (e.stT <= 0) { e.st = 'walk'; e.stT = Math.round(50 / sp); } }
+  else if (e.st === 'toll') {
+    e.arm = -1;
+    if (e.stT === 20) {
+      shake = 10; tone(196, 2.2, 'sine', .08, null, 0, 'sfx'); tone(392, 1.6, 'triangle', .03, null, .02, 'sfx'); blasts.push({x:cx, y:e.y + 14, r:170, life:16}, {x:cx, y:e.y + 14, r:110, life:12});
+      if (p.onGround && Math.abs(p.x + p.w / 2 - cx) < 170) hurt(cx, 1);
+      if (e.phase === 2) for (let i = 0; i < 4; i++) { const x = pcx + (i - 1.5) * 44; if (x > T && x < room.pw - T) eshots.push({x, y:T + 8, vx:0, vy:0, g:.09 + i * .02, life:200, r:4, dmg:1, bone:true}); }
+    }
+    if (e.stT <= 0) { e.st = 'walk'; e.stT = Math.round(70 / sp); e.arm = 0; }
+  }
+}
+function drawChoir(e, fl) {
+  ctx.save(); ctx.translate(Math.round(e.x + e.w / 2), Math.round(e.y + e.h / 2)); ctx.scale(1.35, 1.35);
+  const x = -20, y = -22, cx = 0, C = c => fl ? '#ffffff' : c, open = (e.sing > 0 ? 3 : 1) + (e.st === 'low' ? 1 : 0);
+  ctx.fillStyle = C('#16121e'); ctx.beginPath(); ctx.moveTo(cx - 8, y - 4); ctx.quadraticCurveTo(cx - 30, y + 10, cx - 26, y + 44);
+  for (let i = 0; i <= 8; i++) ctx.lineTo(cx - 26 + i * 6.5, y + 44 + ((i + (e.anim >> 3)) % 2 ? 6 : 0));
+  ctx.quadraticCurveTo(cx + 30, y + 10, cx + 8, y - 4); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = C('#cfc8b4'); ctx.lineWidth = 2;
+  for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(cx, y + 18 + i * 5, 14 - i, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+  ctx.fillStyle = C('#cfc8b4'); ctx.fillRect(cx - 1, y + 10, 2, 28);
+  const sk = [[-14, 4], [-7, -2], [0, -6], [7, -2], [14, 4], [-18, 14], [18, 14]];
+  sk.forEach(([dx, dy], i) => {
+    const sx = cx + dx - 3, sy = y + dy + Math.round(Math.sin(e.anim * .08 + i) * 1);
+    ctx.fillStyle = C('#e8e2d0'); ctx.fillRect(sx, sy, 7, 5); ctx.fillRect(sx + 1, sy + 5, 5, 1);
+    ctx.fillStyle = '#1a1420'; ctx.fillRect(sx + 1, sy + 1, 2, 2); ctx.fillRect(sx + 4, sy + 1, 2, 2); ctx.fillRect(sx + 2, sy + 4, 3, open);
+    ctx.fillStyle = e.phase === 2 ? '#ff9ab8' : '#c8b8ff'; ctx.fillRect(sx + 1, sy + 1, 1, 1); ctx.fillRect(sx + 5, sy + 1, 1, 1);
+  });
+  ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(cx, y + 20, 0, cx, y + 20, 30); g.addColorStop(0, `rgba(170,150,255,${e.sing > 0 ? .3 : .14})`); g.addColorStop(1, 'rgba(120,100,220,0)'); ctx.fillStyle = g; ctx.fillRect(cx - 30, y - 10, 60, 60); ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
+  if (tick % 6 === 0) parts.push({x:e.x + e.w / 2 + (Math.random() - .5) * 54, y:e.y + e.h, vx:0, vy:.4, life:20, color:'#3a3048', size:2});
+}
+function drawBell(e, fl) {
+  ctx.save(); ctx.translate(Math.round(e.x + e.w / 2), Math.round(e.y + e.h)); ctx.scale(1.3, 1.3);
+  const x = -20, y = -56, f = e.face || 1, cx = 0, C = c => fl ? '#ffffff' : c;
+  ctx.fillStyle = C('#1e1612'); ctx.fillRect(cx - 9, y + 44, 7, 12); ctx.fillRect(cx + 2, y + 44, 7, 12);
+  ctx.fillStyle = C('#46362a'); ctx.beginPath(); ctx.moveTo(cx - 16, y + 46); ctx.lineTo(cx - 12, y + 12); ctx.lineTo(cx + 12, y + 12); ctx.lineTo(cx + 16, y + 46); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = C('#4a3a2a'); ctx.fillRect(cx - 12, y + 12, 24, 3); ctx.fillStyle = C('#6a4a2a'); ctx.fillRect(cx - 14, y + 30, 28, 3);
+  ctx.fillStyle = C('#241a14'); ctx.beginPath(); ctx.arc(cx + f * 2, y + 7, 8, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#0c0806'; ctx.fillRect(cx + f * 2 - 4, y + 5, 8, 5);
+  ctx.fillStyle = e.phase === 2 ? '#ff7a4a' : '#e8c070'; ctx.fillRect(cx + f * 4 - 1, y + 6, 2, 1);
+  const a = (e.arm || 0), ax = cx + f * (10 + a * 6), ay = y + 18 + a * 16 - (a < 0 ? 22 * -a : 0), bx = ax + f * 10, by = ay + 4;
+  ctx.strokeStyle = C('#2e241c'); ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(cx + f * 8, y + 16); ctx.lineTo(ax, ay); ctx.stroke();
+  const ring = e.st === 'toll' && e.stT < 30 && e.stT > 10 ? Math.sin(tick * 1.3) * 2 : 0;
+  ctx.save(); ctx.translate(bx + ring, by); ctx.rotate(f * (.2 + a * .35));
+  ctx.fillStyle = C('#8a5e1e'); ctx.beginPath(); ctx.moveTo(-6, -12); ctx.quadraticCurveTo(-8, 0, -15, 12); ctx.lineTo(15, 12); ctx.quadraticCurveTo(8, 0, 6, -12); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = C('#c8922e'); ctx.fillRect(-14, 9, 28, 3); ctx.fillRect(-5, -12, 10, 3); ctx.fillStyle = C('#f0d080'); ctx.fillRect(-4, -8, 2, 14);
+  ctx.fillStyle = C('#3a2a14'); ctx.fillRect(-2, 12, 4, 4);
+  ctx.restore();
+  if (e.st === 'toll' && e.stT > 20) { ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(bx, by, 0, bx, by, 26); g.addColorStop(0, `rgba(255,210,120,${.2 + .25 * (1 - (e.stT - 20) / 36)})`); g.addColorStop(1, 'rgba(255,180,80,0)'); ctx.fillStyle = g; ctx.fillRect(bx - 26, by - 26, 52, 52); ctx.globalCompositeOperation = 'source-over'; }
+  ctx.restore();
 }
 
 /* ---------- Drawing the districts ---------- */
@@ -3517,7 +3648,7 @@ function drawRBoss(e) {
   const fl = e.flash > 0 && e.flash % 4 < 2;
   ctx.save();
   if (e.st === 'dying') ctx.globalAlpha = Math.max(0, 1 - e.stT / 120);
-  if (e.kind === 'forge') drawForge(e, fl); else if (e.kind === 'eel') drawEel(e, fl); else drawThorn(e, fl);
+  if (e.kind === 'forge') drawForge(e, fl); else if (e.kind === 'eel') drawEel(e, fl); else if (e.kind === 'choir') drawChoir(e, fl); else if (e.kind === 'bell') drawBell(e, fl); else drawThorn(e, fl);
   ctx.restore();
 }
 function drawForge(e, fl) {
@@ -3623,7 +3754,7 @@ const openArea = (r, x0, y0, x1, y1) => { for (let y = Math.max(0, y0); y <= Mat
 function biomeBack(g, r) {
   if (!r.biome) return;
   const keep = document.createElement('canvas'); keep.width = r.pw; keep.height = r.ph; keep.getContext('2d').drawImage(g.canvas, 0, 0);
-  const tint = {foundry:['#4e5a6c', .7], drowned:['#2a7480', .78], garden:['#4a7a3a', .55]}[r.biome];
+  const tint = {foundry:['#4e5a6c', .7], drowned:['#2a7480', .78], garden:['#4a7a3a', .55], crypt:['#6a6080', .62], spire:['#8a7050', .5]}[r.biome];
   g.save(); g.globalCompositeOperation = 'color'; g.globalAlpha = tint[1]; g.fillStyle = tint[0]; g.fillRect(0, 0, r.pw, r.ph);
   g.globalCompositeOperation = 'destination-in'; g.globalAlpha = 1; g.drawImage(keep, 0, 0); g.restore();
   if (!r.indoor) { g.fillStyle = r.biome === 'garden' ? 'rgba(30,50,20,.25)' : 'rgba(0,0,0,.2)'; g.fillRect(0, (r.h - 2) * T, r.pw, 2 * T); }
@@ -3655,6 +3786,23 @@ function biomeBack(g, r) {
       for (let k = 0; k < len * 4; k++) { g.fillStyle = k % 2 ? '#3a3e46' : '#5a5e66'; g.fillRect(x * T + 7 + (k % 2), T + k * 4, 2, 4); }
       g.strokeStyle = '#6a707a'; g.lineWidth = 2; g.beginPath(); g.arc(x * T + 8, T + len * 16 + 3, 4, 0, Math.PI); g.stroke();
     }
+  } else if (r.biome === 'crypt') {
+    for (let y = 2; y < r.h - 3; y += 3) for (let x = 2; x < r.w - 3; x += 4) {
+      if (!openArea(r, x, y, x + 2, y + 1) || H(x, y, 91) < .35) continue;
+      const px = x * T + 4, py = y * T + 6;
+      g.fillStyle = 'rgba(12,10,16,.85)'; g.fillRect(px, py, 36, 18); g.fillStyle = 'rgba(60,54,70,.6)'; g.fillRect(px, py, 36, 2);
+      for (let k = 0; k < 4; k++) { const sx = px + 3 + k * 8; g.fillStyle = H(x + k, y, 92) < .5 ? '#8a8270' : '#6e685a'; g.fillRect(sx, py + 8, 6, 5); g.fillRect(sx + 1, py + 13, 4, 1); g.fillStyle = '#16121a'; g.fillRect(sx + 1, py + 9, 1, 2); g.fillRect(sx + 4, py + 9, 1, 2); }
+    }
+    for (let i = 0; i < r.cw * 2; i++) { const x = 3 + Math.floor(H(i, 5, 93) * (r.w - 6)); let fy = r.h - 2; while (fy > 0 && r.grid[fy][x] !== '.') fy--; if (r.grid[fy + 1] && r.grid[fy + 1][x] === '#') { g.fillStyle = '#9a927e'; g.fillRect(x * T + 3, (fy + 1) * T - 3, 8, 3); g.fillRect(x * T + 5, (fy + 1) * T - 5, 4, 2); } }
+  } else if (r.biome === 'spire') {
+    for (let i = 0; i < r.cw * 3; i++) {
+      const x = 2 + Math.floor(H(i, 1, 95) * (r.w - 4)), len = 2 + Math.floor(H(i, 2, 95) * 6);
+      if (!openArea(r, x - 1, 1, x + 1, len + 2)) continue;
+      g.fillStyle = '#5a4630'; g.fillRect(x * T + 7, T, 1, len * T);
+      const by = T + len * T; g.fillStyle = '#6a4a1e'; g.beginPath(); g.moveTo(x * T + 4, by - 6); g.lineTo(x * T + 12, by - 6); g.lineTo(x * T + 15, by + 4); g.lineTo(x * T + 1, by + 4); g.closePath(); g.fill();
+      g.fillStyle = '#a07a3a'; g.fillRect(x * T + 1, by + 3, 14, 1);
+    }
+    for (let y = 3; y < r.h - 2; y += 6) { if (!openArea(r, 1, y, 3, y + 2)) continue; g.fillStyle = 'rgba(30,22,16,.7)'; g.fillRect(T + 4, y * T, 20, 34); g.fillStyle = 'rgba(255,190,110,.12)'; g.fillRect(T + 7, y * T + 4, 14, 26); }
   } else if (r.biome === 'drowned') {
     for (let i = 0; i < r.cw * 2; i++) {
       const x = 3 + Math.floor(H(i, 1, 71) * (r.w - 6));
@@ -3806,6 +3954,8 @@ const DISTRICTS = {
   foundry:{name:'The Foundry', sub:'The city forged its chains here. The Colossi remembered.', rooms:'OUZ', grade:'rgba(255,110,30,.4)', col:'#ffa060'},
   drowned:{name:'The Drowned Quarter', sub:'They broke the dams. You had told them where the dams were.', rooms:'WSN', grade:'rgba(40,150,140,.45)', col:'#8ad8c8'},
   garden:{name:'The Queen’s Garden', sub:'The Council’s garden. You wanted it ash. It grew teeth instead.', rooms:'QMR', grade:'rgba(110,180,70,.4)', col:'#b8e08a'},
+  crypt:{name:'The Catacombs', sub:'Your mother is down here somewhere. You never visited.', rooms:'goc', grade:'rgba(120,100,160,.42)', col:'#cfc4f0'},
+  spire:{name:'The Bell Spire', sub:'They rang it the night you opened the gate. Nobody came.', rooms:'sb', grade:'rgba(200,160,90,.36)', col:'#e8c88a'},
 };
 const districtOf = key => Object.keys(DISTRICTS).find(d => DISTRICTS[d].rooms.includes(key)) || 'low';
 let curDistrict = null, dcard = null;
@@ -6714,8 +6864,10 @@ const BOSS_LIST = [
   {k:'forge', room:'Z', name:'The Forgemaster', sub:'He made the chains. Then he made more.', from:'left'},
   {k:'eel', room:'N', name:'The Eel-Mother', sub:'She slept under the dams until you broke them.', from:'left'},
   {k:'thorn', room:'R', name:'The Thorn Queen', sub:'She bargained for her garden. It kept her.', from:'right'},
+  {k:'choir', room:'c', name:'The Bone Choir', sub:'They sang for the city once. Now they sing for you.', from:'left'},
+  {k:'bell', room:'b', name:'The Bellwright', sub:'He rang it until his hands bled. Nobody came.', from:'left'},
   {k:'ash', room:'X', name:'The Ash-King', sub:'We had a deal, warden.', from:'left'}];
-makeRoom('BH', 'Hall of Statues', 40, 12, 2, 1, {indoor:true, dark:.6}, B => { B.solid(0, 16, 63, 17); for (let i = 0; i < 4; i++) B.solid(10 + i * 13, 14, 14 + i * 13, 15); B.put('P', 4, 15); });
+makeRoom('BH', 'Hall of Statues', 40, 12, 3, 1, {indoor:true, dark:.6}, B => { B.solid(0, 16, 95, 17); for (let i = 0; i < 6; i++) B.solid(10 + i * 13, 14, 14 + i * 13, 15); B.put('P', 4, 15); });
 let bintro = null;
 const DIFFS = {easy:{name:'Easy', hp:.6, dmg:0, hearts:2}, normal:{name:'Normal', hp:1, dmg:0, hearts:0}, hard:{name:'Hard', hp:1.5, dmg:1, hearts:0}};
 const golds = () => { try { return JSON.parse(localStorage.getItem('wallfall-bossgold') || '{}'); } catch (e) { return {}; } };
@@ -6729,7 +6881,7 @@ function startBossMode() {
 function bossSave(k) {
   const r = bossMode.real;
   save = Object.assign(fresh(), {worldV:4, clsChosen:true, cls:r.cls, look:r.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:r.whet, rations:r.rations || 0, ups:r.ups || {},
-    districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true])), visited:{BH:true}, gateOpen:k === 'ash', cogs:3, seenBoss:{forge:1, eel:1, thorn:1, ash:1}});
+    districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true])), visited:{BH:true}, gateOpen:k === 'ash', cogs:3, seenBoss:{forge:1, eel:1, thorn:1, choir:1, bell:1, ash:1}});
   save.hearts = Object.keys(r.bosses || {}).length; save.bosses = {};
 }
 function bossHall(msg) {
@@ -6782,6 +6934,8 @@ function statueImg(k, gold) {
   try {
     if (k === 'forge') drawForge({x:38, y:138 - 62, w:44, h:62, face:1, st:'idle', stT:0, anim:0, arm:0, phase:1, atks:0}, false);
     else if (k === 'thorn') drawThorn({x:38, y:138 - 64, w:44, h:64, open:.6, st:'guard', face:1}, false);
+    else if (k === 'choir') drawChoir({x:33, y:62, w:54, h:60, anim:0, sing:1, phase:1, st:'float'}, false);
+    else if (k === 'bell') drawBell({x:34, y:138 - 74, w:52, h:74, face:1, arm:-.4, st:'walk', phase:1}, false);
     else if (k === 'eel') { R = {water:{y:9999}}; const hist = []; for (let i = 0; i < 40; i++) hist.push([60 + Math.sin(i * .25) * 22, 132 - i * 2.4]); drawEel({hist:[...hist].reverse(), hx:60 + Math.sin(-.25) * 22, hy:30, face:1, st:'idle'}, false); }
     else { const P = giantPose(60, 138 + 40, .48, 0, .2, .08); giantShape(P, '#21100c', 0, 0); giantDetails(P, {hot:.8, eye:1}); }
   } catch (e) {} finally { ctx = main; R = keepR; }
@@ -6901,7 +7055,7 @@ function drawVoice() {
   ctx.font = '8px Silkscreen, ui-monospace, monospace'; ctx.fillStyle = '#a0503a'; ctx.fillText('THE ASH-KING', VW / 2, VH - 62);
   ctx.restore();
 }
-const VOICE_BOSS = {forge:'That forge made the chains that held us out. You gave it to me. Thank you.', eel:'The deep was always ours. You only opened the door.', thorn:'Their queen bargained too. She was worse at it than you.'};
+const VOICE_BOSS = {forge:'That forge made the chains that held us out. You gave it to me. Thank you.', eel:'The deep was always ours. You only opened the door.', thorn:'Their queen bargained too. She was worse at it than you.', choir:'They prayed to be spared from us. Listen to them now.', bell:'He rang for help. I heard it. I came.'};
 const VOICE_COG = ['One cog. The gate wants to open for you, warden.', 'Two. You are almost home.', 'Three. Come up, and we will talk terms again.'];
 function introBanner() { banner = {title:'Six notes lie in the ruins', sub:'Find them. They remember what you did.', color:'#e3d6bd', t:330}; }
 const VOICES = {v:{f:150, type:'square', vol:.02, var:.3, rate:2}, f:{f:104, type:'sawtooth', vol:.018, var:.22, rate:2},
