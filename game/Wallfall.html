@@ -272,7 +272,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.28';
+const VERSION = '0.1.29';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1285,9 +1285,10 @@ function closeWardrobe() {
 const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0});
 const SAVE_KEY = 'wallfall-save';
 let save = fresh();
+let bossMode = null;
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), {seenIntro:true}, s); } catch (e) {}
 const persist = () => { if (typeof bossMode !== 'undefined' && bossMode) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
-const maxHp = () => cls().hp + (save.rations || 0) + (save.hearts || 0);
+const maxHp = () => bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0);
 
 let room, enemies = [], anchors = [], parts = [], entry = {x:0, y:0}, cam = {x:0, y:0};
 const DYN = new Map(); let R = null;
@@ -4046,6 +4047,7 @@ function drawParry() {
 }
 function hurt(fromX, dmg = 1) {
   if (p.inv > 0 || mode !== 'play' || ADMIN.god) return;
+  if (bossMode && bossMode.fighting) dmg += DIFFS[bossMode.diff || 'normal'].dmg;
   if (p.parryT > 0) { parried(fromX); return; }
   if (cls().thorns) { const cx = p.x + p.w / 2, cy = p.y + p.h / 2; hitArea(inCircle(cx, cy, 34), 2, e => Math.sign(e.x + e.w / 2 - cx) * 9, '#7aff9a'); burst(cx, cy, '#5a8a3a', 10, 2); }
   if (p.shield > 0) { p.shield = 0; p.inv = 40; sfx.clang(); burst(p.x + p.w / 2, p.y + 10, '#fff0b8', 16, 2.4); pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'AEGIS'}); return; }
@@ -6344,7 +6346,9 @@ const BOSS_LIST = [
   {k:'thorn', room:'R', name:'The Thorn Queen', sub:'She bargained for her garden. It kept her.', from:'right'},
   {k:'ash', room:'X', name:'The Ash-King', sub:'We had a deal, warden.', from:'left'}];
 makeRoom('BH', 'Hall of Statues', 40, 12, 2, 1, {indoor:true, dark:.6}, B => { B.solid(0, 16, 63, 17); for (let i = 0; i < 4; i++) B.solid(10 + i * 13, 14, 14 + i * 13, 15); B.put('P', 4, 15); });
-let bossMode = null, bintro = null;
+let bintro = null;
+const DIFFS = {easy:{name:'Easy', hp:.6, dmg:0, hearts:2}, normal:{name:'Normal', hp:1, dmg:0, hearts:0}, hard:{name:'Hard', hp:1.5, dmg:1, hearts:0}};
+const golds = () => { try { return JSON.parse(localStorage.getItem('wallfall-bossgold') || '{}'); } catch (e) { return {}; } };
 const fmtTime = f => { const s = Math.floor(f / 60), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
 const bestTimes = () => { try { return JSON.parse(localStorage.getItem('wallfall-bosstimes') || '{}'); } catch (e) { return {}; } };
 function startBossMode() {
@@ -6359,22 +6363,34 @@ function bossSave(k) {
   save.hearts = Object.keys(r.bosses || {}).length; save.bosses = {};
 }
 function bossHall(msg) {
-  bossMode.fighting = null; bossSave();
+  bossMode.fighting = null; bossMode.onehit = false; bossSave();
   const sp = safeSpot('BH'); enterRoom('BH'); p.x = sp.x * T + 2; p.y = (sp.y + 1) * T - p.h; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; p.inv = 60; snapCam();
   banner = {title:'Hall of Statues', sub:msg || 'Strike a statue to fight that boss again.', color:'#c8c0b0', t:240};
 }
-function bossFight(B) {
-  bossMode.fighting = B.k; bossMode.t = 0; bossSave(B.k);
+function bossPick(B) {
+  const one = !!bossMode.oneSel;
+  openDlg({kicker:B.name, title:'How hard?', body:[B.sub, one ? 'One hit: you have a single heart. Win like this and the statue turns to gold.' : 'Turn on One hit to fight with a single heart.'],
+    opts:[...Object.keys(DIFFS).map(d => ({text:DIFFS[d].name, tag:d === 'easy' ? 'Two more hearts, a weaker boss' : d === 'hard' ? 'A tougher boss that hits harder' : '', run:() => bossFight(B, d, one)})),
+      {text:'One hit: ' + (one ? 'on' : 'off'), run:() => { bossMode.oneSel = !one; bossPick(B); }}, {text:'Not yet'}]});
+}
+function bossFight(B, diff = 'normal', onehit = false) {
+  bossMode.fighting = B.k; bossMode.t = 0; bossMode.diff = diff; bossMode.onehit = onehit; bossSave(B.k);
+  const D = DIFFS[diff]; save.rations += D.hearts;
   const r = ROOMS[B.room]; enterRoom(B.room);
+  if (R && R.boss) { R.boss.life = R.boss.max = Math.round(BOSSES[R.boss.kind].hp * D.hp); }
+  if (boss) { boss.hp = boss.max = Math.round(BOSS_HP * D.hp); }
   let sp = null; for (let x = B.from === 'left' ? 2 : r.w - 3; x > 0 && x < r.w - 1 && !sp; x += B.from === 'left' ? 1 : -1) for (let y = r.h - 2; y > 1; y--) if (r.grid[y][x] === '.' && r.grid[y - 1][x] === '.' && '#-'.includes(r.grid[y + 1][x]) && !(REG[B.room] && REG[B.room].water && y > REG[B.room].water - 1)) { sp = {x, y}; break; }
   sp = sp || safeSpot(B.room); p.x = sp.x * T + 2; p.y = (sp.y + 1) * T - p.h; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; p.inv = 60; p.face = B.from === 'left' ? 1 : -1; snapCam();
-  toast = {text:B.name, t:120};
+  toast = {text:B.name + ' · ' + D.name + (onehit ? ' · One hit' : ''), t:150};
 }
 function bossWon(k) {
-  const t = bossMode.t, best = bestTimes(), was = best[k];
-  if (!was || t < was) { best[k] = t; try { localStorage.setItem('wallfall-bosstimes', JSON.stringify(best)); } catch (e) {} }
+  const id = k + ':' + bossMode.diff + (bossMode.onehit ? ':1' : ''), t = bossMode.t, best = bestTimes(), was = best[id], D = DIFFS[bossMode.diff];
+  if (!was || t < was) { best[id] = t; try { localStorage.setItem('wallfall-bosstimes', JSON.stringify(best)); } catch (e) {} }
+  let gold = false;
+  if (bossMode.onehit) { const g = golds(); gold = !g[k]; g[k] = true; try { localStorage.setItem('wallfall-bossgold', JSON.stringify(g)); } catch (e) {} delete statueCache[k + 'gold']; }
   musSting('clear'); sfx.pick();
-  banner = {title:'Defeated in ' + fmtTime(t), sub:!was ? 'Your first time.' : t < was ? 'A new best. The old one was ' + fmtTime(was) + '.' : 'Your best is ' + fmtTime(was) + '.', color:'#ffd27a', t:240};
+  banner = gold ? {title:'The statue turns to gold', sub:'One hit, ' + D.name.toLowerCase() + ', ' + fmtTime(t) + '.', color:'#ffd84a', t:300}
+    : {title:'Defeated in ' + fmtTime(t), sub:D.name + (bossMode.onehit ? ', one hit' : '') + '. ' + (!was ? 'Your first time.' : t < was ? 'A new best. The old one was ' + fmtTime(was) + '.' : 'Your best is ' + fmtTime(was) + '.'), color:'#ffd27a', t:240};
   bossMode.done = 200;
 }
 function bossTick() {
@@ -6382,14 +6398,15 @@ function bossTick() {
   if (bossMode.done > 0 && --bossMode.done === 0) { const b = banner; bossHall(); banner = b; }
   if (room.key !== 'BH' || mode !== 'play') return;
   const B = nearStatue();
-  if (B && hit.attack) { hit.attack = false; bossFight(B); }
+  if (B && hit.attack) { hit.attack = false; bossPick(B); }
 }
 function endBossMode() { if (!bossMode) return; const b = bossMode.back; save = bossMode.real; bossMode = null; enterRoom(b.k); p.x = b.x; p.y = b.y; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; snapCam(); }
 const statueX = i => (12 + i * 13) * T + 8;
 function nearStatue() { for (let i = 0; i < BOSS_LIST.length; i++) if (Math.abs(p.x + p.w / 2 - statueX(i)) < 40 && p.y + p.h <= 14 * T + 2 && p.onGround) return BOSS_LIST[i]; return null; }
 const statueCache = {};
-function statueImg(k) {
-  if (statueCache[k]) return statueCache[k];
+function statueImg(k, gold) {
+  const ck = k + (gold ? 'gold' : '');
+  if (statueCache[ck]) return statueCache[ck];
   const c = document.createElement('canvas'); c.width = 120; c.height = 140; const g = c.getContext('2d'); if (!g) return null;
   const main = ctx, keepR = R; ctx = g;
   try {
@@ -6398,20 +6415,24 @@ function statueImg(k) {
     else if (k === 'eel') { R = {water:{y:9999}}; const hist = []; for (let i = 0; i < 40; i++) hist.push([60 + Math.sin(i * .25) * 22, 132 - i * 2.4]); drawEel({hist:[...hist].reverse(), hx:60 + Math.sin(-.25) * 22, hy:30, face:1, st:'idle'}, false); }
     else { const P = giantPose(60, 138 + 40, .48, 0, .2, .08); giantShape(P, '#21100c', 0, 0); giantDetails(P, {hot:.8, eye:1}); }
   } catch (e) {} finally { ctx = main; R = keepR; }
-  const d = g.getImageData && g.getImageData(0, 0, 120, 140); if (!d || !d.data) return statueCache[k] = c;
+  const d = g.getImageData && g.getImageData(0, 0, 120, 140); if (!d || !d.data) return statueCache[ck] = c;
   const a = d.data;
-  for (let i = 0; i < a.length; i += 4) { if (!a[i + 3]) continue; const l = (a[i] * .3 + a[i + 1] * .59 + a[i + 2] * .11) * .55 + 70; a[i] = l * 1.02; a[i + 1] = l; a[i + 2] = l * .95; }
+  for (let i = 0; i < a.length; i += 4) { if (!a[i + 3]) continue; const l = (a[i] * .3 + a[i + 1] * .59 + a[i + 2] * .11) * .55 + 70;
+    if (gold) { a[i] = Math.min(255, l * 1.45); a[i + 1] = Math.min(255, l * 1.12); a[i + 2] = l * .38; } else { a[i] = l * 1.02; a[i + 1] = l; a[i + 2] = l * .95; } }
   g.putImageData(d, 0, 0);
-  return statueCache[k] = c;
+  return statueCache[ck] = c;
 }
 function drawStatues() {
-  const best = bestTimes();
+  const best = bestTimes(), gd = golds();
   BOSS_LIST.forEach((B, i) => {
-    const x = statueX(i), base = 14 * T, img = statueImg(B.k);
+    const x = statueX(i), base = 14 * T, gold = !!gd[B.k], img = statueImg(B.k, gold);
+    if (gold) { const gl = ctx.createRadialGradient(x, base - 50, 0, x, base - 50, 70); gl.addColorStop(0, 'rgba(255,214,90,.22)'); gl.addColorStop(1, 'rgba(255,200,60,0)'); ctx.fillStyle = gl; ctx.fillRect(x - 70, base - 120, 140, 140); if (tick % 9 === i) parts.push({x:x - 40 + Math.random() * 80, y:base - Math.random() * 110, vx:0, vy:-.2, life:30, color:'#fff2a0', size:1}); }
     if (img) ctx.drawImage(img, Math.round(x - 60), base - 140);
-    ctx.fillStyle = '#2e2a28'; ctx.fillRect(x - 38, base, 76, 3);
-    txt(B.name, x, base + 6, 8, '#d8ccc0', 'center');
-    txt(best[B.k] ? 'Best ' + fmtTime(best[B.k]) : 'Not beaten', x, base + 16, 8, best[B.k] ? '#ffd27a' : '#8a7a6a', 'center');
+    ctx.fillStyle = gold ? '#8a6a20' : '#2e2a28'; ctx.fillRect(x - 38, base, 76, 3);
+    const mine = Object.keys(best).filter(id => id.split(':')[0] === B.k || id === B.k).sort((a, b) => best[a] - best[b])[0];
+    const lab = mine ? 'Best ' + fmtTime(best[mine]) + (mine.includes(':') ? ' ' + DIFFS[mine.split(':')[1]].name + (mine.endsWith(':1') ? ' 1HP' : '') : '') : 'Not beaten';
+    txt(B.name, x, base + 6, 8, gold ? '#ffd84a' : '#d8ccc0', 'center');
+    txt(lab, x, base + 16, 8, mine ? '#ffd27a' : '#8a7a6a', 'center');
   });
   const B = nearStatue(); if (B && mode === 'play') promptBubble(keyOf('attack'), 'Fight', statueX(BOSS_LIST.indexOf(B)), 14 * T - 150, '#ff8a3d');
 }
