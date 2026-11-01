@@ -272,7 +272,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.27';
+const VERSION = '0.1.28';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1282,11 +1282,11 @@ function closeWardrobe() {
 }
 
 /* ---------- State ---------- */
-const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0});
+const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0});
 const SAVE_KEY = 'wallfall-save';
 let save = fresh();
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), {seenIntro:true}, s); } catch (e) {}
-const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
+const persist = () => { if (typeof bossMode !== 'undefined' && bossMode) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
 const maxHp = () => cls().hp + (save.rations || 0) + (save.hearts || 0);
 
 let room, enemies = [], anchors = [], parts = [], entry = {x:0, y:0}, cam = {x:0, y:0};
@@ -2518,11 +2518,11 @@ function updateBoss() {
   switch (b.state) {
     case 'wait':
       b.face = -1; b.walkPh += .01;
-      if (p.x > 4 * T) { b.state = 'intro'; b.t = 0; setBars([[0, 0, 13, 15]]); sfx.slam(); shake = 8; }
+      if (p.x > 4 * T) { b.state = 'intro'; b.t = 0; setBars([[0, 0, 13, 15]]); sfx.slam(); shake = 8; bossIntro('ash', {x:b.x, y:b.y - 90}); }
       break;
     case 'intro':
       if (b.t < 60) { b.walkPh += .05; b.x -= .4; }
-      if (b.t === 60) { banner = {title:'The Colossus', sub:'It stops. It turns. Its eye finds you on the stones.', color:'#ff8a3d', t:170}; }
+      if (b.t === 60) { banner = {title:'The Ash-King', sub:'It stops. It turns. Its eye finds you on the stones.', color:'#ff8a3d', t:170}; }
       if (b.t > 70) b.eye = Math.min(1.2, .15 + (b.t - 70) / 70);
       if (b.t === 150) { sfx.roar(); shake = 20; banner = {title:'It has decided', sub:'It does not see the one who freed it. It sees prey.', color:'#ff5a3a', t:200}; }
       if (b.t > 210) { b.state = 'walk'; b.t = 0; b.eye = 1; }
@@ -2588,7 +2588,7 @@ function updateBoss() {
       b.kneel = Math.min(1.7, b.t / 70); b.eye = Math.max(0, 1.2 - b.t / 110);
       if (b.t % 6 === 0) burst(b.x + (Math.random() - .5) * 40, b.y - Math.random() * 90, '#ff7a2e', 8, 2.5);
       if (b.t % 30 === 0) { shake = 10; sfx.slam(); }
-      if (b.t === 180) { save.bossDead = true; persist(); setBars(null); finish('crown'); }
+      if (b.t === 180) { if (bossMode) { setBars(null); bossWon('ash'); } else { save.bossDead = true; persist(); setBars(null); finish('crown'); } }
       break;
   }
   b.x = Math.max(3 * T, Math.min(room.pw - 3 * T, b.x));
@@ -2959,7 +2959,7 @@ function regionUpdate(ax, atkBox) {
   if (sim && R.boss) {
     if (R.fight === 'idle' && R.cfg.trigger()) {
       R.fight = 'on'; setBars(R.cfg.bars); sfx.slam(); shake = 10;
-      const B = BOSSES[R.boss.kind];
+      const B = BOSSES[R.boss.kind]; bossIntro(R.boss.kind, R.boss.kind === 'eel' ? {x:R.boss.hx || R.boss.x, y:R.water.y} : {x:R.boss.x + R.boss.w / 2, y:R.boss.y + R.boss.h / 2});
       banner = {title:B.name, sub:{forge:'He sets down the crucible and lifts his hammer.', eel:'Something long moves under the black water.', thorn:'The briars around the throne begin to turn toward you.'}[R.boss.kind], color:B.color, t:200};
     }
   }
@@ -3034,6 +3034,7 @@ function bossHit(e) {
   }
 }
 function bossFelled(e) {
+  if (bossMode) { e.dead = true; R.fight = 'done'; setBars(null); burst(e.x + e.w / 2, e.y + e.h / 2, BOSSES[e.kind].color, 50, 3.5); bossWon(e.kind); return; }
   e.dead = true; R.fight = 'done'; setBars(null);
   save.bosses = save.bosses || {}; save.bosses[R.key] = true; save.hearts = Object.keys(save.bosses).length; persist();
   p.max = maxHp(); p.hp = p.max; sfx.pick(); musSting('clear');
@@ -3652,6 +3653,7 @@ function newGame() {
 function transition() {
   const cx = p.x + p.w/2, cy = p.y + p.h/2;
   if (cx >= 0 && cy >= 0 && cx < room.pw && cy < room.ph) return;
+  if (bossMode) { p.x = Math.max(0, Math.min(room.pw - p.w, p.x)); if (p.y > room.ph) { p.y = room.ph - 3 * T; p.vy = 0; } return; }
   const gx = room.ox + cx, gy = room.oy + cy;
   const k = BYPOS[Math.floor(gx / (CW*T)) + ',' + Math.floor(gy / (CH*T))];
   if (!k) { p.x = Math.max(0, Math.min(room.pw - p.w, p.x)); return; }
@@ -4070,10 +4072,12 @@ function update() {
   if (hit.map) showMap = !showMap;
   if (showMap && mode === 'play') { clearHits(); return; }
   if (mode === 'note') { clearHits(); return; }
+  if (bossMode && mode === 'play') bossMode.t += room.key === 'BH' ? 0 : 1;
   if (mode === 'cut') { cutUpdate(); clearHits(); return; }
+  if (mode === 'bintro') { bintroTick(); clearHits(); return; }
   if (mode === 'title') { updateParts(); if (!dlg.open && !binder.open && !wardrobe.open) openTitle(); clearHits(); return; }
   if (mode === 'won') { ringT++; if (hit.restart) newGame(); clearHits(); updateParts(); return; }
-  if (mode === 'dead') { if (--modeT <= 0) { mode = 'play'; p.downed = false; if (!respawnAtCheckpoint()) startAt(save.gateOpen && !save.bossDead ? 'G' : 'T'); } clearHits(); updateParts(); return; }
+  if (mode === 'dead') { if (--modeT <= 0 && bossMode) { mode = 'play'; bossHall('You fell. Try again.'); clearHits(); return; } if (modeT <= 0) { mode = 'play'; p.downed = false; if (!respawnAtCheckpoint()) startAt(save.gateOpen && !save.bossDead ? 'G' : 'T'); } clearHits(); updateParts(); return; }
   if (mode === 'respawn') { if (--modeT <= 0) mode = 'play'; clearHits(); return; }
   save.frames++;
   p.calm = (p.calm || 0) + 1;
@@ -4208,7 +4212,7 @@ function update() {
   }
   updateShots();
   updateClassFx();
-  skillTick(); moveTick(); voiceTick();
+  skillTick(); moveTick(); voiceTick(); bossTick();
   regionUpdate(ax, atkBox);
   ventUpdate(); dropsUpdate();
   updateEShots(atkBox);
@@ -5614,10 +5618,11 @@ function drawHUD() {
     ctx.fillRect(ox + (r.gx - GX0) * (cs + 1), oy + (r.gy - GY0) * (chh + 1), r.cw * (cs + 1) - 1, r.ch * (chh + 1) - 1);
     if (r.ents.some(e => e.t === 'N') && !save.found[k] && r !== room) { ctx.fillStyle = '#e3d6bd'; ctx.fillRect(ox + (r.gx - GX0) * (cs + 1) + 1, oy + (r.gy - GY0) * (chh + 1) + 1, 1, 1); }
   }
-  if (room && tick % 40 < 28) { const mx = ((room.ox + p.x) / (CW*T) - GX0) * (cs + 1), my = ((room.oy + p.y) / (CH*T) - GY0) * (chh + 1); ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(ox + mx), Math.round(oy + my), 2, 2); }
+  if (room && !bossMode && tick % 40 < 28) { const mx = ((room.ox + p.x) / (CW*T) - GX0) * (cs + 1), my = ((room.oy + p.y) / (CH*T) - GY0) * (chh + 1); ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(ox + mx), Math.round(oy + my), 2, 2); }
   const ny = oy + GH * (chh + 1) + 4;
   ctx.fillStyle = '#d8ccae'; ctx.fillRect(ox, ny + 2, 8, 7); ctx.fillStyle = '#a8977a'; ctx.fillRect(ox, ny + 5, 8, 1); ctx.fillStyle = '#8e2f22'; ctx.fillRect(ox + 3, ny + 4, 2, 2);
   txt(`${save.notes}/6`, ox + 12, ny + 2, 8, save.notes >= 6 ? '#ffd27a' : '#e3d6bd');
+  txt(fmtTime(bossMode ? bossMode.t : save.frames), ox + 40, ny + 2, 8, bossMode ? '#ff9a5a' : '#bfb2a0');
   keycap(keyOf('map'), px0 + pw - 6 - Math.max(11, keyOf('map').length * 7 + 4), ny + 1);
   if (toast) {
     ctx.globalAlpha = Math.max(0, Math.min(1, toast.t / 30));
@@ -5987,6 +5992,7 @@ function render() {
   ctx.save(); ctx.translate(-cx, -cy);
   const target = save.hook && mode === 'play' && !p.hook ? findAnchor() : null;
   for (const f of room.fires || []) drawFire(f);
+  if (room.key === 'BH') drawStatues();
   for (const a of anchors) drawAnchor(a, a === target);
   for (const it of room.ents) {
     if (itemLive(room, it)) drawItem(it);
@@ -6051,7 +6057,7 @@ function render() {
   if (target && !p.hook) keycap(keyOf('hook'), target.x + 8 - cx, target.y - 18 - cy);
   ctx.restore();
 
-  drawHUD(); drawDistrictCard(); drawVoice(); drawAdminInfo();
+  if (mode !== 'bintro') drawHUD(); drawDistrictCard(); drawVoice(); drawAdminInfo(); drawBintro();
   if (mode === 'respawn') { ctx.fillStyle = `rgba(10,6,5,${modeT / 24})`; ctx.fillRect(0, 0, VW, VH); }
   if (mode === 'dead' && p.downed) {
     ctx.fillStyle = 'rgba(40,8,4,.45)'; ctx.fillRect(0, 0, VW, VH);
@@ -6242,6 +6248,7 @@ function openTitle() {
   let html = `<div class="titlemenu"><div class="opts">`;
   if (hasProgress()) html += btn('Continue', () => leaveTitle());
   html += btn(hasProgress() ? 'New game' : 'Begin', () => hasProgress() ? confirmNew() : (leaveTitle(), parts = [], startCut()));
+  if (save.clsChosen) html += btn('Boss fights', () => { leaveTitle(); startBossMode(); });
   html += btn('Co-op', () => openCoop());
   html += btn(acct ? 'Account · ' + acct.name : 'Account', () => openAccount());
   html += `</div>${hasProgress() ? `<p class="tsub">${esc(CLASSES[save.cls] ? CLASSES[save.cls].name : '')} · ${esc(progressOf(save))}</p>` : ''}</div>`;
@@ -6330,6 +6337,115 @@ function openSound(back) {
     audio(); if (Date.now() - last > 120) { last = Date.now(); if (k === 'voice') blip(VOICES.f, 'a'); else if (k !== 'music') sfx.pick(); }
   }));
 }
+/* ---------- Boss fights ---------- */
+const BOSS_LIST = [
+  {k:'forge', room:'Z', name:'The Forgemaster', sub:'He made the chains. Then he made more.', from:'left'},
+  {k:'eel', room:'N', name:'The Eel-Mother', sub:'She slept under the dams until you broke them.', from:'left'},
+  {k:'thorn', room:'R', name:'The Thorn Queen', sub:'She bargained for her garden. It kept her.', from:'right'},
+  {k:'ash', room:'X', name:'The Ash-King', sub:'We had a deal, warden.', from:'left'}];
+makeRoom('BH', 'Hall of Statues', 40, 12, 2, 1, {indoor:true, dark:.6}, B => { B.solid(0, 16, 63, 17); for (let i = 0; i < 4; i++) B.solid(10 + i * 13, 14, 14 + i * 13, 15); B.put('P', 4, 15); });
+let bossMode = null, bintro = null;
+const fmtTime = f => { const s = Math.floor(f / 60), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+const bestTimes = () => { try { return JSON.parse(localStorage.getItem('wallfall-bosstimes') || '{}'); } catch (e) { return {}; } };
+function startBossMode() {
+  const real = save;
+  bossMode = {real, t:0, fighting:null, back:{k:room.key, x:p.x, y:p.y}};
+  bossSave(); bossHall();
+}
+function bossSave(k) {
+  const r = bossMode.real;
+  save = Object.assign(fresh(), {worldV:4, clsChosen:true, cls:r.cls, look:r.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:r.whet, rations:r.rations || 0,
+    districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true])), visited:{BH:true}, gateOpen:k === 'ash', cogs:3, seenBoss:{forge:1, eel:1, thorn:1, ash:1}});
+  save.hearts = Object.keys(r.bosses || {}).length; save.bosses = {};
+}
+function bossHall(msg) {
+  bossMode.fighting = null; bossSave();
+  const sp = safeSpot('BH'); enterRoom('BH'); p.x = sp.x * T + 2; p.y = (sp.y + 1) * T - p.h; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; p.inv = 60; snapCam();
+  banner = {title:'Hall of Statues', sub:msg || 'Strike a statue to fight that boss again.', color:'#c8c0b0', t:240};
+}
+function bossFight(B) {
+  bossMode.fighting = B.k; bossMode.t = 0; bossSave(B.k);
+  const r = ROOMS[B.room]; enterRoom(B.room);
+  let sp = null; for (let x = B.from === 'left' ? 2 : r.w - 3; x > 0 && x < r.w - 1 && !sp; x += B.from === 'left' ? 1 : -1) for (let y = r.h - 2; y > 1; y--) if (r.grid[y][x] === '.' && r.grid[y - 1][x] === '.' && '#-'.includes(r.grid[y + 1][x]) && !(REG[B.room] && REG[B.room].water && y > REG[B.room].water - 1)) { sp = {x, y}; break; }
+  sp = sp || safeSpot(B.room); p.x = sp.x * T + 2; p.y = (sp.y + 1) * T - p.h; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; p.inv = 60; p.face = B.from === 'left' ? 1 : -1; snapCam();
+  toast = {text:B.name, t:120};
+}
+function bossWon(k) {
+  const t = bossMode.t, best = bestTimes(), was = best[k];
+  if (!was || t < was) { best[k] = t; try { localStorage.setItem('wallfall-bosstimes', JSON.stringify(best)); } catch (e) {} }
+  musSting('clear'); sfx.pick();
+  banner = {title:'Defeated in ' + fmtTime(t), sub:!was ? 'Your first time.' : t < was ? 'A new best. The old one was ' + fmtTime(was) + '.' : 'Your best is ' + fmtTime(was) + '.', color:'#ffd27a', t:240};
+  bossMode.done = 200;
+}
+function bossTick() {
+  if (!bossMode) return;
+  if (bossMode.done > 0 && --bossMode.done === 0) { const b = banner; bossHall(); banner = b; }
+  if (room.key !== 'BH' || mode !== 'play') return;
+  const B = nearStatue();
+  if (B && hit.attack) { hit.attack = false; bossFight(B); }
+}
+function endBossMode() { if (!bossMode) return; const b = bossMode.back; save = bossMode.real; bossMode = null; enterRoom(b.k); p.x = b.x; p.y = b.y; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; snapCam(); }
+const statueX = i => (12 + i * 13) * T + 8;
+function nearStatue() { for (let i = 0; i < BOSS_LIST.length; i++) if (Math.abs(p.x + p.w / 2 - statueX(i)) < 40 && p.y + p.h <= 14 * T + 2 && p.onGround) return BOSS_LIST[i]; return null; }
+const statueCache = {};
+function statueImg(k) {
+  if (statueCache[k]) return statueCache[k];
+  const c = document.createElement('canvas'); c.width = 120; c.height = 140; const g = c.getContext('2d'); if (!g) return null;
+  const main = ctx, keepR = R; ctx = g;
+  try {
+    if (k === 'forge') drawForge({x:38, y:138 - 62, w:44, h:62, face:1, st:'idle', stT:0, anim:0, arm:0, phase:1, atks:0}, false);
+    else if (k === 'thorn') drawThorn({x:38, y:138 - 64, w:44, h:64, open:.6, st:'guard', face:1}, false);
+    else if (k === 'eel') { R = {water:{y:9999}}; const hist = []; for (let i = 0; i < 40; i++) hist.push([60 + Math.sin(i * .25) * 22, 132 - i * 2.4]); drawEel({hist:[...hist].reverse(), hx:60 + Math.sin(-.25) * 22, hy:30, face:1, st:'idle'}, false); }
+    else { const P = giantPose(60, 138 + 40, .48, 0, .2, .08); giantShape(P, '#21100c', 0, 0); giantDetails(P, {hot:.8, eye:1}); }
+  } catch (e) {} finally { ctx = main; R = keepR; }
+  const d = g.getImageData && g.getImageData(0, 0, 120, 140); if (!d || !d.data) return statueCache[k] = c;
+  const a = d.data;
+  for (let i = 0; i < a.length; i += 4) { if (!a[i + 3]) continue; const l = (a[i] * .3 + a[i + 1] * .59 + a[i + 2] * .11) * .55 + 70; a[i] = l * 1.02; a[i + 1] = l; a[i + 2] = l * .95; }
+  g.putImageData(d, 0, 0);
+  return statueCache[k] = c;
+}
+function drawStatues() {
+  const best = bestTimes();
+  BOSS_LIST.forEach((B, i) => {
+    const x = statueX(i), base = 14 * T, img = statueImg(B.k);
+    if (img) ctx.drawImage(img, Math.round(x - 60), base - 140);
+    ctx.fillStyle = '#2e2a28'; ctx.fillRect(x - 38, base, 76, 3);
+    txt(B.name, x, base + 6, 8, '#d8ccc0', 'center');
+    txt(best[B.k] ? 'Best ' + fmtTime(best[B.k]) : 'Not beaten', x, base + 16, 8, best[B.k] ? '#ffd27a' : '#8a7a6a', 'center');
+  });
+  const B = nearStatue(); if (B && mode === 'play') promptBubble(keyOf('attack'), 'Fight', statueX(BOSS_LIST.indexOf(B)), 14 * T - 150, '#ff8a3d');
+}
+function bossIntro(k, at) {
+  if (bossMode || (save.seenBoss || {})[k]) return;
+  save.seenBoss = save.seenBoss || {}; save.seenBoss[k] = true; persist();
+  const B = BOSS_LIST.find(q => q.k === k); if (!B) return;
+  bintro = {B, at, t:0, from:{x:cam.x, y:cam.y}, banner:null}; mode = 'bintro'; dcard = null; toast = null; for (const q in held) held[q] = false;
+  tone(46, 1.4, 'sawtooth', .06, 34); shake = Math.max(shake, 6);
+}
+function bintroTick() {
+  const b = bintro; if (!b) { mode = 'play'; return; }
+  b.t++;
+  const tx = Math.max(0, Math.min(room.pw - VW, b.at.x - VW / 2)), ty = Math.max(0, Math.min(room.ph - VH, b.at.y - VH / 2));
+  const k = b.t < 200 ? Math.min(1, b.t / 50) : Math.max(0, 1 - (b.t - 200) / 40), e = k * k * (3 - 2 * k);
+  cam.x = b.from.x + (tx - b.from.x) * e; cam.y = b.from.y + (ty - b.from.y) * e;
+  if (b.t === 70) { sfx.roar ? sfx.roar() : sfx.boom(); shake = 10; }
+  updateParts();
+  if (b.t > 30 && Object.keys(hit).some(q => hit[q]) && b.t < 200) b.t = 200;
+  if (banner) { b.banner = b.banner || banner; banner = null; }
+  if (b.t >= 240) { banner = b.banner; bintro = null; mode = 'play'; }
+}
+function drawBintro() {
+  const b = bintro; if (!b || mode !== 'bintro') return;
+  const bar = Math.min(1, b.t / 30, (240 - b.t) / 30) * 30;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, bar); ctx.fillRect(0, VH - bar, VW, bar);
+  const a = Math.max(0, Math.min(1, (b.t - 60) / 30, (210 - b.t) / 30));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '30px "IM Fell English SC", "IM Fell English", Georgia, serif'; ctx.fillStyle = '#000'; ctx.fillText(b.B.name, VW / 2 + 1, 59); ctx.fillStyle = '#f2e2c4'; ctx.fillText(b.B.name, VW / 2, 58);
+  ctx.fillStyle = '#a07a46'; ctx.fillRect(VW / 2 - 70, 76, 140, 1);
+  ctx.font = 'italic 13px "IM Fell English", Georgia, serif'; ctx.fillStyle = '#ff9a6a'; ctx.fillText(b.B.sub, VW / 2, 89);
+  ctx.restore();
+}
 function openPause() {
   if (dlg.open || binder.open || wardrobe.open || mode !== 'play') return;
   const click = id => () => { const b = document.getElementById(id); if (b) b.click(); };
@@ -6337,7 +6453,7 @@ function openPause() {
     {text:'Resume'}, {text:'Full screen', run:click('fsb')}, {text:'Co-op', run:click('coop')},
     {text:acct ? 'Account · ' + acct.name : 'Account', run:click('acctb')}, {text:'Controls', run:click('ctl')},
     {text:'Sound', run:() => openSound(openPause)}, {text:'Admin panel', run:() => openAdmin()},
-    {text:'Quit to the title screen', run:() => { persist(); if (acct) cloudNow(); parts = []; openTitle(); }}];
+    ...(bossMode ? [{text:'Back to the hall', run:() => bossHall()}] : []), {text:bossMode ? 'Leave boss fights' : 'Quit to the title screen', run:() => { endBossMode(); persist(); if (acct) cloudNow(); parts = []; openTitle(); }}];
   const btns = opts.map((o, i) => `<button class="opt" id="opt${i}" data-i="${i}"><span class="t">${esc(o.text)}</span></button>`).join('');
   openDlg({opts, html:`<div class="card pausecard"><p class="kicker">Paused${NET.on ? ' · co-op keeps running' : ''}</p><h2>${esc(room ? room.name : 'Wallfall')}</h2><div class="opts pgrid">${btns}</div></div>`});
   dlg.pause = true;
