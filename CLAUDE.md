@@ -35,6 +35,7 @@ What the game already is, so don't undo it. The humans own this list and add to 
 - **Decide small things yourself.** Ask only about what is really the humans' call: story, direction, or anything that can't be undone.
 - **Do what was asked.** Keep changes small and on target. Ideas go in NOTES.md, not into a surprise rewrite.
 - **Match the code around you:** its naming, its dense one-line style, and its `/* ---------- Section ---------- */` headers.
+- **Almost no comments.** The humans don't want explaining comments in the code. Use the section headers, and a short comment only where something would really surprise the next reader. Explanations go in NOTES.md.
 - **Never claim something works unless you ran it.**
 
 ## The game's voice
