@@ -272,7 +272,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.33';
+const VERSION = '0.1.34';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -301,7 +301,7 @@ function makeRoom(key, name, gx, gy, cw, ch, opt, build) {
 
 makeRoom('T', 'Training Yard', -3, 3, 3, 1, {dark:.4}, B => {
   B.solid(0, 16, 95, 17); B.clear(95, 13, 95, 15);
-  B.put('M', 2, 15); B.put('P', 5, 15); B.put('W', 8, 15); B.put('S', 11, 15);
+  B.put('M', 2, 15); B.put('P', 5, 15); B.put('W', 8, 15); B.put('S', 11, 15); B.put('&', 13, 15);
   B.put('d', 16, 15); B.put('d', 20, 15);
   B.ledge(25, 31, 9); B.put('h', 28, 10); B.put('S', 23, 15);
   B.ledge(34, 40, 12); B.ledge(37, 43, 8); B.put('S', 33, 15);
@@ -619,6 +619,14 @@ function drawCampProps() {
       ctx.fillStyle = gl; ctx.fillRect(x + 3, base - 24, 10, 19);
       ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(x + 4, base - 23, 1, 6); ctx.fillRect(x + 5, base - 23, 1, 2);
       ctx.fillStyle = '#c9a060'; ctx.fillRect(x + 7, base - 28, 2, 2);
+    } else if (it.t === '&') {
+      ctx.fillStyle = '#2e2622'; ctx.fillRect(x - 1, base - 6, 18, 6); ctx.fillStyle = '#4a3e36'; ctx.fillRect(x - 1, base - 6, 18, 1);
+      ctx.fillStyle = '#3a302a'; ctx.fillRect(x + 2, base - 20, 12, 14); ctx.fillStyle = '#52463c'; ctx.fillRect(x + 2, base - 20, 12, 1);
+      ctx.fillStyle = '#1a1210'; ctx.fillRect(x + 5, base - 17, 6, 8);
+      const fl = (tick >> 2) % 3;
+      ctx.fillStyle = '#e04a14'; ctx.fillRect(x + 6, base - 13 - fl, 4, 4 + fl); ctx.fillStyle = '#ffb04a'; ctx.fillRect(x + 7, base - 12, 2, 3); ctx.fillStyle = '#fff0b8'; ctx.fillRect(x + 7, base - 10, 2, 1);
+      ctx.fillStyle = '#ff8a2a'; ctx.fillRect(x + 7, base - 24 - ((tick >> 3) % 4), 1, 1);
+      if (tick % 9 === 0) parts.push({x:x + 8 + (Math.random() - .5) * 4, y:base - 16, vx:(Math.random() - .5) * .3, vy:-.5, life:30, color:Math.random() < .5 ? '#ffb04a' : '#ff6a2a', size:1});
     } else if (it.t === 'W') {
       ctx.fillStyle = '#5a3a1e'; ctx.fillRect(x - 6, base - 20, 2, 20); ctx.fillRect(x + 20, base - 20, 2, 20);
       ctx.fillStyle = '#6b4524'; ctx.fillRect(x - 7, base - 20, 30, 3); ctx.fillRect(x - 7, base - 4, 30, 2);
@@ -747,6 +755,68 @@ const WBMP = {
   drum:[".........", "#.......#", ".#.....#.", "..#####..", ".#.....#.", ".#######.", ".#.#.#.#.", ".#######.", "........."],
   flask:["...###...", "....#....", "....#....", "...#.#...", "..#...#..", ".#.###.#.", ".#######.", ".#######.", "..#####.."],
 };
+/* ---------- Ember shards ---------- */
+const UPS = {
+  vig:{name:'Vigor', sub:'One more heart.', cost:[30, 70, 130]},
+  edge:{name:'Edge', sub:'Every hit and skill does one more damage.', cost:[50, 120]},
+  haste:{name:'Haste', sub:'Skills come back 12% sooner.', cost:[25, 60, 110]},
+  greed:{name:'Greed', sub:'Half again as many shards from every kill.', cost:[20, 60]},
+};
+const upLv = k => (save && save.ups && save.ups[k]) || 0;
+const hasteK = () => 1 - .12 * upLv('haste');
+const CACHES = [['H', 23, 4, 8], ['C', 4, 3, 8], ['D', 22, 3, 15], ['B', 19, 3, 8], ['I', 150, 3, 8], ['F', 119, 7, 15], ['O', 56, 2, 8], ['W', 89, 3, 8], ['Q', 86, 5, 15],
+  ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8]];
+let sparks = [], shardShow = null, shardFlash = 0;
+function shardVal(e) { return e.t === 'boss' ? 40 : e.t === 'u' ? 4 : 'ewcyl'.includes(e.t) ? 2 : 1; }
+function dropShards(e, n) {
+  if (!save || mode === 'title') return;
+  n = n || shardVal(e); n += Math.floor(n * .5 * upLv('greed') + (upLv('greed') ? Math.random() : 0));
+  save.shards = (save.shards || 0) + n;
+  const cx = e.x + e.w / 2, cy = e.y + e.h / 2;
+  for (let i = 0; i < Math.min(n, 12); i++) sparks.push({x:cx, y:cy, vx:(Math.random() - .5) * 3, vy:-1.5 - Math.random() * 2.5, t:0, v:i === 0 ? n : 0});
+}
+function cacheLive(c) { return c[0] === room.key && !(save.caches || {})[c[0] + c[1] + ',' + c[2]]; }
+function shardTick() {
+  for (const c of CACHES) if (cacheLive(c) && overlap({x:p.x, y:p.y, w:p.w, h:p.h}, {x:c[1] * T, y:c[2] * T - 4, w:T, h:T + 4})) {
+    save.caches = save.caches || {}; save.caches[c[0] + c[1] + ',' + c[2]] = 1;
+    dropShards({x:c[1] * T, y:c[2] * T, w:T, h:T}, c[3]); persist(); sfx.pick(); toast = {text:'An ember cache: ' + c[3] + ' shards', t:120};
+  }
+  const tx = cam.x + 14, ty = cam.y + 56;
+  for (const m of sparks) {
+    m.t++;
+    if (m.t < 22) { m.vy += .18; m.x += m.vx; m.y += m.vy; m.vx *= .96; }
+    else { const dx = tx - m.x, dy = ty - m.y, d = Math.hypot(dx, dy) || 1, sp = Math.min(12, 2 + m.t * .25); m.x += dx / d * sp; m.y += dy / d * sp; if (d < 10) { m.done = true; shardFlash = 10; if (m.t % 2) tone(1400 + Math.random() * 300, .04, 'triangle', .012, null, 0, 'sfx'); } }
+    if (m.t > 160) m.done = true;
+  }
+  sparks = sparks.filter(m => !m.done);
+  if (shardFlash > 0) shardFlash--;
+}
+function drawShards() {
+  for (const c of CACHES) if (cacheLive(c)) {
+    const x = c[1] * T, b = (c[2] + 1) * T, bob = Math.round(Math.sin(tick * .08 + c[1]) * 1.5);
+    ctx.fillStyle = '#2e2622'; ctx.fillRect(x + 3, b - 4, 10, 4); ctx.fillStyle = '#4a3e36'; ctx.fillRect(x + 4, b - 6, 8, 2);
+    ctx.fillStyle = '#c43a14'; ctx.fillRect(x + 6, b - 12 + bob, 4, 5); ctx.fillStyle = '#ff8a2a'; ctx.fillRect(x + 7, b - 13 + bob, 2, 5); ctx.fillStyle = '#fff0b8'; ctx.fillRect(x + 7, b - 11 + bob, 1, 2);
+    ctx.globalCompositeOperation = 'lighter'; const gr = ctx.createRadialGradient(x + 8, b - 10, 0, x + 8, b - 10, 18); gr.addColorStop(0, 'rgba(255,130,50,.35)'); gr.addColorStop(1, 'rgba(255,90,30,0)'); ctx.fillStyle = gr; ctx.fillRect(x - 10, b - 28, 36, 36); ctx.globalCompositeOperation = 'source-over';
+    if (tick % 14 === 0) parts.push({x:x + 8, y:b - 12, vx:(Math.random() - .5) * .4, vy:-.5, life:24, color:'#ffb04a', size:1});
+  }
+  for (const m of sparks) { ctx.fillStyle = m.t % 6 < 3 ? '#ffb04a' : '#fff0b8'; ctx.fillRect(Math.round(m.x) - 1, Math.round(m.y) - 1, 2, 2); }
+}
+function shardHud(x, y) {
+  if (!save || bossMode) return;
+  const n = save.shards || 0, owed = sparks.reduce((a, m) => a + m.v, 0), show = Math.max(0, n - owed);
+  ctx.fillStyle = 'rgba(16,10,8,.72)'; ctx.fillRect(x, y, 50, 14);
+  ctx.fillStyle = shardFlash > 0 ? '#fff0b8' : '#ff8a2a'; ctx.fillRect(x + 5, y + 3, 3, 8); ctx.fillStyle = shardFlash > 0 ? '#ffffff' : '#ffb04a'; ctx.fillRect(x + 6, y + 2, 1, 9); ctx.fillRect(x + 4, y + 5, 5, 3);
+  txt(String(show), x + 13, y + 3, 8, '#e3d6bd');
+}
+function openShrine() {
+  const n = save.shards || 0;
+  const opts = Object.keys(UPS).map(k => { const U = UPS[k], lv = upLv(k), max = lv >= U.cost.length, c = U.cost[lv];
+    return {text:`${U.name} ${'●'.repeat(lv)}${'○'.repeat(U.cost.length - lv)}`, tag:max ? 'Done' : `${c} shards · ${U.sub}`, disabled:max || n < c,
+      run:() => { save.shards -= c; save.ups = save.ups || {}; save.ups[k] = lv + 1; p.max = maxHp(); if (k === 'vig') p.hp = p.max; persist(); sfx.pick(); burst(p.x + p.w / 2, p.y + 8, '#ffb04a', 20, 2.2); openShrine(); }}; });
+  opts.push({text:'Leave'});
+  openDlg({kicker:'Ember Shrine', title:`${n} shards`, body:['The fire in it is the same fire as the city. Feed it what you take from them.'], opts});
+}
+
 /* ---------- Class powers ---------- */
 const LASH = {type:'melee', dmg:1, cd:20, dur:12, reach:18, h:24, arc:.8, knock:4};
 let thralls = [], zaps = [], blasts = [];
@@ -756,7 +826,7 @@ function airLaunch(A) {
 }
 function playerDmg(A) {
   const C = cls();
-  return A.dmg + (save.str || 1) - 1 + (save.whet ? 1 : 0) + (p.lunge ? 1 : 0) + (p.dive ? 1 : 0) + (C.frenzy && p.hp <= p.max / 2 ? 1 : 0) + (C.crit && p.critSwing && p.atkT > 0 ? 2 : 0) + (p.song > 0 ? 1 : 0);
+  return A.dmg + (save.str || 1) - 1 + (save.whet ? 1 : 0) + (p.lunge ? 1 : 0) + (p.dive ? 1 : 0) + (C.frenzy && p.hp <= p.max / 2 ? 1 : 0) + (C.crit && p.critSwing && p.atkT > 0 ? 2 : 0) + (p.song > 0 ? 1 : 0) + upLv('edge');
 }
 function hitEnemy(e, dmg, kx) {
   e.hp -= dmg; e.flash = 12; if (e.dummy) dummyHit(e, dmg);
@@ -1366,13 +1436,13 @@ function closeWardrobe() {
 }
 
 /* ---------- State ---------- */
-const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0});
+const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}});
 const SAVE_KEY = 'wallfall-save';
 let save = fresh();
 let bossMode = null;
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), {seenIntro:true}, s); } catch (e) {}
 const persist = () => { if (typeof bossMode !== 'undefined' && bossMode) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
-const maxHp = () => bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0);
+const maxHp = () => bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0) + upLv('vig');
 
 let room, enemies = [], anchors = [], parts = [], entry = {x:0, y:0}, cam = {x:0, y:0};
 const DYN = new Map(); let R = null;
@@ -1643,7 +1713,7 @@ function applyWorld(w, fresh) {
     e.gx = o.x; e.gy = o.y; e.hp = 9999; e.dead = false;
     seen.add(o.i);
   }
-  for (const [id, e] of NET.prox) if (!seen.has(id)) { if (!e.prop && !e.dummy) burst(e.x + e.w / 2, e.y + e.h / 2, DEATHCOL[e.t] || '#ff7a2e', 14, 2.2); NET.prox.delete(id); }
+  for (const [id, e] of NET.prox) if (!seen.has(id)) { if (!e.prop && !e.dummy && !e.crate && e.t !== 'boss') dropShards(e); if (!e.prop && !e.dummy) burst(e.x + e.w / 2, e.y + e.h / 2, DEATHCOL[e.t] || '#ff7a2e', 14, 2.2); NET.prox.delete(id); }
   enemies = [...NET.prox.values()];
   eshots = (w.es || []).map(([x, y, vx, vy, g, r, k]) => ({x, y, vx, vy, g, r, life:60, dmg:1, seed:k === 1, water:k === 2}));
   if (w.ar && arena) {
@@ -2384,6 +2454,7 @@ function knock(e, v) {
 }
 function killCheck(e) { if (e.hp <= 0 && !e.dead) { e.dead = true;
   if (e.crate) { crateBroken(e); return; }
+  if (!e.dummy && !e.prop) dropShards(e);
   if (!e.dummy && !e.crate && cls().atk.type === 'summon' && Math.random() < .2) summonThrall(e.x + e.w/2, e.y + e.h);
   if (!e.dummy && cls().souls && (p.souls || 0) < 6) p.souls = (p.souls || 0) + 1;
   if (!e.dummy && cls().frenzy && (p.kills = (p.kills || 0) + 1) % 3 === 0 && p.hp < p.max) { p.hp++; burst(p.x + p.w/2, p.y + 6, '#ff5a4a', 12, 1.5); sfx.heal(); } burst(e.x + e.w/2, e.y + e.h/2, DEATHCOL[e.t] || '#ff7a2e', e.t === 'u' ? 30 : 18, 2.5); if (e.t === 'u') shake = 6; } }
@@ -3140,7 +3211,7 @@ function bossHit(e) {
 }
 function bossFelled(e) {
   if (bossMode) { e.dead = true; R.fight = 'done'; setBars(null); burst(e.x + e.w / 2, e.y + e.h / 2, BOSSES[e.kind].color, 50, 3.5); bossWon(e.kind); return; }
-  e.dead = true; R.fight = 'done'; setBars(null);
+  e.dead = true; R.fight = 'done'; setBars(null); dropShards(e, 40);
   save.bosses = save.bosses || {}; save.bosses[R.key] = true; save.hearts = Object.keys(save.bosses).length; persist();
   p.max = maxHp(); p.hp = p.max; sfx.pick(); musSting('clear');
   const B = BOSSES[e.kind];
@@ -3836,7 +3907,7 @@ const SKILLS = {
   chaplain:{name:'Benediction', cd:420}, lightbearer:{name:'Aegis', cd:420},
   reaper:{name:'Reap', cd:170}, ringdancer:{name:'Twin Rings', cd:110}, juggernaut:{name:'Bull Rush', cd:200}, sentinel:{name:'Leg Sweep', cd:160}, drummer:{name:'War Song', cd:480}, alchemist:{name:'Elixir', cd:330}};
 let pwaves = [];
-const skillDmg = d => d + (save.whet ? 1 : 0);
+const skillDmg = d => d + (save.whet ? 1 : 0) + upLv('edge');
 function hitArea(test, dmg, kx, col = '#ffcf8a', hitSet) {
   let n = 0;
   for (const e of enemies) {
@@ -3855,7 +3926,7 @@ function floorBelow(x, y) { const cx = Math.floor(x / T); let cy = Math.floor(y 
 function useSkill() {
   const k = clsKey(), S = SKILLS[k]; if (!S || p.skillCd > 0 || p.hook) return;
   const cx = p.x + p.w / 2, cy = p.y + p.h / 2, f = p.face, A = cls().atk;
-  p.skillCd = S.cd; p.skillFlash = 20;
+  p.skillCd = Math.round(S.cd * hasteK()); p.skillFlash = 20;
   if (k === 'warden') { hitArea(inCircle(cx, cy, 42), skillDmg(2), e => Math.sign(e.x + e.w / 2 - cx) * 10); p.spin = Math.max(p.spin || 0, 16); blasts.push({x:cx, y:cy, r:42, life:14}); sfx.heavy(); }
   else if (k === 'mage') { for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; shots.push({x:cx, y:cy, vx:Math.cos(a) * 3.4, vy:Math.sin(a) * 3.4, life:30, dmg:skillDmg(1), kind:'fire', hit:[]}); } sfx.fire(); sfx.boom(); }
   else if (k === 'breaker') { if (p.onGround) spawnQuake(); else { p.vy = 9; p.pendingQuake = true; p.noCut = 0; } sfx.heavy(); }
@@ -4056,7 +4127,7 @@ const nearest = (cx, cy, r, ok = () => true) => { let best = null, bd = r; for (
 function useSkill2() {
   const k = clsKey(), S = SKILLS2[k]; if (!S || p.skill2Cd > 0 || p.hook) return;
   const cx = p.x + p.w / 2, cy = p.y + p.h / 2, f = p.face, A = cls().atk;
-  p.skill2Cd = S.cd; p.skill2Flash = 20;
+  p.skill2Cd = Math.round(S.cd * hasteK()); p.skill2Flash = 20;
   if (k === 'warden') { p.parryT = 60; p.guard = 60; sfx.clang(); }
   else if (k === 'mage') { const e = nearest(cx + f * 60, cy, 200, o => (o.x - cx) * f > -10); const tx = e ? e.x + e.w / 2 : cx + f * 90; shots.push({kind:'bomb', fire:true, x:tx - f * 14, y:Math.max(4, (e ? e.y : p.y) - 110), ty:(e ? e.y : p.y) - 10, vx:f * .5, vy:3.5, life:120, dmg:skillDmg(3), radius:44, hit:[], big:true}); sfx.fire(); }
   else if (k === 'breaker') { p.vy = -9.4; p.onGround = false; p.noCut = 20; p.pendingQuake = true; p.skyslam = true; sfx.heavy(); }
@@ -4246,6 +4317,7 @@ function update() {
   const npcNear = nearNpc();
   if (hit.attack && npcNear && p.onGround) { hit.attack = false; p.vx = 0; talk(npcNear); }
   if (hit.attack && p.onGround && nearEnt('W')) { hit.attack = false; p.vx = 0; openClassPick(); }
+  if (hit.attack && p.onGround && nearEnt('&')) { hit.attack = false; p.vx = 0; openShrine(); }
   if (hit.attack && p.onGround && nearEnt('M')) { hit.attack = false; p.vx = 0; openWardrobe(); }
   if (hit.attack && p.atkCd === 0) {
     const C = cls(), A = C.atk; p.atkT = A.dur; p.atkCd = A.cd; p.lash = false; p.lunge = false; p.up = !!held.up && !held.down;
@@ -4343,7 +4415,7 @@ function update() {
   }
   updateShots();
   updateClassFx();
-  skillTick(); moveTick(); voiceTick(); bossTick();
+  skillTick(); moveTick(); shardTick(); voiceTick(); bossTick();
   regionUpdate(ax, atkBox);
   ventUpdate(); dropsUpdate();
   updateEShots(atkBox);
@@ -5834,6 +5906,7 @@ function drawHUD() {
     ctx.save(); ctx.beginPath(); ctx.rect(hx, top, 7, 11 + 6 - top); ctx.clip(); ctx.globalAlpha = .55 + .2 * Math.sin(tick * .12); heart(hx, 11, true); ctx.restore();
   }
   if (cls().armor) { const hx = 11 + p.max * 9 + 2; ctx.fillStyle = p.plate ? '#aab2ba' : '#33281f'; ctx.fillRect(hx, 11, 7, 5); ctx.fillRect(hx + 1, 16, 5, 1); ctx.fillRect(hx + 2, 17, 3, 1); if (p.plate) { ctx.fillStyle = '#e8eef4'; ctx.fillRect(hx + 1, 12, 2, 1); } }
+  shardHud(6, 50);
   badge(11, 22, true, 'dash'); badge(29, 22, save.dbl, 'dbl'); badge(47, 22, save.wall, 'wall'); badge(65, 22, save.hook, 'hook'); badge(83, 22, true, 'weapon');
   for (let i = 1; i < (save.str || 1); i++) { ctx.fillStyle = '#ff6a3a'; ctx.fillRect(84 + (i - 1) * 4, 39, 3, 2); }
   {
@@ -6260,7 +6333,7 @@ function render() {
   drawPeers();
   if (mode !== 'dead') drawPlayer();
   if (mode !== 'dead') drawParry();
-  drawSkillFx(); drawMoveFx();
+  drawSkillFx(); drawMoveFx(); drawShards();
   drawDropHint();
   for (const q of parts) { ctx.globalAlpha = Math.min(1, q.life / 20); ctx.fillStyle = q.color; ctx.fillRect(q.x, q.y, q.size, q.size); }
   ctx.globalAlpha = 1; drawRegionFront();
@@ -6282,6 +6355,8 @@ function render() {
   if (mode === 'play') {
     const rk = nearEnt('W');
     if (rk) promptBubble(keyOf('attack'), 'Change class', rk.x*T + 8 - cx, rk.y*T - 22 - cy, '#ff8a3d');
+    const sh = nearEnt('&');
+    if (sh) promptBubble(keyOf('attack'), 'Ember Shrine', sh.x*T + 8 - cx, sh.y*T - 30 - cy, '#ff8a3d');
     const mr = nearEnt('M');
     if (mr) promptBubble(keyOf('attack'), 'Change look', mr.x*T + 8 - cx, mr.y*T - 30 - cy, '#ff8a3d');
     const sg = nearEnt('S');
@@ -6591,7 +6666,7 @@ function startBossMode() {
 }
 function bossSave(k) {
   const r = bossMode.real;
-  save = Object.assign(fresh(), {worldV:4, clsChosen:true, cls:r.cls, look:r.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:r.whet, rations:r.rations || 0,
+  save = Object.assign(fresh(), {worldV:4, clsChosen:true, cls:r.cls, look:r.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:r.whet, rations:r.rations || 0, ups:r.ups || {},
     districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true])), visited:{BH:true}, gateOpen:k === 'ash', cogs:3, seenBoss:{forge:1, eel:1, thorn:1, ash:1}});
   save.hearts = Object.keys(r.bosses || {}).length; save.bosses = {};
 }
