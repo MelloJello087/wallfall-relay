@@ -1,0 +1,6 @@
+{
+  "name": "wallfall-native-tests",
+  "private": true,
+  "scripts": { "record": "node record.js" },
+  "devDependencies": { "puppeteer-core": "^24.0.0" }
+}

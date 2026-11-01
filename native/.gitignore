@@ -1,5 +1,8 @@
 build/
 out/
+deps/
 .vs/
+node_modules/
+tests/frames/
 *.exe
 *.pdb

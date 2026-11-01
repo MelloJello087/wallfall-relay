@@ -1,11 +1,36 @@
 # C++ version: research
 
-Started 2026-11-01, measured against the browser game at v0.1.35. Nothing here is built yet.
+Started 2026-11-01, measured against the browser game at v0.1.35. The proof (step 1) is done and tested against v0.1.48; the game itself is not ported yet.
 
 ## The short answer
 It can be done, and it can be a normal `.exe` on Steam. But it is a rewrite of the whole game, not a conversion. No tool turns this code into C++, so every part gets rewritten by hand and checked against the browser game.
 
 Hollow Knight was built in Unity with C#, using the PlayMaker tool for its enemies, so it isn't a C++ template to copy. What carries over is the result: a real `.exe`, smooth frame rate and instant input.
+
+## Proof results (2026-11-01, browser game v0.1.48)
+Every test compares with real output from Chrome.
+
+| Check | Result |
+|---|---|
+| Build | Clean build from nothing works. 4.6 MB `.exe` plus 2.8 MB `SDL3.dll` |
+| Real game frames (title and 7 rooms) | Replayed every drawing call, all features handled. Average difference 0.5 to 1.9 out of 255 per colour. 96 to 99.7% of pixels within 8 of 255 |
+| Speed | 3 to 6 ms a frame once warmed up, against a 16.6 ms budget. Drawn on the CPU only |
+| Game speed | Updates stayed at 60 a second on a 240 Hz screen |
+| Sound effects (8 from the game's table) | Same waveform as Chrome: over 100 dB between them, and a deliberately wrong pair scored only 4.7% |
+| Controller | Passed with SDL's simulated controller. No real controller tried yet |
+| Sound out | The device opened and played. No person has listened to it yet |
+
+What changed from the plan:
+- **Skia needs no compiling.** JetBrains publishes ready-made Windows builds. That removes the biggest risk and the disk space worry.
+- **No GPU needed for drawing.** The game is 512x288, so the CPU draws it and the GPU only scales it up with blocky pixels.
+- **LabSound is not needed so far.** Rebuilding Chrome's oscillator tables by hand matched exactly.
+
+Known gaps:
+- **Small pixel text is a little crisper than Chrome's.** Chrome draws web fonts with its own font engine (Fontations), which this Skia build leaves out. Text layout matches exactly and large text is very close. Text is where the visible differences are. An exact match would need our own Skia build with Fontations on.
+- Some rooms still differ by a few colour levels across the background, too little to see. Not tracked down yet.
+- Music is unproven: the compressor, reverb, filters and noise come next.
+- Glyphs are drawn as shapes every time. It is fast enough now, and can be cached if text-heavy screens need it.
+- Not tested yet: Steam, the map screen, the HTML menus, and other PCs.
 
 ## What has to be rebuilt
 Measured from `game/Wallfall.html`.
@@ -22,8 +47,8 @@ Measured from `game/Wallfall.html`.
 
 ## Recommended tools
 - **SDL3** for the window, keyboard, controllers and sound output. It is stable (3.4 series) and handles controller hot-plug, button labels and rumble. Steam games must call `SteamAPI_InitEx()` before `SDL_Init()`.
-- **Skia** for drawing. It is the graphics engine behind Chrome's canvas, so it is the best chance of matching the look. The risk is that it is known to be awkward to build on Windows, so it gets tested first. If it won't build cleanly, **ThorVG** is the fallback, at the cost of a less exact match.
-- **Own sound layer**, modelled on browser audio nodes. **LabSound** came out of WebKit's audio code and is the first thing to try, but it deliberately differs from the browser standard in places, so it has to be checked by comparing recordings.
+- **Skia** for drawing. It is the graphics engine behind Chrome's canvas, so it is the best chance of matching the look. We use JetBrains' ready-made build, drawing on the CPU.
+- **Own sound layer**, modelled on browser audio nodes and checked by comparing recordings. **LabSound** stays as a backup if the music nodes turn out to be hard.
 - **Steamworks SDK** for achievements, overlay, Steam Cloud, invites and networking. App ID 480 (Spacewar) is Valve's sample app.
 - **Visual Studio 2026 and CMake**, which are already installed and were tested: a small C++ program built and ran here on 2026-11-01.
 
@@ -41,8 +66,8 @@ Expect a very close match, not a perfect one. Text edges and sound may differ sl
 - The honest limit: a new mechanic in the browser game has to be written again in C++. So the two versions drift apart until that is done. `native/PORTED_VERSION` will record which browser version this one matches.
 
 ## Order of work
-1. **Proof first:** a window drawing with Skia, playing a test sound, reading a controller. If this fails, the plan changes before much work is lost.
-2. `Canvas` and sound layers, tested against Chrome.
+1. **Proof first (done):** a window drawing with Skia, playing a test sound, reading a controller.
+2. Finish the `Canvas` and sound layers, tested against Chrome. Drawing is mostly there; the music nodes are next.
 3. Core loop, player and one room, feeling identical side by side.
 4. All rooms, enemies, classes, skills and bosses.
 5. Menus, cutscenes, map and conversations.
@@ -55,11 +80,12 @@ Expect a very close match, not a perfect one. Text edges and sound may differ sl
 - **Freeze point:** porting a moving target is slower, so at some point it helps to pause new mechanics in the browser game while the C++ version catches up.
 
 ## Machine notes
-Windows 11, RTX 4060 Ti, Visual Studio 2022 and 2026, CMake 4.3, Ninja. The C: drive is 95% full with about 50 GB free, and a Skia build can take a lot of that, so check space first.
+Windows 11, RTX 4060 Ti, Visual Studio 2022 and 2026, CMake 4.3, Ninja. The C: drive is 95% full with about 50 GB free. `native/deps` and `native/build` use about 300 MB, because Skia comes ready-made. Building Skia ourselves would need much more, so check space first. The main monitor runs at 240 Hz, which is handy for checking that game speed doesn't follow the screen.
 
 ## Sources
 - [Team Cherry on Unity and PlayMaker](https://www.teamcherry.com.au/blog/inside-the-mind-of-a-bug-unity-and-playmaker)
 - [Unity's Hollow Knight case study](https://unity.com/case-study/hollow-knight)
+- [JetBrains skia-pack](https://github.com/JetBrains/skia-pack)
 - [SDL3 gamepad docs](https://wiki.libsdl.org/SDL3/CategoryGamepad/raw)
 - [SDL 3 release notes](https://linuxiac.com/sdl-simple-directmedia-layer-3-released/)
 - [C++ 2D graphics libraries compared](https://www.pistack.xyz/posts/2026-06-30-cpp-2d-graphics-libraries-skia-cairo-nanovg-blend2d/)
