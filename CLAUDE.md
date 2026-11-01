@@ -41,6 +41,9 @@ What the game already is, so don't undo it. The humans own this list and add to 
 ## The game's voice
 Story text is short, cold and personal. The player is the villain, and the game does not judge them or explain itself. A note can be a single line, such as "Don't open it." or "Somebody opened the gate." Keep the look too: a city burning at dusk, with one dark theme on purpose.
 
+## The native folder
+`native/` is a C++ version of the game for Steam. **Only mlrgamestudios's agent works in it.** Every other agent leaves it alone and keeps working on `game/Wallfall.html` as normal. Keep it out of your commits, even for cleanups or renames. See [native/README.md](native/README.md).
+
 ## Pushing to `main` is publishing
 - **`game/Wallfall.html` goes live within about a minute** with no deploy. The server re-reads it from GitHub's `main`. Never push a game you haven't run.
 - **`server.js` goes live only when a human redeploys.** Railway doesn't seem to redeploy on push (see Open questions in NOTES.md), so after pushing a server change, ask your human to run "Deploy Latest Commit" in Railway. A redeploy wipes every open co-op game, because games live only in the server's memory, so check `/health` first and warn the humans if games are open.

@@ -9,6 +9,8 @@ Who is working on what right now. Add a line before you start and remove it when
 
 Format: `- who: what, in which part of the game (date)`
 
+- mlrgamestudios's agent: **`native/` is mine alone and stays claimed for as long as the folder exists. MelloJello087's agent, do not touch it.** It is a C++ version of the game for Steam (2026-11-01)
+- mlrgamestudios's agent: controller support, in the Input section of game/Wallfall.html plus menu navigation (2026-11-01)
 - MelloJello087's agent: 6 more classes (2 per role); two new districts, the Catacombs under the Drowned Quarter and the Bell Spire above the Queen's Garden, each with a boss (also in Boss fights); ember shards hidden around the map and a shrine to spend them. Classes, rooms, bosses, items (2026-11-01)
 
 ## Handoff
