@@ -249,7 +249,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.21';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
+const VERSION = '0.1.22';   // add 0.0.1 for every game update; see Versions in CLAUDE.md
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -2713,7 +2713,7 @@ function drawBossBar(b) {
   if (['wait'].includes(b.state)) return;
   const w = 230, x = (VW - w) / 2, y = 56, k = b.hp / b.max;
   ctx.fillStyle = 'rgba(10,6,5,.75)'; ctx.fillRect(x - 6, y - 14, w + 12, 26);
-  ctx.font = '11px "IM Fell English SC", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#ffd2a0'; ctx.fillText('The Colossus', VW / 2, y - 3);
+  ctx.font = '11px "IM Fell English SC", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#ffd2a0'; ctx.fillText('The Ash-King', VW / 2, y - 3);
   ctx.fillStyle = '#2a1410'; ctx.fillRect(x, y, w, 6);
   ctx.fillStyle = '#8c1f1f'; ctx.fillRect(x, y, w * k, 6); ctx.fillStyle = '#e8503a'; ctx.fillRect(x, y, w * k, 2);
   ctx.fillStyle = '#e3d6bd'; for (const t of [1 / 3, 2 / 3]) ctx.fillRect(x + w * t, y - 1, 1, 8);
@@ -6385,17 +6385,12 @@ function drawPrologue(t) {
   const z = 1 + .05 * t / PRO; ctx.save(); ctx.translate(VW / 2, VH * .75); ctx.scale(z, z); ctx.translate(-VW / 2, -VH * .75);
   // the plain, far below
   ctx.fillStyle = '#0d0b10'; ctx.fillRect(-20, VH * .66, VW + 40, VH);
-  // it rises out of the dark, eyes first
-  const up = Math.max(0, Math.min(1, (t - 60) / 360)), eyes = Math.max(0, Math.min(1, (t - 240) / 120)), base = VH * 1.98 + (1 - up * (2 - up)) * 220;
-  cutColossus(VW * .36, base, 2.4, t * .006, .1, eyes);
-  // its crown: a heavy iron crown sitting on the top of its head, drawn in big pixels, the tips barely warm
-  if (up > 0) {
-    const sc = 2.4, P = giantPose(VW * .36, base, sc, t * .006, .1, 0), hx = P.head.x, top = P.head.y - 8 * sc - 22 * sc;
-    const CR = ['o.....o.....o', '#.....#.....#', '#h...#h#...h#', '##h.##h##.h##', 'hhhhhhhhhhhhh', '#############', '#############'], c = 3, x0 = Math.round(hx - 6.5 * c), y0 = Math.round(top + 16 - CR.length * c);
-    CR.forEach((row, j) => { for (let i = 0; i < row.length; i++) { const ch = row[i]; if (ch === '.') continue;
-      ctx.fillStyle = ch === 'o' ? `rgba(255,140,70,${(.5 + .15 * Math.sin(t * .05 + i)) * eyes})` : ch === 'h' ? '#6a5f74' : '#2a2330'; ctx.fillRect(x0 + i * c, y0 + j * c, c, c); } });
-    ctx.fillStyle = `rgba(150,140,170,${.35 * eyes})`; ctx.fillRect(x0, y0 + 4 * c, c, c);
-  }
+  // it rises out of the dark: the Ash-King, the one you meet past the Last Gate, horned and masked, its furnace heart lit
+  const up = Math.max(0, Math.min(1, (t - 60) / 360)), eyes = Math.max(0, Math.min(1, (t - 240) / 120)), base = VH * 1.5 + (1 - up * (2 - up)) * 220;
+  { const P = giantPose(VW * .36, base, 1.7, t * .006, .2, .08); P.s = 1.7; P.ph = t * .006;
+    giantShape(P, `rgba(210,90,45,${.25 + .5 * eyes})`, 2.6, -1.5); giantShape(P, '#0c0606', 0, 0);
+    const { x:ex, y:ey } = giantDetails(P, {hot:.15 + .75 * eyes, eye:eyes});
+    ctx.globalCompositeOperation = 'lighter'; const rg = ctx.createRadialGradient(ex, ey, 0, ex, ey, 30); rg.addColorStop(0, `rgba(255,170,80,${.35 * eyes})`); rg.addColorStop(1, 'rgba(255,120,40,0)'); ctx.fillStyle = rg; ctx.fillRect(ex - 30, ey - 30, 60, 60); ctx.globalCompositeOperation = 'source-over'; }
   // the wall you stand on
   const wy = VH * .8;
   ctx.fillStyle = '#060405'; ctx.fillRect(-20, wy, VW + 40, VH); for (let x = -20; x < VW + 20; x += 22) ctx.fillRect(x, wy - 10, 13, 10);
