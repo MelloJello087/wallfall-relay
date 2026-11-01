@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.47';
+const VERSION = '0.1.48';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1622,9 +1622,9 @@ const SLOTS = 5, slotKey = i => i ? 'wallfall-save-' + i : 'wallfall-save';
 let slot = 0; try { slot = Math.max(0, Math.min(SLOTS - 1, +localStorage.getItem('wallfall-slot') || 0)); } catch (e) {}
 let SAVE_KEY = slotKey(slot);
 let save = fresh();
-let bossMode = null;
+let bossMode = null, pvp = null;
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), {seenIntro:true}, s); } catch (e) {}
-const persist = () => { if (typeof bossMode !== 'undefined' && bossMode) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
+const persist = () => { if (typeof bossMode !== 'undefined' && bossMode || typeof pvp !== 'undefined' && pvp) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
 const gameDiff = () => !bossMode && !pvp && DIFFS[save.diff] || DIFFS.normal;
 const maxHp = () => pvp ? cls().hp + 2 : bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0) + upLv('vig') + (treeOn('defense', 0) ? 1 : 0) + gameDiff().hearts;
 
@@ -1813,6 +1813,7 @@ async function netStart(role, code) {
     }
     Object.assign(NET, {on:true, role, peers:[], host:null, proxy:false, hits:[], applied:{}, last:{}});
     toast = {text:role === 'host' ? 'Hosting · code ' + NET.code : 'Joined ' + NET.code, t:160}; sfx.pick();
+    if (NET.pvpAfter) { NET.pvpAfter = false; NET.busy = false; dlg.open = false; dlgEl.hidden = true; leaveTitle(); enterPvp(); return; }
   } catch (e) { NET.err = (e && e.message && e.message !== 'no transport' ? e.message + ' ' : 'Could not connect. ') + (Transport === RoomTransport ? 'Your friend needs the game shared with them on Claude.' : Transport === PeerTransport ? 'Check the code, and that you are both online.' : ''); }
   NET.busy = false;
   if ((!dlg.open || dlg.coop) && !binder.open && !wardrobe.open && (mode === 'play' || mode === 'note')) openCoop();
@@ -1992,7 +1993,7 @@ function openCoop() {
   const peers = NET.peers.map((q, i) => `<li><i style="background:${PEERCOL[i % 4]}"></i>${esc(q.s.n || 'Partner')}${q.s.r === 'host' ? ' (host)' : ''} · ${esc((ROOMS[q.s.rk] || {}).name || '')}</li>`).join('');
   const opts = [], btn = (text, run, extra = '') => { opts.push({text, run}); return `<button class="opt" id="opt${opts.length - 1}" data-i="${opts.length - 1}"${extra}><span class="t">${esc(text)}</span></button>`; };
   if (!NET.on) Transport = pickTransport();
-  let html = `<div class="card coop"><p class="kicker">Co-op · ${esc(Transport === WsTransport ? 'online, your server' : Transport.name)}</p><h2>${inS ? 'Code ' + esc(NET.code) : 'Play together'}</h2>`;
+  let html = `<div class="card coop"><p class="kicker">Co-op · ${esc(Transport === WsTransport ? 'online, your server' : Transport.name)}</p><h2>${inS ? 'Code ' + esc(NET.code) : NET.pvpAfter ? 'Fight your friends' : 'Play together'}</h2>`;
   if (!inS) {
     html += `<label class="cf">Your name<input id="cName" maxlength="14" value="${esc(NET.name)}" autocomplete="off"></label>`;
     if (!onClaude() && !servedByRelay()) html += `<label class="cf">Server <span style="text-transform:none;letter-spacing:0;font-weight:400">(your Railway address; leave empty to connect directly)</span><input id="cServer" placeholder="wallfall-relay.up.railway.app" autocomplete="off" spellcheck="false" value="${esc((() => { try { return localStorage.getItem('wallfall-server') || DEFAULT_SERVER; } catch (e) { return DEFAULT_SERVER; } })())}"></label>`;
@@ -7136,7 +7137,8 @@ function openTitle() {
   if (slotList().length) html += btn('Continue', () => openSaves());
   html += btn(slotList().length ? 'New game' : 'Begin', () => confirmNew());
   if (save.clsChosen) html += btn('Boss fights', () => { leaveTitle(); startBossMode(); });
-  html += btn('Co-op', () => openCoop());
+  html += btn('PvP', () => { NET.pvpAfter = true; if (NET.on) { leaveTitle(); enterPvp(); } else openCoop(); });
+  html += btn('Co-op', () => { NET.pvpAfter = false; openCoop(); });
   html += btn(acct ? 'Account · ' + acct.name : 'Account', () => openAccount());
   html += `</div>${hasProgress() ? `<p class="tsub">${esc(CLASSES[save.cls] ? CLASSES[save.cls].name : '')} · ${esc(progressOf(save))}</p>` : ''}</div>`;
   openDlg({opts, html});
@@ -7244,14 +7246,14 @@ makeRoom('PV', 'The Pit', 40, 14, 3, 2, {dark:.38, noGiants:true}, B => {
 const PV_SPAWNS = [[7, 33], [88, 33], [8, 18], [87, 18], [38, 8], [57, 8]];
 const PV_POWERS = [[47, 25, 'fury'], [11, 28, 'heal'], [84, 28, 'heal'], [39, 8, 'swift'], [56, 8, 'swift'], [11, 4, 'aegis'], [84, 4, 'aegis'], [47, 18, 'fury']];
 const PV_KIND = {heal:{col:'#ff6a5a', name:'Heart'}, fury:{col:'#ff3a1a', name:'Fury'}, swift:{col:'#7ad8ff', name:'Swift'}, aegis:{col:'#fff0b8', name:'Aegis'}};
-let pvp = null;
 function enterPvp() {
   if (!NET.on || pvp || bossMode) return;
-  pvp = {back:{k:room.key, x:p.x, y:p.y}, kills:0, deaths:0, seq:0, out:[], seen:{}, pd:{}, cd:{}, by:null, by2:null, pw:PV_POWERS.map(() => 0)};
+  pvp = {back:null, kills:0, deaths:0, seq:0, out:[], seen:{}, pd:{}, cd:{}, by:null, by2:null, pw:PV_POWERS.map(() => 0)};
   enterRoom('PV'); pvpSpawn(); banner = {title:'The Pit', sub:'Friends are just enemies who have not had the chance.', color:'#ff5a3a', t:220};
 }
 function leavePvp() {
   if (!pvp) return; const b = pvp.back; pvp = null; p.fury = p.swift = 0;
+  if (!b) { p.max = maxHp(); p.hp = p.max; startAt('T'); openTitle(); return; }
   enterRoom(ROOMS[b.k] ? b.k : 'T'); p.x = b.x; p.y = b.y; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; p.inv = 60; snapCam();
 }
 function pvpSpawn() {
@@ -7456,7 +7458,7 @@ function openPause() {
     {text:'Resume'}, {text:'Full screen', run:click('fsb')}, {text:'Co-op', run:click('coop')},
     {text:acct ? 'Account · ' + acct.name : 'Account', run:click('acctb')}, {text:'Controls', run:click('ctl')},
     {text:'Sound', run:() => openSound(openPause)}, {text:'Admin panel', run:() => openAdmin()},
-    ...((NET.on || pvp) && !bossMode ? [pvp ? {text:'Leave the Pit', run:() => leavePvp()} : {text:'PvP: the Pit', run:() => enterPvp()}] : []),
+    ...(pvp ? [{text:'Leave the Pit', run:() => leavePvp()}] : []),
     ...(bossMode ? [{text:'Back to the hall', run:() => bossHall()}] : []), {text:bossMode ? 'Leave boss fights' : 'Quit to the title screen', run:() => { endBossMode(); persist(); if (acct) cloudNow(); parts = []; openTitle(); }}];
   const btns = opts.map((o, i) => `<button class="opt" id="opt${i}" data-i="${i}"><span class="t">${esc(o.text)}</span></button>`).join('');
   openDlg({opts, html:`<div class="card pausecard"><p class="kicker">Paused${NET.on ? ' · co-op keeps running' : ''}</p><h2>${esc(room ? room.name : 'Wallfall')}</h2><div class="opts pgrid">${btns}</div></div>`});
