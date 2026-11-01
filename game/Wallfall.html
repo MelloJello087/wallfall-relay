@@ -272,7 +272,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.31';
+const VERSION = '0.1.32';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -933,8 +933,8 @@ function fireShot() {
   else if (A.kind === 'wisp') { const q = shots[shots.length - 1]; let bd = 220; for (const o of enemies) { if (o.dead || o.prop || o.crate || o.ghost || o.spawn > 0) continue; const d = Math.hypot(o.x + o.w / 2 - cx, o.y + o.h / 2 - p.y - 9); if (d < bd && los(cx, p.y + 9, o.x + o.w / 2, o.y + o.h / 2)) { bd = d; q.seek = o; } } q.wisp = true; }
   if (A.recoil && p.up) { if (!p.onGround) { p.vy = Math.max(p.vy, 2); } shake = Math.max(shake, 5); burst(p.x + p.w/2, p.y - 4, '#c9c4bc', 14, 1.4); }
   else if (A.recoil) {
-    p.vx = -p.face * (p.onGround ? 3.2 : 5.2); if (!p.onGround) { p.vy = Math.min(p.vy, -3.6); p.noCut = 10; }
-    p.lock = 9; p.dashT = 0; shake = Math.max(shake, 5);
+    p.vx = -p.face * (p.onGround ? 3.2 : 5.2); if (!p.onGround) { p.vy = Math.min(p.vy, -7.4); p.noCut = 18; p.spin = Math.max(p.spin, 12); }
+    p.lock = p.onGround ? 9 : 14; p.dashT = 0; shake = Math.max(shake, 5);
     burst(p.x + p.w/2 + p.face * 14, p.y + 9, '#c9c4bc', 14, 1.4); burst(p.x + p.w/2 + p.face * 14, p.y + 9, '#ffcf70', 6, 2);
   }
 }
