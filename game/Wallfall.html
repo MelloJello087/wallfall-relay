@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.49';
+const VERSION = '0.1.50';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -5004,7 +5004,7 @@ function update() {
     }
     if (it.t === 'B' && mode === 'play') {
       const bx = it.x*T + 8, by = it.y*T + 8;
-      if (Math.abs(p.x + p.w/2 - bx) < 22 && Math.abs(p.y + p.h/2 - by) < 20) { banner = null; openGate(); }
+      if (Math.abs(p.x + p.w/2 - bx) < 22 && Math.abs(p.y + p.h/2 - by) < 20 && useHit()) { useDone(); banner = null; openGate(); }
     }
   }
 
@@ -6927,6 +6927,8 @@ function render() {
   if (mode === 'play') {
     const rk = nearEnt('W');
     if (rk) promptBubble(keyOf('interact'), 'Change class', rk.x*T + 8 - cx, rk.y*T - 22 - cy, '#ff8a3d');
+    const gw = room.ents.find(it => it.t === 'B' && Math.abs(p.x + p.w / 2 - it.x * T - 8) < 22 && Math.abs(p.y + p.h / 2 - it.y * T - 8) < 20);
+    if (gw) promptBubble(keyOf('interact'), save.gateOpen ? 'The gate' : 'The winch', gw.x*T + 8 - cx, gw.y*T - 30 - cy, '#ff8a3d');
     const ws = nearEnt('%') || nearLitLantern();
     if (ws) promptBubble(keyOf('interact'), 'Travel', ws.x*T + 8 - cx, ws.y*T - 34 - cy, '#ff8a3d');
     const sh = nearEnt('&');
@@ -7134,8 +7136,8 @@ function openTitle() {
   mode = 'title'; if (pvp) { save = pvp.real; pvp = null; p.fury = p.swift = 0; p.max = maxHp(); p.hp = p.max; }
   const opts = [], btn = (text, run) => { opts.push({text, run}); return `<button class="opt" id="opt${opts.length - 1}" data-i="${opts.length - 1}"><span class="t">${esc(text)}</span></button>`; };
   let html = `<div class="titlemenu"><div class="opts">`;
-  if (slotList().length) html += btn('Continue', () => openSaves());
   html += btn(slotList().length ? 'New game' : 'Begin', () => confirmNew());
+  if (slotList().length) html += btn('Continue', () => openSaves());
   if (save.clsChosen) html += btn('Boss fights', () => { leaveTitle(); startBossMode(); });
   html += btn('PvP', () => { NET.pvpAfter = true; if (NET.on) { leaveTitle(); enterPvp(); } else openCoop(); });
   html += btn('Co-op', () => { NET.pvpAfter = false; openCoop(); });
