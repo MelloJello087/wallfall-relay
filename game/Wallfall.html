@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.57';
+const VERSION = '0.1.58';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -821,6 +821,18 @@ const CLASSES = {
     atk:{type:'melee', dmg:1, cd:22, dur:14, reach:22, h:26, arc:.9, knock:5}, pal:{l:'#5a4a38', L:'#3e3226'}},
   lightbearer:{group:'support', name:'Lightbearer', short:'Lantern · shields', role:'Lantern', desc:'Sends out seeking wisps of light. Aegis wraps you and nearby allies in a shield, and raises the fallen.', hp:4, speed:2.25, dashes:1, weapon:'lantern',
     atk:{type:'bolt', kind:'wisp', dmg:1, cd:24, dur:12, speed:3.4, life:64}, pal:{l:'#4a4438', L:'#34302a'}},
+  gargoyle:{group:'defense', name:'Gargoyle', short:'Stone mace · stomps', role:'Stomp', desc:'Carved for the cathedral roof and never meant to come down. Landing from a fall cracks the ground under every foe nearby.', hp:7, speed:2.05, dashes:1, weapon:'gmace', stomp:true,
+    atk:{type:'melee', dmg:2, cd:24, dur:14, reach:22, h:24, arc:.9, knock:8}, pal:{l:'#4e4c4a', L:'#363432'}},
+  golem:{group:'defense', name:'Golem', short:'Stone fists · steady', role:'Fists', desc:'Clay and rubble given one order. Slow, heavy, and nothing knocks it back.', hp:8, speed:1.85, dashes:1, weapon:'fists', steady:true,
+    atk:{type:'melee', dmg:3, cd:36, dur:18, reach:20, h:26, arc:.7, knock:12}, pal:{l:'#6a5040', L:'#4a382c'}},
+  plaguewarden:{group:'defense', name:'Plaguewarden', short:'Censer · poison', role:'Censer', desc:'Kept the sick quarter shut. Every hit with the censer leaves a foe poisoned.', hp:6, speed:2.1, dashes:1, weapon:'censer', plague:true,
+    atk:{type:'melee', dmg:1, cd:20, dur:14, reach:30, h:20, arc:.9, knock:4}, pal:{l:'#3a3e2a', L:'#282c1e'}},
+  beekeeper:{group:'support', name:'Beekeeper', short:'Smoker · bees', role:'Bees', desc:'The rooftop hives survived the fire. Bees hunt down foes for you, and honey heals and slows.', hp:5, speed:2.2, dashes:1, weapon:'smoker',
+    atk:{type:'bolt', kind:'bee', dmg:1, cd:16, dur:10, speed:3.4, life:80}, pal:{l:'#c09a3a', L:'#8a6a2a'}},
+  medic:{group:'support', name:'Field Medic', short:'Scalpel · triage', role:'Medic', desc:'Patched up the gate guards, once. Every heal you give mends one heart more.', hp:5, speed:2.3, dashes:1, weapon:'scalpel', medic:true,
+    atk:{type:'melee', dmg:1, cd:10, dur:8, reach:16, h:18, arc:.7, knock:3}, pal:{l:'#cfc4ae', L:'#a39a86'}},
+  puppeteer:{group:'support', name:'Puppeteer', short:'Strings · puppets', role:'Strings', desc:'Ran the street theatre. Now the strings go into foes, who fight their friends until you cut them loose.', hp:4, speed:2.25, dashes:1, weapon:'cross',
+    atk:{type:'melee', dmg:1, cd:20, dur:14, reach:40, h:10, arc:0, knock:-4, thrust:true}, pal:{l:'#4a2a4a', L:'#341c34'}},
   mirrorguard:{group:'defense', name:'Mirrorguard', short:'Mirror · reflects', role:'Mirror', desc:'Shots that hit your mirror while you strike fly back at whoever fired them.', hp:6, speed:2.1, dashes:1, weapon:'mirror', reflect:true,
     atk:{type:'melee', dmg:1, cd:18, dur:12, reach:18, h:26, arc:.8, knock:7}, pal:{l:'#3e4a5a', L:'#2a3440'}},
   anchor:{group:'defense', name:'Anchorman', short:'Anchor · drags', role:'Anchor', desc:'A ship’s anchor on a chain. Long, slow swings that pull foes in and leave them sluggish.', hp:7, speed:1.95, dashes:1, weapon:'anchor', drag:true,
@@ -886,6 +898,12 @@ const WBMP = {
   buckler:["..#####..", ".#.....#.", "#..###..#", "#.#####.#", "#..###..#", ".#.....#.", "..#####..", ".........", "........."],
   censer:["....#....", "....#....", "....#....", "...###...", "..#.#.#..", "..#####..", "...###...", "....#....", "........."],
   lantern:["....#....", "...###...", "..#...#..", "..#.#.#..", "..#...#..", "...###...", "....#....", "....#....", "....#...."],
+  gmace:["....###..", "...#####.", "...#####.", "....###..", "...#.....", "..#......", ".#.......", "#........", "........."],
+  fists:["..####...", ".######..", "#######..", "#.#.#.#..", "#######..", ".#####...", "..###....", "..###....", "........."],
+  censer:["#........", ".#.......", "..#......", "...#.....", "....#....", "....#....", "...###...", "..#####..", "...###..."],
+  smoker:["....##...", "...#.....", "..####...", ".######..", ".######..", ".######..", ".######..", "..####...", "........."],
+  scalpel:["........#", ".......#.", "......##.", ".....##..", "....#....", "...#.....", "..#......", ".#.......", "#........"],
+  cross:["....#....", "#########", "....#....", "....#....", "#...#...#", "#...#...#", "#.......#", "#.......#", "........."],
   mirror:["..#####..", ".#.....#.", "#..#....#", "#.#.....#", "#.......#", "#.......#", ".#.....#.", "..#####..", "....#...."],
   anchor:["....#....", "...#.#...", "....#....", "..#####..", "....#....", "....#....", "#...#...#", ".#..#..#.", "..#####.."],
   pyre:["....#..#.", "...#..#..", "..#.##...", "..###....", ".###.....", "###......", ".#.......", "#.#......", "........."],
@@ -1262,7 +1280,7 @@ function fireShot() {
   if (!p.onGround) shots[shots.length - 1].air = true;
   if (A.ret) shots[shots.length - 1].ret = Math.round(A.life / 2);
   if (e) steerShot(shots[shots.length - 1], Math.PI);
-  else if (A.kind === 'wisp' || A.kind === 'spirit') { const q = shots[shots.length - 1]; let bd = 220; for (const o of enemies) { if (o.dead || o.prop || o.crate || o.ghost || o.spawn > 0) continue; const d = Math.hypot(o.x + o.w / 2 - cx, o.y + o.h / 2 - p.y - 9); if (d < bd && los(cx, p.y + 9, o.x + o.w / 2, o.y + o.h / 2)) { bd = d; q.seek = o; } } q.wisp = true; }
+  else if (A.kind === 'wisp' || A.kind === 'spirit' || A.kind === 'bee') { const q = shots[shots.length - 1]; let bd = 220; for (const o of enemies) { if (o.dead || o.prop || o.crate || o.ghost || o.spawn > 0) continue; const d = Math.hypot(o.x + o.w / 2 - cx, o.y + o.h / 2 - p.y - 9); if (d < bd && los(cx, p.y + 9, o.x + o.w / 2, o.y + o.h / 2)) { bd = d; q.seek = o; } } q.wisp = true; if (q.seek && Math.sign(q.seek.x + q.seek.w / 2 - cx) !== Math.sign(q.vx)) q.vx = -q.vx; }
   if (A.recoil && p.up) { if (!p.onGround) { p.vy = Math.max(p.vy, 2); } shake = Math.max(shake, 5); burst(p.x + p.w/2, p.y - 4, '#c9c4bc', 14, 1.4); }
   else if (A.recoil) {
     p.vx = -p.face * (p.onGround ? 3.2 : 5.2); if (!p.onGround) { p.vy = Math.min(p.vy, -7.4); p.noCut = 18; p.spin = Math.max(p.spin, 12); }
@@ -1332,6 +1350,8 @@ function drawShot(s) {
       ctx.fillStyle = '#fff0b8'; ctx.fillRect(x - 2, y - 2, 4, 4); ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 1, y - 1, 2, 2);
       return;
     }
+    if (s.kind === 'bee') { ctx.fillStyle = '#f2c23a'; ctx.fillRect(x - 2, y - 1, 4, 3); ctx.fillStyle = '#1e1612'; ctx.fillRect(x - 1, y - 1, 1, 3); ctx.fillRect(x + 1, y - 1, 1, 3); ctx.fillStyle = 'rgba(230,240,255,.7)'; ctx.fillRect(x - 1, y - 3 + (tick % 4 < 2 ? 0 : 1), 3, 1); return; }
+    if (s.kind === 'boulder') { ctx.save(); ctx.translate(x, y); ctx.rotate(s.x * .1); ctx.fillStyle = '#5e5850'; ctx.fillRect(-5, -5, 10, 10); ctx.fillStyle = '#7a746a'; ctx.fillRect(-5, -5, 6, 4); ctx.fillStyle = '#3e3a34'; ctx.fillRect(1, 1, 4, 4); ctx.restore(); return; }
     if (s.kind === 'spirit') { ctx.globalAlpha = .75; ctx.fillStyle = '#9affd8'; ctx.beginPath(); ctx.arc(x, y - 1, 3, Math.PI, 0); ctx.lineTo(x + 3, y + 3); ctx.lineTo(x + 1, y + 2); ctx.lineTo(x, y + 4); ctx.lineTo(x - 1, y + 2); ctx.lineTo(x - 3, y + 3); ctx.fill(); ctx.fillStyle = '#1e2a28'; ctx.fillRect(x - 2, y - 2, 1, 1); ctx.fillRect(x + 1, y - 2, 1, 1); ctx.globalAlpha = 1; if (tick % 3 === 0) parts.push({x:s.x, y:s.y + 2, vx:0, vy:.3, life:12, color:'#5ac8a0', size:1}); return; }
     if (s.kind === 'star') { ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x, y, 0, x, y, 10); g.addColorStop(0, 'rgba(140,210,255,.55)'); g.addColorStop(1, 'rgba(80,140,255,0)'); ctx.fillStyle = g; ctx.fillRect(x - 10, y - 10, 20, 20); ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#eaf8ff'; ctx.fillRect(x - 3, y, 7, 1); ctx.fillRect(x, y - 3, 1, 7); ctx.fillRect(x - 1, y - 1, 3, 3); return; }
     if (s.kind === 'blood') { ctx.fillStyle = '#5e1414'; ctx.fillRect(x - 3, y - 2, 6, 5); ctx.fillStyle = '#b83a2a'; ctx.fillRect(x - 2, y - 2, 4, 4); ctx.fillStyle = '#ff8a7a'; ctx.fillRect(x - 1, y - 1, 1, 1); if (tick % 2) parts.push({x:s.x, y:s.y, vx:0, vy:.4, life:12, color:'#8c1f1f', size:1}); return; }
@@ -1396,6 +1416,40 @@ function drawWeapon(kind, H, dir, put, attacking) {
     L(bx - dir.x * 4, by - dir.y * 4, 13, dir.x, dir.y, 'w', 'W');
     const lx2 = Math.round(bx + dir.x * 11), ly2 = Math.round(by + dir.y * 11), glow = attacking || (tick >> 3) % 4 !== 0;
     ["kkk", "kOk", "kok", "kkk"].forEach((row, j) => { for (let i = 0; i < 3; i++) put(lx2 - 1 + i, ly2 - 1 + j, row[i] === 'O' && !glow ? 'o' : row[i]); });
+    return;
+  }
+  if (kind === 'gmace') {
+    if (!attacking) dir = {x:(dir.x < 0 ? -1 : 1) * .3, y:-.95};
+    L(bx - dir.x * 2, by - dir.y * 2, 10, dir.x, dir.y, 'w', 'W');
+    const tx = Math.round(bx + dir.x * 11), ty = Math.round(by + dir.y * 11);
+    for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) if (Math.abs(a) + Math.abs(b) < 4) put(tx + a, ty + b, a + b < -1 ? 'M' : 'I');
+    return;
+  }
+  if (kind === 'fists') {
+    const ln = attacking ? 10 : 2, fx = Math.round(bx + dir.x * ln), fy = Math.round(by + dir.y * ln);
+    if (attacking) L(bx, by, ln, dir.x, dir.y, 'I');
+    for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) if (Math.abs(a) + Math.abs(b) < 4) put(fx + a, fy + b, b === -2 || a === -2 ? 'M' : 'I');
+    return;
+  }
+  if (kind === 'censer') {
+    const sw = attacking ? 12 : 5, ex = bx + dir.x * sw, ey = by + (attacking ? dir.y * sw : 6), d = Math.hypot(ex - bx, ey - by) || 1;
+    L(bx, by, Math.max(1, Math.round(d)), (ex - bx) / d, (ey - by) / d, 'M');
+    [".I.", "IgI", "III"].forEach((row, j) => { for (let i = 0; i < 3; i++) if (row[i] !== '.') put(Math.round(ex) - 1 + i, Math.round(ey) + j, row[i]); });
+    if ((tick >> 2) % 2) put(Math.round(ex), Math.round(ey) - 2, 'g');
+    return;
+  }
+  if (kind === 'smoker') {
+    L(bx, by, 3, dir.x, dir.y, 'w');
+    const hx = Math.round(bx + dir.x * 4), hy = Math.round(by + dir.y * 4);
+    [".M.", "III", "IyI", "III"].forEach((row, j) => { for (let i = 0; i < 3; i++) if (row[i] !== '.') put(hx - 1 + i, hy - 1 + j, row[i]); });
+    return;
+  }
+  if (kind === 'scalpel') { L(bx, by, 3, dir.x, dir.y, 'w'); L(bx + dir.x * 3, by + dir.y * 3, attacking ? 6 : 5, dir.x, dir.y, 'M'); return; }
+  if (kind === 'cross') {
+    const hx = Math.round(bx + dir.x * 3), hy = Math.round(by + dir.y * 3) - 2;
+    for (let i = -3; i <= 3; i++) put(hx + i, hy, 'w'); for (let j = -1; j <= 2; j++) put(hx, hy + j, 'w');
+    if (attacking) { for (let t = 1; t <= 18; t++) put(Math.round(hx + dir.x * t), Math.round(hy + 2 + dir.y * t), t % 3 ? 'a' : 'y'); }
+    else for (const i of [-3, 0, 3]) for (let j = 1; j <= 4; j++) put(hx + i, hy + j, 'a');
     return;
   }
   if (kind === 'mirror') {
@@ -1587,6 +1641,12 @@ const SKDESC = {
   ironclad:['Iron Will: untouchable for a while, plate restored.', 'Swing the flail in a wide orbit.'],
   thornguard:['Raise a wall of thorns that stops shots.', 'Thorns burst out all around you.'],
   chaplain:['Heal yourself and nearby allies; raise the fallen.', 'Bless the ground: allies heal, foes burn.'],
+  gargoyle:['Stone skin: for a while nothing hurts you, and foes that touch you crack.', 'Wing leap: spring high and hold jump to glide down.'],
+  golem:['Boulder: roll a rock that ploughs through every foe in its path.', 'Tremor: the ground splits outward on both sides, stunning foes.'],
+  plaguewarden:['Miasma: a cloud of rot that eats at foes standing in it.', 'Purge: every poisoned foe nearby takes the rest of its poison at once; you mend a heart.'],
+  beekeeper:['Honey: heal yourself and nearby allies and slow every foe around; raise the fallen.', 'Hive: set down a hive that sends bees after foes.'],
+  medic:['Triage: heal yourself and nearby allies a lot; the fallen rise with full health.', 'Adrenaline: you and nearby allies hit harder and run faster.'],
+  puppeteer:['Marionette: string up the nearest foe. It follows you and hurts its friends. Raises the fallen.', 'Cut the strings: every puppet bursts.'],
   mirrorguard:['A blinding glare stuns everything in front of you.', 'Mirror wall: for three seconds every shot near you flies back.'],
   anchor:['Moor: drop the anchor and hold every foe near it in place.', 'Undertow: drag every foe around you in close.'],
   pyreknight:['A ring of fire burns around you for a while.', 'Phoenix: if you fall in the next ten seconds, you rise again.'],
@@ -1651,7 +1711,7 @@ function openClassPick() {
 }
 function chooseClass(k) {
   save.cls = k; save.clsChosen = true; persist();
-  p.max = maxHp(); p.hp = p.max; p.dashLeft = cls().dashes; p.plate = true; p.shield = 0; p.orbit = p.hold = p.souls = p.whirl = p.static = p.rage = p.dig = p.mend = p.slow = p.mirror = p.phoenix = 0;
+  p.max = maxHp(); p.hp = p.max; p.dashLeft = cls().dashes; p.plate = true; p.shield = 0; p.orbit = p.hold = p.souls = p.whirl = p.static = p.rage = p.dig = p.mend = p.slow = p.mirror = p.phoenix = p.stone = p.glide = 0;
   toast = {text:CLASSES[k].name, t:120};
   if (save.notes === 0) introBanner();
   if (!save.lookChosen) setTimeout(openWardrobe, 0);
@@ -4699,6 +4759,7 @@ const SKILLS = {
   storm:{name:'Thunderfall', cd:200}, reaver:{name:'Whirlwind', cd:220}, pilgrim:{name:'Palm Blast', cd:120}, gunner:{name:'Buckshot', cd:160},
   duelist:{name:'Flurry', cd:140}, flayer:{name:'Chain Hook', cd:150}, ironclad:{name:'Iron Will', cd:420}, thornguard:{name:'Bramble Wall', cd:240},
   chaplain:{name:'Benediction', cd:420}, lightbearer:{name:'Aegis', cd:420},
+  gargoyle:{name:'Stone Skin', cd:420}, golem:{name:'Boulder', cd:220}, plaguewarden:{name:'Miasma', cd:300}, beekeeper:{name:'Honey', cd:380}, medic:{name:'Triage', cd:420}, puppeteer:{name:'Marionette', cd:360},
   mirrorguard:{name:'Glare', cd:200}, anchor:{name:'Moor', cd:260}, pyreknight:{name:'Pyre', cd:300}, herbalist:{name:'Poultice', cd:360}, bannerman:{name:'Plant the Banner', cd:540}, spiritcaller:{name:'Ancestor', cd:420},
   gravewarden:{name:'Bury', cd:180}, bastion:{name:'Rampart', cd:300}, ironbark:{name:'Root', cd:260}, oracle:{name:'Time Slip', cd:480}, tinker:{name:'Turret', cd:240}, bloodbinder:{name:'Blood Pact', cd:360},
   reaper:{name:'Reap', cd:170}, ringdancer:{name:'Twin Rings', cd:110}, juggernaut:{name:'Bull Rush', cd:200}, sentinel:{name:'Leg Sweep', cd:160}, drummer:{name:'War Song', cd:480}, alchemist:{name:'Elixir', cd:330}};
@@ -4766,6 +4827,12 @@ function useSkill() {
   else if (k === 'thornguard') { for (let i = 0; i < 4; i++) { const x = cx + f * (18 + i * 14); pwaves.push({spike:true, thorn:true, x, y:floorBelow(x, p.y + 4), delay:i * 3, life:150, dmg:skillDmg(1), hit:new Set(), re:0}); } sfx.heavy(); }
   else if (k === 'chaplain') { aid('h', 2); aid('v', 0); blasts.push({x:cx, y:cy, r:AID_R, life:16, holy:true}); for (let i = 0; i < 18; i++) parts.push({x:cx + (Math.random() - .5) * 60, y:cy + 10, vx:0, vy:-.6 - Math.random(), life:40, color:'#ffd65a', size:1}); sfx.heal(); }
   else if (k === 'lightbearer') { aid('s', 600); aid('v', 0); blasts.push({x:cx, y:cy, r:AID_R, life:16, holy:true}); sfx.heal(); sfx.clang(); }
+  else if (k === 'gargoyle') { p.stone = 150; p.inv = Math.max(p.inv, 150); sfx.clang(); burst(cx, cy, '#9a948c', 18, 2); }
+  else if (k === 'golem') { shots.push({x:cx + f * 10, y:p.y + p.h - 7, vx:f * 3.4, vy:0, life:110, dmg:skillDmg(3), pierce:true, kind:'boulder', hit:[]}); shake = 5; sfx.heavy(); }
+  else if (k === 'plaguewarden') { pwaves.push({zone:true, acid:true, x:cx, y:floorBelow(cx, p.y + 4), life:300, r:52}); burst(cx, p.y + p.h, '#8ad04a', 18, 2); sfx.swing(); }
+  else if (k === 'beekeeper') { aid('h', 1); aid('v', 0); for (const e of enemies) if (!e.dead && !e.prop && Math.hypot(e.x + e.w / 2 - cx, e.y + e.h / 2 - cy) < 120) e.slowT = 240; blasts.push({x:cx, y:cy, r:AID_R, life:16, holy:true}); for (let i = 0; i < 14; i++) parts.push({x:cx + (Math.random() - .5) * 60, y:cy - 10, vx:0, vy:.6, life:30, color:'#f2b83a', size:2}); sfx.heal(); }
+  else if (k === 'medic') { aid('h', 2); aid('v', 1); blasts.push({x:cx, y:cy, r:AID_R, life:16, holy:true}); burst(cx, cy, '#ff8a7a', 16, 2); sfx.heal(); }
+  else if (k === 'puppeteer') { let best = null, bd = 170; for (const e of enemies) { if (e.dead || e.prop || e.crate || e.dummy || e.t === 'boss' || e.puppet > 0 || e.spawn > 0) continue; const d = Math.hypot(e.x + e.w / 2 - cx, e.y + e.h / 2 - cy); if (d < bd) { bd = d; best = e; } } aid('v', 0); if (best) { best.puppet = 480; const ps = enemies.filter(e => e.puppet > 0 && !e.dead); if (ps.length > 2) ps[0].puppet = 0; zaps.push({pts:[{x:cx, y:cy - 8}, {x:best.x + best.w / 2, y:best.y}], life:14, chain:true}); sfx.zap(); } else { p.skillCd = 30; pops.push({x:cx, y:p.y - 6, v:0, life:30, txt:'NO ONE NEAR'}); } }
   else if (k === 'mirrorguard') { const b = {x:f > 0 ? p.x + p.w : p.x - 110, y:p.y - 14, w:110, h:p.h + 24}; hitArea(inBox(b), skillDmg(1), () => f * 4, '#eaf8ff'); for (const e of enemies) if (!e.dead && e.t !== 'boss' && !e.prop && overlap(b, e)) e.stun = 110; blasts.push({x:cx + f * 30, y:cy, r:60, life:16, holy:true}); sfx.zap(); }
   else if (k === 'anchor') { const x = cx + f * 40; pwaves.push({moor:true, x, y:floorBelow(x, p.y + 4), life:200, r:58}); shake = 8; sfx.slam(); burst(x, p.y + p.h, '#8c7d6a', 18, 2.4); }
   else if (k === 'pyreknight') { pwaves.push({pyre:true, life:240, r:48}); sfx.fire(); sfx.heavy(); }
@@ -4825,6 +4892,7 @@ function drawSkillFx() {
   if (p.iron > 0) { ctx.strokeStyle = `rgba(200,210,220,${.3 + .3 * Math.sin(tick * .3)})`; ctx.lineWidth = 2; ctx.strokeRect(Math.round(p.x) - 4, Math.round(p.y) - 6, p.w + 8, p.h + 8); }
   for (const w of pwaves) {
     if (w.moor || w.pyre || w.banner) continue;
+    if (w.turret && w.hive) { const bx = Math.round(w.x), by = Math.round(w.y); ctx.fillStyle = '#5a3a1e'; ctx.fillRect(bx - 6, by - 2, 12, 2); ctx.fillStyle = '#c09a3a'; ctx.fillRect(bx - 5, by - 12, 10, 10); ctx.fillStyle = '#8a6a2a'; ctx.fillRect(bx - 5, by - 9, 10, 1); ctx.fillRect(bx - 5, by - 5, 10, 1); ctx.fillStyle = '#1e1612'; ctx.fillRect(bx - 1, by - 4, 2, 2); if (tick % 20 < 10) { ctx.fillStyle = '#f2c23a'; ctx.fillRect(bx + 4 + (tick % 5), by - 14, 2, 1); } continue; }
     if (w.turret) { const bx = Math.round(w.x), by = Math.round(w.y); ctx.fillStyle = '#3a302a'; ctx.fillRect(bx - 5, by - 4, 10, 4); ctx.fillStyle = '#6e6862'; ctx.fillRect(bx - 3, by - 10, 6, 6); ctx.fillStyle = '#c9a04a'; ctx.fillRect(bx - 1, by - 12, 2, 2); ctx.fillStyle = w.cd < 6 ? '#ffd27a' : '#8a5a2a'; ctx.fillRect(bx - 1, by - 8, 2, 2); continue; }
     if (w.wall) { for (const y of w.ys) { ctx.fillStyle = '#5c4f45'; ctx.fillRect(w.tx * T, y * T, T, T); ctx.fillStyle = '#8c7d6a'; ctx.fillRect(w.tx * T, y * T, T, 2); ctx.fillStyle = '#3a302a'; ctx.fillRect(w.tx * T + 7, y * T + 3, 1, T - 4); } continue; }
     if (w.trap || w.mine || w.zone) continue;
@@ -4935,6 +5003,7 @@ const SKILLS2 = {
   sapper:{name:'Mine', cd:200}, storm:{name:'Static Field', cd:320}, reaver:{name:'Bloodrage', cd:480}, pilgrim:{name:'Hundred Fists', cd:220},
   gunner:{name:'Rocket Jump', cd:200}, duelist:{name:'Fleche', cd:180}, flayer:{name:'Lash Spin', cd:220}, ironclad:{name:'Iron Orbit', cd:280},
   thornguard:{name:'Thorn Burst', cd:240}, chaplain:{name:'Sanctuary', cd:600}, lightbearer:{name:'Flare', cd:360},
+  gargoyle:{name:'Wing Leap', cd:200}, golem:{name:'Tremor', cd:300}, plaguewarden:{name:'Purge', cd:240}, beekeeper:{name:'Hive', cd:480}, medic:{name:'Adrenaline', cd:420}, puppeteer:{name:'Cut the Strings', cd:120},
   mirrorguard:{name:'Mirror Wall', cd:360}, anchor:{name:'Undertow', cd:220}, pyreknight:{name:'Phoenix', cd:900}, herbalist:{name:'Overgrowth', cd:420}, bannerman:{name:'Charge', cd:360}, spiritcaller:{name:'Wail', cd:260},
   gravewarden:{name:'Dig In', cd:300}, bastion:{name:'Shield Toss', cd:160}, ironbark:{name:'Bark Skin', cd:420}, oracle:{name:'Mending Light', cd:480}, tinker:{name:'Repair Kit', cd:330}, bloodbinder:{name:'Hemorrhage', cd:280},
   reaper:{name:'Soul Feast', cd:120}, ringdancer:{name:'Ring Storm', cd:320}, juggernaut:{name:'Earthshaker', cd:260}, sentinel:{name:'Hold the Line', cd:360}, drummer:{name:'Thunder Drum', cd:240}, alchemist:{name:'Acid Pool', cd:280}};
@@ -4962,6 +5031,12 @@ function useSkill2() {
   else if (k === 'thornguard') { hitArea(inCircle(cx, cy, 56), skillDmg(2), e => Math.sign(e.x + e.w / 2 - cx) * 14, '#7aff9a'); for (let i = 0; i < 8; i++) { const x = cx - 42 + i * 12; pwaves.push({spike:true, x, y:floorBelow(x, p.y + 4), delay:Math.abs(i - 3.5) * 2 | 0, life:20, dmg:0, hit:new Set()}); } sfx.heavy(); }
   else if (k === 'chaplain') { pwaves.push({zone:true, x:cx, y:p.y + p.h, life:360, r:64}); sfx.heal(); }
   else if (k === 'lightbearer') { for (const e of enemies) if (!e.dead && !e.prop && !e.crate && e.t !== 'boss' && Math.hypot(e.x + e.w / 2 - cx, e.y + e.h / 2 - cy) < 150) { e.stun = 120; hitEnemy(e, skillDmg(1), 0); e.flash = 12; } blasts.push({x:cx, y:cy, r:150, life:16, holy:true}); shake = 5; sfx.zap(); }
+  else if (k === 'gargoyle') { p.vy = -10.5; p.onGround = false; p.noCut = 24; p.glide = 260; sfx.swing(); burst(cx, p.y + p.h, '#9a948c', 10, 1.6); }
+  else if (k === 'golem') { for (let i = 0; i < 4; i++) for (const sd of [-1, 1]) { const x = cx + sd * (20 + i * 18); pwaves.push({spike:true, x, y:floorBelow(x, p.y + 4), delay:6 + i * 8, life:20, dmg:skillDmg(2), hit:new Set(), stun:40}); } shake = 10; sfx.slam(); }
+  else if (k === 'plaguewarden') { let n = 0; for (const e of enemies) if (!e.dead && !e.prop && e.t !== 'boss' && e.bleed > 0 && Math.hypot(e.x + e.w / 2 - cx, e.y + e.h / 2 - cy) < 160) { const d = skillDmg(1) + Math.floor(e.bleed / 70); e.bleed = 0; hitEnemy(e, d, 0); e.flash = 12; burst(e.x + e.w / 2, e.y + e.h / 2, '#8ad04a', 14, 2); n++; } if (n && p.hp < p.max) { p.hp++; sfx.heal(); } blasts.push({x:cx, y:cy, r:160, life:16}); sfx.zap(); }
+  else if (k === 'beekeeper') { const x = cx + f * 18; pwaves.push({turret:true, hive:true, x, y:floorBelow(x, p.y + 4), life:600, cd:20}); const hs = pwaves.filter(w => w.hive); if (hs.length > 2) hs[0].life = 0; sfx.swing(); }
+  else if (k === 'medic') { aid('b', 300); aid('w', 300); burst(cx, cy, '#ff8a7a', 14, 2); sfx.heal(); }
+  else if (k === 'puppeteer') { let n = 0; for (const e of enemies) if (e.puppet > 0 && !e.dead) { e.puppet = 0; explode({x:e.x + e.w / 2, y:e.y + e.h / 2, radius:44, dmg:skillDmg(3), life:1}); n++; } if (!n) p.skill2Cd = 30; }
   else if (k === 'mirrorguard') { p.mirror = 180; sfx.clang(); }
   else if (k === 'anchor') { for (const e of enemies) { if (e.dead || e.prop || e.crate || e.t === 'boss') continue; const dx = cx - (e.x + e.w / 2), d = Math.hypot(dx, cy - e.y - e.h / 2); if (d > 175) continue; const step = Math.sign(dx) * Math.min(Math.abs(dx) - 18, 70), nx = e.x + step; if (Math.abs(dx) > 18 && !solid(Math.floor((nx + e.w / 2) / T), Math.floor((e.y + e.h - 4) / T))) e.x = nx; e.stun = 50; hitEnemy(e, skillDmg(2), 0); e.flash = 12; zaps.push({pts:[{x:cx, y:cy}, {x:e.x + e.w / 2, y:e.y + e.h / 2}], life:10, chain:true}); } sfx.heavy(); }
   else if (k === 'pyreknight') { p.phoenix = 600; burst(cx, cy, '#ffb04a', 20, 2.4); sfx.fire(); pops.push({x:cx, y:p.y - 6, v:0, life:40, txt:'PHOENIX'}); }
@@ -4996,6 +5071,14 @@ function moveTick() {
   if (p.song > 0) { p.song--; if (p.atkCd > 2 && tick % 3 === 0) p.atkCd--; if (tick % 14 === 0) parts.push({x:p.x + Math.random() * p.w, y:p.y, vx:(Math.random() - .5) * .4, vy:-.7, life:26, color:'#ffd65a', size:1}); }
   if (p.mendCd > 0) p.mendCd--;
   if (p.ritesCd > 0) p.ritesCd--; if (p.slow > 0) p.slow--; if (timeSlow > 0) timeSlow--;
+  if (p.stone > 0) { p.stone--; p.slow = Math.max(p.slow || 0, 2); if (p.stone % 20 === 0) hitArea(inCircle(cx, cy, 28), 1, e => Math.sign(e.x + e.w / 2 - cx) * 10, '#9a948c'); }
+  if (p.glide > 0) p.glide--;
+  for (const e of enemies) if (e.puppet > 0 && !e.dead) {
+    e.puppet--; e.stun = Math.max(e.stun || 0, 3);
+    const tx = p.x + p.w / 2 + p.face * 24 - e.w / 2, nx = e.x + Math.sign(tx - e.x) * Math.min(Math.abs(tx - e.x), 2.5);
+    if (!solid(Math.floor((nx + e.w / 2) / T), Math.floor((e.y + e.h - 4) / T))) e.x = nx;
+    if (e.puppet % 30 === 0) for (const o of enemies) if (o !== e && !o.dead && !o.prop && !o.crate && !(o.puppet > 0) && overlap(o, {x:e.x - 8, y:e.y - 4, w:e.w + 16, h:e.h + 8})) { hitEnemy(o, skillDmg(1), Math.sign(o.x - e.x) * 4); o.flash = 8; }
+  }
   if (p.mirror > 0) p.mirror--; if (p.phoenix > 0) p.phoenix--; if (p.ward2 > 0) p.ward2--; if (!pvp && p.swift > 0) p.swift--;
   for (const e of enemies) if (e.slowT > 0) e.slowT--;
   for (const w of pwaves) {
@@ -5010,7 +5093,7 @@ function moveTick() {
   if (p.mend > 0) { p.mend--; if (p.mend % 90 === 0) aid('h', 1); }
   if (cls().regen && p.calm > 0 && p.calm % 600 === 0 && p.hp < p.max) { p.hp++; sfx.heal(); burst(cx, p.y + 6, '#5a8a3a', 12, 1.6); }
   for (const e of enemies) if (e.bleed > 0) { e.bleed--; if (e.bleed % 40 === 0 && !e.dead) { if (e.t === 'boss') e.hp -= 1; else hitEnemy(e, 1, 0); e.flash = 8; burst(e.x + e.w / 2, e.y + e.h / 2, '#b83a2a', 6, 1.2); } }
-  for (const w of pwaves) if (w.turret) { w.life--; if (--w.cd <= 0) { const e = nearest(w.x, w.y - 10, 170); if (e) { const dx = e.x + e.w / 2 - w.x, dy = e.y + e.h / 2 - (w.y - 10), d = Math.hypot(dx, dy) || 1; shots.push({x:w.x, y:w.y - 10, vx:dx / d * 6, vy:dy / d * 6, life:34, dmg:skillDmg(1), kind:'bolt', hit:[]}); sfx.shoot(); w.cd = 34; } else w.cd = 10; } }
+  for (const w of pwaves) if (w.turret) { w.life--; if (--w.cd <= 0) { const e = nearest(w.x, w.y - 10, 170); if (e) { const dx = e.x + e.w / 2 - w.x, dy = e.y + e.h / 2 - (w.y - 10), d = Math.hypot(dx, dy) || 1; shots.push(w.hive ? {x:w.x, y:w.y - 10, vx:dx / d * 3.4, vy:dy / d * 3.4, life:80, dmg:skillDmg(1), kind:'bee', hit:[], seek:e, wisp:true} : {x:w.x, y:w.y - 10, vx:dx / d * 6, vy:dy / d * 6, life:34, dmg:skillDmg(1), kind:'bolt', hit:[]}); sfx.shoot(); w.cd = 34; } else w.cd = 10; } }
   for (const w of pwaves) if (w.wall && --w.life <= 0) { for (const y of w.ys) DYN.delete(w.tx + ',' + y); burst(w.tx * T + 8, w.ys[0] * T, '#8c7d6a', 12, 2); }
   if (p.orbit > 0) { p.orbit--; if (p.orbit % 20 === 0) { hitArea(inCircle(cx, cy, 36), skillDmg(1), e => Math.sign(e.x + e.w / 2 - cx) * 5, '#d4d7dc'); sfx.swing(); } }
   if (p.hold > 0) { p.hold--; if (!p.onGround || held.left || held.right || held.jump || p.dashT > 0) p.hold = 0; }
@@ -5037,6 +5120,9 @@ function drawMoveFx() {
   }
   if (p.static > 0) { ctx.strokeStyle = `rgba(140,200,255,${.3 + .2 * Math.sin(tick)})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(p.x + p.w / 2, p.y + 11, 20 + Math.random() * 3, 0, Math.PI * 2); ctx.stroke(); }
   if (p.rage > 0) { ctx.fillStyle = 'rgba(255,40,30,.6)'; if (tick % 3 === 0) parts.push({x:p.x + Math.random() * p.w, y:p.y + p.h, vx:0, vy:-.8, life:16, color:'#ff3a2a', size:1}); }
+  if (p.stone > 0) { ctx.fillStyle = `rgba(150,145,138,${.25 + .1 * Math.sin(tick * .3)})`; ctx.fillRect(Math.round(p.x) - 2, Math.round(p.y) - 2, p.w + 4, p.h + 4); }
+  if (p.glide > 0 && !p.onGround && held.jump) { const x = Math.round(p.x + p.w / 2), y = Math.round(p.y + 6); ctx.fillStyle = '#5e5a56'; for (let i = 1; i <= 9; i++) { ctx.fillRect(x - 3 - i, y - Math.floor(i / 3), 1, 3 + (i % 3)); ctx.fillRect(x + 2 + i, y - Math.floor(i / 3), 1, 3 + (i % 3)); } }
+  for (const e of enemies) if (e.puppet > 0 && !e.dead) { ctx.strokeStyle = 'rgba(230,220,200,.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(p.x + p.w / 2, p.y + 4); ctx.lineTo(e.x + e.w / 2, e.y); ctx.stroke(); }
   if (p.mirror > 0) { ctx.strokeStyle = `rgba(220,240,255,${.35 + .25 * Math.sin(tick * .4)})`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x + p.w / 2, p.y + 11, 26, 0, Math.PI * 2); ctx.stroke(); }
   if (p.ward2 > 0) { const a = tick * .1, x = p.x + p.w / 2 + Math.cos(a) * 18, y = p.y + 8 + Math.sin(a) * 8; ctx.globalAlpha = .7; ctx.fillStyle = '#9affd8'; ctx.beginPath(); ctx.arc(x, y, 4, Math.PI, 0); ctx.lineTo(x + 4, y + 5); ctx.lineTo(x - 4, y + 5); ctx.fill(); ctx.globalAlpha = 1; }
   if (p.phoenix > 0 && tick % 4 === 0) parts.push({x:p.x + Math.random() * p.w, y:p.y + p.h, vx:0, vy:-1, life:18, color:Math.random() < .5 ? '#ffb04a' : '#ff6a2a', size:1});
@@ -5052,6 +5138,7 @@ function aid(kind, amt, r = AID_R) {
   const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
   if (treeOn('support', 1)) r = Math.round(r * 1.5);
   if (kind === 'v' && treeOn('support', 2)) amt = 1;
+  if (kind === 'h' && cls().medic) amt++;
   applyAid(kind, amt);
   if (NET.on) { NET.aids.push([++NET.aidSeq, kind, Math.round(cx), Math.round(cy), r, amt]); if (NET.aids.length > 8) NET.aids.shift(); }
 }
@@ -5242,11 +5329,13 @@ function update() {
   const ox = p.x, oy = p.y;
   if (ADMIN.fly) { p.x += ax * 5; p.y += ((held.down ? 1 : 0) - (held.up || held.jump ? 1 : 0)) * 5; p.vx = p.vy = 0; p.dashT = 0; p.hook = null; }
   else moveX(p);
-  const was = p.onGround;
+  const was = p.onGround, fv = p.vy;
   if (!ADMIN.fly) moveY(p, p.drop > 0); else p.onGround = false;
   if (p.hook && p.hook.t > 3 && Math.abs(p.x - ox) + Math.abs(p.y - oy) < .5) { p.hook = null; p.vy = -4; p.air = airJ(); }
   if (p.spin > 0) p.spin--;
   crumbleUpdate();
+  if (p.glide > 0 && !p.onGround && held.jump && p.vy > 1.1) p.vy = 1.1;
+  if (cls().stomp && !was && p.onGround && fv > 5.5) { const sx = p.x + p.w / 2; hitArea(inCircle(sx, p.y + p.h, 44), skillDmg(2), e => Math.sign(e.x + e.w / 2 - sx) * 10, '#9a948c'); shake = Math.max(shake, 6); burst(sx, p.y + p.h, '#9a948c', 16, 2.4); sfx.slam(); p.glide = 0; }
   if (p.dive && p.onGround) { p.dive = false; p.atkT = 0; shake = Math.max(shake, 4); burst(p.x + p.w/2, p.y + p.h, '#8c7d6a', 12, 2); sfx.slam(); }
   if (p.onGround) { p.coyote = 6; p.air = airJ(); if (p.atkT < 12) p.spin = 0; if (p.dashT === 0) p.dashLeft = cls().dashes; if (!was) burst(p.x + p.w/2, p.y + p.h, '#6b5d52', 4, 1); }
   p.run = p.onGround && Math.abs(p.vx) > .4 ? p.run + 1 : 0;
@@ -5280,6 +5369,7 @@ function update() {
       if (A.pogo) { p.vy = -6.8; p.noCut = 14; p.air = Math.max(p.air, airJ()); p.dashLeft = cls().dashes; p.atkT = 0; burst(p.x + p.w / 2, p.y + p.h, '#ffcf8a', 8, 1.6); }
       if (A.low && e.t !== 'boss' && !e.prop) e.stun = Math.max(e.stun || 0, 40);
       if (cls().drag && !e.prop) e.slowT = 120;
+      if (cls().plague && !e.prop) e.bleed = Math.max(e.bleed || 0, 200);
       if (cls().ignite && p.hp <= p.max / 2 && !e.prop) e.bleed = Math.max(e.bleed || 0, 160);
       if (p.critSwing && cls().crit) { pops.push({x:e.x + e.w / 2, y:e.y - 6, v:0, life:30, txt:'CRIT'}); burst(e.x + e.w / 2, e.y + e.h / 2, '#ffd65a', 10, 2.2); }
       if (A.bounce && p.onGround) {
@@ -6579,6 +6669,114 @@ const OUTFIT = {
     "....kRRRRRRRRk......",
     "....kRRRzRzRRk......",
     "....kRRRRRRRRk......",
+    "....kkbbbbgbbbk.....",
+    ".....kRRRRRRRk......",
+    ".....kRRRRRRRk......"]},
+  gargoyle:{top:0, hood:'slate', arm:['I', 'k', 'k'], hand:['i', 'I'], pauldron:true, body:[
+    "....k..kkkkk..k.....",
+    "....kk.kkkkk.kk.....",
+    ".....kIiiiiiik......",
+    "....kIiiiiiiiik.....",
+    "....kIIkkkkkkkk.....",
+    "....kIIiOiiiOik.....",
+    "....kIIiiiiiiik.....",
+    ".....kIIIIIIIk......",
+    "...kkIIRRRRRRIkk....",
+    "..kIiiRRRRRRRRIik...",
+    "...kIIRRRRRRRRkIk...",
+    ".....kIRRRRRRIk.....",
+    ".....kIRRRRRRIk.....",
+    ".....kIRRRRRRIk.....",
+    ".....kkbbbbgbbk.....",
+    ".....kIIIIIIIIk.....",
+    ".....kIIIIIIIIk....."]},
+  golem:{top:0, hood:'umber', arm:['i', 'I', 'I'], body:[
+    "....................",
+    ".......kkkkkk.......",
+    "......kIIIIIIk......",
+    ".....kIiiiiiIIk.....",
+    "....kIiiiiiiiIk.....",
+    "....kIiOkiiOkik.....",
+    "....kIiiiiiiiIk.....",
+    "....kIIiikkiik......",
+    "...kiiIiiiiiik......",
+    "...kiiIiiiiiik......",
+    "...kIiiiIiiiik......",
+    "....kIiiiiiIik......",
+    "....kIiiiiiiik......",
+    "....kIiiiiiiik......",
+    "....kkbbbbgbbbk.....",
+    ".....kIIIIIIIk......",
+    ".....kIIIIIIIk......"]},
+  plaguewarden:{top:0, hood:'black', eye:'#c8e86a', arm:['r', 'd', 'D'], body:[
+    "........kkkkk.......",
+    "......kkRRRRRkk.....",
+    ".....kRRRRRRRRRk....",
+    "....kRRRRRRRRRRRk...",
+    "....kRRRkkkkkkRRk...",
+    "....kRRkzzzzzzzk....",
+    "....kdRkzezzezzk....",
+    "....kddRkzzzzzkkk...",
+    "...kdddRRkkkkRk.....",
+    "...kddRRRRRRRRk.....",
+    "...kdRRzRzRzRRk.....",
+    "....kRRRRRRRRk......",
+    "....kRRRzRzRRk......",
+    "....kRRRRRRRRk......",
+    "....kkbbbbgbbbk.....",
+    ".....kRRRRRRRk......",
+    ".....kRRRRRRRk......"]},
+  beekeeper:{top:0, hood:'ochre', arm:['l', 'L', 'L'], body:[
+    "....................",
+    "........kkkkk.......",
+    "......kkRRRRRkk.....",
+    ".....kRRRRRRRRRk....",
+    "....kRRRRRRRRRRRk...",
+    "....kRRRkkkkkkRRk...",
+    "....kRRkfffefffk....",
+    "....kdRkffffffk.....",
+    "...kddRRkkkkkk......",
+    "...kddlllllllk......",
+    "...kLllllllllk......",
+    "....kLlllllllk......",
+    "....kLlllllllk......",
+    "....kLllllllk.......",
+    "....kkbbbbgbbbk.....",
+    ".....klllllllk......",
+    ".....kLllllllk......"]},
+  medic:{top:0, hood:'bone', arm:['r', 'd', 'D'], body:[
+    ".......kkkkk........",
+    "......kiiiiik.......",
+    ".....kIiiiiiik......",
+    "....kIIiiiiiiik.....",
+    "....kkkkkkkkkkk.....",
+    "....kRRkfffefffk....",
+    "....kRRkffffffk.....",
+    "....kdRRkkkkkk......",
+    "...kddRRRRRRRk......",
+    "...kdRRRRaRRRk......",
+    "...kdRRaaaaaRk......",
+    "....kRRRRaRRRk......",
+    "....kRRRRRRRRk......",
+    "....kRRRRRRRRk......",
+    "....kkbbbbgbbbk.....",
+    ".....kRRRRRRRk......",
+    ".....kRRRRRRRk......"]},
+  puppeteer:{top:0, hood:'plum', eye:'#e8b8ff', arm:['r', 'd', 'D'], body:[
+    "........kkkkk.......",
+    "......kkRRRRRkk.....",
+    ".....kRRRRRRRRRk....",
+    "....kRRRRRRRRRRRk...",
+    "....kRRRkkkkkkRRk...",
+    "....kRRkfffffffk....",
+    "....kdRkfeffeffk....",
+    "....kddRkfffffk.....",
+    "...kdddRRkkkkRk.....",
+    "...kddRRaRRRaRk.....",
+    "...kdRRRRaRaRRk.....",
+    "....kRRRRRaRRk......",
+    "....kRRRRaRaRk......",
+    "....kRRRaRRRaRk.....",
     "....kkbbbbgbbbk.....",
     ".....kRRRRRRRk......",
     ".....kRRRRRRRk......"]},
