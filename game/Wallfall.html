@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.51';
+const VERSION = '0.1.52';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -477,7 +477,7 @@ makeRoom('I', 'The Sewers', 0, 5, 8, 1, {indoor:true, dark:.85}, B => {
 
 /* ---------- The new districts ---------- */
 makeRoom('O', 'The Slag Works', 9, 3, 3, 1, {indoor:true, biome:'foundry'}, B => {
-  B.solid(0, 16, 95, 17); B.clear(0, 13, 0, 15); B.clear(56, 0, 58, 0);
+  B.solid(0, 16, 95, 17); B.clear(0, 13, 0, 15); B.clear(95, 13, 95, 15); B.clear(56, 0, 58, 0);
   B.slag(29, 34, 16); B.ledge(30, 33, 13);
   B.put('Z', 15, 1); B.put('Z', 23, 1);
   B.ledge(48, 53, 12); B.ledge(53, 58, 9); B.ledge(55, 59, 3); B.ledge(44, 49, 6);
@@ -588,6 +588,32 @@ makeRoom('n', "The Crow's Nest", 0, 1, 1, 1, {dark:.35, skin:'roof'}, B => {
   B.clear(20, 17, 27, 17); B.ledge(19, 28, 15); B.stakes(1, 18, 16); B.stakes(29, 30, 16);
   B.crumble(13, 16, 12); B.crumble(7, 10, 9); B.ledge(1, 5, 6); B.put('R', 4, 5);
   B.put('j', 10, 3); B.put('j', 22, 5); B.put('m', 16, 4);
+});
+makeRoom('e', 'The Quarry Cut', 12, 3, 2, 1, {indoor:true, biome:'quarry'}, B => {
+  B.solid(0, 16, 63, 17); B.clear(0, 13, 0, 15); B.clear(63, 13, 63, 15);
+  B.solid(10, 13, 15, 15); B.solid(16, 10, 21, 15); B.stakes(22, 33, 15); B.crumble(23, 32, 10); B.solid(34, 11, 39, 15); B.solid(40, 13, 45, 15);
+  B.ledge(17, 22, 5); B.ledge(27, 31, 4); B.ledge(50, 57, 10); B.solid(1, 1, 5, 6);
+  B.put('q', 4, 15); B.put('z', 48, 15); B.put('A', 56, 15); B.put('k', 18, 9); B.put('j', 30, 3); B.put('u', 13, 12);
+});
+makeRoom('f', 'The Kiln Steps', 14, 3, 1, 2, {indoor:true, biome:'quarry'}, B => {
+  B.clear(0, 13, 0, 15); B.clear(0, 31, 0, 33);
+  B.solid(1, 16, 12, 16); B.ledge(16, 26, 20); B.ledge(4, 12, 24); B.ledge(16, 26, 28); B.solid(0, 34, 31, 35);
+  B.solid(14, 1, 30, 12); B.ledge(13, 22, 32);
+  B.put('m', 20, 22); B.put('A', 8, 23); B.put('j', 6, 28);
+});
+makeRoom('d', "Ashmaw's Den", 12, 4, 2, 1, {indoor:true, biome:'quarry'}, B => {
+  B.solid(0, 16, 63, 17); B.clear(63, 13, 63, 15);
+  B.ledge(8, 14, 11); B.ledge(49, 55, 11); B.ledge(26, 37, 7);
+});
+makeRoom('v', 'The Gallery of Laws', 5, -1, 2, 1, {indoor:true, biome:'council'}, B => {
+  B.clear(1, 17, 62, 17); B.ledge(1, 62, 16); B.clear(63, 13, 63, 15);
+  B.solid(8, 10, 9, 15); B.solid(22, 10, 23, 15); B.solid(40, 10, 41, 15); B.solid(54, 10, 55, 15);
+  B.ledge(10, 21, 10); B.ledge(24, 39, 7); B.ledge(42, 53, 10); B.ledge(2, 7, 6); B.ledge(56, 62, 6);
+  B.put('q', 31, 15); B.put('z', 16, 15); B.put('z', 47, 15); B.put('m', 30, 4); B.put('y', 4, 5);
+});
+makeRoom('w', 'The Council Chamber', 7, -1, 2, 1, {indoor:true, biome:'council'}, B => {
+  B.clear(1, 17, 62, 17); B.ledge(1, 62, 16); B.clear(0, 13, 0, 15);
+  B.ledge(10, 16, 11); B.ledge(47, 53, 11); B.ledge(26, 37, 8);
 });
 
 const EXTRA = [
@@ -860,7 +886,7 @@ const treeHas = (g, i) => !!(save && save.tree && save.tree[g + i]);
 const treeOn = (g, i) => treeHas(g, i) && cls().group === g;
 const hasteK = () => 1 - .12 * upLv('haste');
 const CACHES = [['H', 23, 4, 8], ['C', 4, 3, 8], ['D', 22, 3, 15], ['B', 19, 3, 8], ['I', 150, 3, 8], ['F', 119, 7, 15], ['O', 56, 2, 8], ['W', 89, 3, 8], ['Q', 86, 5, 15],
-  ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8], ['n', 2, 5, 25], ['t', 57, 6, 12], ['g', 33, 5, 15], ['o', 13, 6, 8], ['s', 24, 9, 15]];
+  ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8], ['n', 2, 5, 25], ['t', 57, 6, 12], ['e', 29, 3, 15], ['f', 24, 19, 12], ['v', 31, 6, 15], ['g', 33, 5, 15], ['o', 13, 6, 8], ['s', 24, 9, 15]];
 let sparks = [], shardShow = null, shardFlash = 0;
 function shardVal(e) { return e.t === 'boss' ? 40 : e.t === 'u' ? 4 : e.t === 'z' ? 3 : 'ewcylm'.includes(e.t) ? 2 : 1; }
 let gems = [], wakeReq = false;
@@ -2502,7 +2528,40 @@ Object.assign(TRACKS, {
   }},
 });
 FIGHT.add('choirboss'); FIGHT.add('bellboss');
-Object.assign(ROOM_MUSIC, {PV:'ashroad', t:'yard', n:'city', a:'ashroad', h:'ashroad', g:'crypt', o:'crypt', c:'crypt', s:'spire', b:'spire', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
+Object.assign(TRACKS, {
+  quarry:{bpm:84, bars:4, play(c, bar, st, t, d, loop) {
+    const ch = CHD[['Am','F','C','E'][bar]], b = bassOf(ch);
+    if (st === 0 || st === 10) INS.taiko(c, t, .16, 70);
+    if (st % 4 === 0) INS.bass(c, t, b, d * 3, .045);
+    if (st === 6 || st === 14) INS.anvil(c, t, 84, .014);
+    if (st === 0) INS.pad(c, t, ch, d * 16, .01, 700);
+    if (loop % 2 && st % 2 === 0) INS.pluck(c, t, ch[[1, 2, 3, 2, 1, 3, 2, 1][st / 2]] + 12, .016, .7, 2);
+  }},
+  council:{bpm:66, bars:8, play(c, bar, st, t, d, loop) {
+    const ch = CHD[['Dm','Gm','A','Dm','Bb','Gm','A','A'][bar]], b = bassOf(ch);
+    if (st === 0) { INS.choir(c, t, ch.slice(0, 3), d * 16, .03, 1); INS.bass(c, t, b, d * 12, .04); INS.bell(c, t, ch[0] + 24, .014, 3); }
+    if (st === 8) INS.str(c, t, ch[2] + 12, d * 7, .014);
+    if (loop % 2 && st % 4 === 2) INS.pluck(c, t, ch[[1, 2, 3, 2][(st - 2) / 4]] + 24, .012, 1, 2);
+  }},
+  houndboss:{bpm:c => bossPh(c) > 1 ? 150 : 138, bars:4, play(c, bar, st, t, d, loop) {
+    const ph = bossPh(c), ch = CHD[['Am','F','G','E'][bar]], b = bassOf(ch);
+    if ([0, 3, 6, 8, 11, 14].includes(st)) INS.taiko(c, t, st % 8 === 0 ? .22 : .14, 78);
+    if (st % 2 === 0) INS.bass(c, t, b + (st === 14 ? 12 : 0), d * 1.2, .05);
+    if (st === 4 || st === 12) INS.snare(c, t, .055);
+    if (loop % 2 && (st === 0 || st === 8)) INS.brass(c, t, ch[2] + 12, d * 5, .022);
+    if (ph > 1) INS.hat(c, t, st % 2 ? .006 : .012);
+  }},
+  councilboss:{bpm:c => bossPh(c) > 1 ? 128 : 116, bars:4, play(c, bar, st, t, d, loop) {
+    const ph = bossPh(c), ch = CHD[['Dm','Bb','Gm','A'][bar]], b = bassOf(ch);
+    if (st === 0) { INS.choir(c, t, ch.slice(0, 3), d * 16, .036, 0); INS.bell(c, t, ch[0] + 24, .03, 2.4); }
+    INS.str(c, t, ch[[1, 2, 3, 2][st % 4]] + 12 + (st >= 8 ? 12 : 0), d * .8, .011);
+    if ([0, 7, 10].includes(st)) INS.taiko(c, t, .18, 84);
+    if (st % 4 === 0) INS.bass(c, t, b, d * 2, .05);
+    if (ph > 1 && (st === 4 || st === 12)) INS.snare(c, t, .05);
+  }},
+});
+FIGHT.add('houndboss'); FIGHT.add('councilboss');
+Object.assign(ROOM_MUSIC, {e:'quarry', f:'quarry', d:'quarry', v:'council', w:'council', PV:'ashroad', t:'yard', n:'city', a:'ashroad', h:'ashroad', g:'crypt', o:'crypt', c:'crypt', s:'spire', b:'spire', O:'foundry', U:'foundry', Z:'foundry', W:'drowned', S:'drowned', N:'drowned', Q:'garden', M:'garden', R:'garden'});
 
 function musSting(kind) {
   if (!ac || !soundOn || !musicOn) return;
@@ -3373,6 +3432,8 @@ const REG = {
   M:{pods:[[54, 15, 44, 49, 12], [43, 11, 32, 38, 9], [31, 8, 20, 26, 6], [19, 5, 9, 18, 5]]},
   h:{},
   R:{boss:'thorn', bossAt:[9, 15], trigger:() => p.x < 52 * T && p.y > 7 * T, bars:[[63, 63, 2, 4]]},
+  d:{boss:'hound', bossAt:[12, 15], trigger:() => p.x < 54 * T, bars:[[63, 63, 13, 15]]},
+  w:{boss:'council', bossAt:[32, 5], trigger:() => p.x > 8 * T && p.onGround, bars:[[0, 0, 13, 15], [1, 62, 17, 17]]},
   c:{boss:'choir', bossAt:[40, 8], trigger:() => p.x > 8 * T, bars:[[0, 0, 13, 15]]},
   b:{boss:'bell', bossAt:[44, 15], trigger:() => p.onGround, bars:[[12, 19, 16, 16]]},
 };
@@ -3388,6 +3449,8 @@ const BOSSES = {
   thorn:{name:'The Thorn Queen', heart:'Heart of Thorns', color:'#b8e07a', hp:60},
   choir:{name:'The Bone Choir', heart:'Heart of the Choir', color:'#cfc4f0', hp:65},
   bell:{name:'The Bellwright', heart:'Heart of the Bell', color:'#e8c070', hp:75},
+  hound:{name:'Ashmaw', heart:'Heart of the Hound', color:'#ff7a3a', hp:70},
+  council:{name:'The Council', heart:'Heart of the Law', color:'#e8d08a', hp:78},
 };
 function regionEnter(key) {
   DYN.clear(); R = null;
@@ -3531,7 +3594,7 @@ function regionUpdate(ax, atkBox) {
     if (R.fight === 'idle' && R.cfg.trigger()) {
       R.fight = 'on'; setBars(R.cfg.bars); sfx.slam(); shake = 10;
       const B = BOSSES[R.boss.kind]; bossIntro(R.boss.kind, R.boss.kind === 'eel' ? {x:R.boss.hx || R.boss.x, y:R.water.y} : {x:R.boss.x + R.boss.w / 2, y:R.boss.y + R.boss.h / 2});
-      banner = {title:B.name, sub:{choir:'A hundred jaws open at once.', bell:'He lifts the great bell off its hook.', forge:'He sets down the crucible and lifts his hammer.', eel:'Something long moves under the black water.', thorn:'The briars around the throne begin to turn toward you.'}[R.boss.kind], color:B.color, t:200};
+      banner = {title:B.name, sub:{hound:'Something big gets up off a pile of bones.', council:'Three chairs. Three judges. They remember your name.', choir:'A hundred jaws open at once.', bell:'He lifts the great bell off its hook.', forge:'He sets down the crucible and lifts his hammer.', eel:'Something long moves under the black water.', thorn:'The briars around the throne begin to turn toward you.'}[R.boss.kind], color:B.color, t:200};
     }
   }
   regionFx(sim);
@@ -3587,6 +3650,8 @@ function makeRBoss(kind, tx, ty) {
   const e = {t:'boss', kind, x:tx * T, y:(ty + 1) * T - 62, w:44, h:62, hp:9999, life:B.hp, max:B.hp, flash:0, spawn:0, st:'idle', stT:60, face:-1, phase:1, atks:0, anim:0, arm:0, dyingT:0};
   if (kind === 'eel') { Object.assign(e, {w:24, h:18, ghost:true, hx:tx * T, hy:room.ph + 40, hist:[], st:'lurk', stT:90}); }
   if (kind === 'thorn') { Object.assign(e, {w:44, h:64, y:(ty + 1) * T - 64, st:'guard', stT:90, open:0, face:1}); }
+  if (kind === 'hound') { Object.assign(e, {w:52, h:30, y:(ty + 1) * T - 30, gy:(ty + 1) * T - 30, st:'prowl', stT:80, face:1}); }
+  if (kind === 'council') { Object.assign(e, {w:30, h:40, x:tx * T - 15, y:ty * T, arm:1, st:'judge', stT:120, dmgSince:0}); }
   if (kind === 'choir') { Object.assign(e, {w:54, h:60, y:ty * T - 60, st:'float', stT:90, sing:0}); }
   if (kind === 'bell') { Object.assign(e, {w:52, h:74, y:(ty + 1) * T - 74, gy:(ty + 1) * T - 74, st:'walk', stT:90}); }
   return e;
@@ -3598,7 +3663,7 @@ function bossHit(e) {
   e.life -= dmg; pops.push({x:e.x + e.w / 2, y:e.y - 4, v:dmg, life:45});
   if (e.life <= e.max / 2 && e.phase === 1) {
     e.phase = 2; sfx.roar(); shake = 14;
-    banner = {title:{forge:'The forge roars', eel:'The cistern floods', thorn:'The thorns grow wild', choir:'The choir swells', bell:'The bell cracks'}[e.kind], sub:{choir:'More voices join. They sing faster.', bell:'He swings it now, and the tower shakes.', forge:'He moves faster now, and his hammer throws sparks.', eel:'The water climbs. She strikes twice.', thorn:'She calls her children up from the soil.'}[e.kind], color:BOSSES[e.kind].color, t:170};
+    banner = {title:{hound:'Ashmaw is starving', council:'The Council rises', forge:'The forge roars', eel:'The cistern floods', thorn:'The thorns grow wild', choir:'The choir swells', bell:'The bell cracks'}[e.kind], sub:{hound:'It stops circling. It wants you now.', council:'All three speak at once. The sentence is death.', choir:'More voices join. They sing faster.', bell:'He swings it now, and the tower shakes.', forge:'He moves faster now, and his hammer throws sparks.', eel:'The water climbs. She strikes twice.', thorn:'She calls her children up from the soil.'}[e.kind], color:BOSSES[e.kind].color, t:170};
     if (e.kind === 'eel') R.water.target = 7 * T;
   }
   if (e.life <= 0) {
@@ -3626,7 +3691,7 @@ function updateRBoss(e) {
     return;
   }
   if (R.fight !== 'on') { if (e.kind === 'eel') eelIdle(e); return; }
-  if (e.kind === 'forge') forgeAI(e); else if (e.kind === 'eel') eelAI(e); else if (e.kind === 'choir') choirAI(e); else if (e.kind === 'bell') bellAI(e); else thornAI(e);
+  if (e.kind === 'forge') forgeAI(e); else if (e.kind === 'eel') eelAI(e); else if (e.kind === 'choir') choirAI(e); else if (e.kind === 'bell') bellAI(e); else if (e.kind === 'hound') houndAI(e); else if (e.kind === 'council') councilAI(e); else thornAI(e);
 }
 const floorUnder = x => { let y = 1; const cx = Math.floor(x / T); while (y < room.h && tile(cx, y) !== '#') y++; return y * T; };
 function forgeAI(e) {
@@ -3714,6 +3779,75 @@ function thornAI(e) {
     e.open = Math.min(1, e.open + .06);
     if (e.stT <= 0) { e.st = 'guard'; e.stT = 60; sfx.clang(); }
   }
+}
+function houndAI(e) {
+  const F = foeFor(e), pcx = F.x + F.w / 2, cx = e.x + e.w / 2, dx = pcx - cx, sp = e.phase === 2 ? 1.35 : 1, fl = e.gy + e.h;
+  e.stT--;
+  if (e.st === 'prowl') {
+    e.face = Math.sign(dx) || e.face; const ov = e.x; e.x += e.face * .9 * sp; if (e.x < T || e.x + e.w > room.pw - T) e.x = ov;
+    if (e.stT <= 0) { e.atks++; const r = Math.random(); if (e.atks % 4 === 0) { e.st = 'howl'; e.stT = 50; } else if (r < .5) { e.st = 'crouch'; e.stT = 24; } else { e.st = 'rush'; e.stT = 30; e.vx = 0; } }
+  } else if (e.st === 'crouch') { if (e.stT <= 0) { e.st = 'pounce'; e.stT = 42; e.lx = e.x; e.tx = Math.max(T, Math.min(room.pw - T - e.w, pcx - e.w / 2)); sfx.heavy(); } }
+  else if (e.st === 'pounce') {
+    const k = 1 - Math.max(0, e.stT) / 42; e.x = e.lx + (e.tx - e.lx) * k; e.y = e.gy - Math.sin(k * Math.PI) * 80;
+    if (e.stT <= 0) { e.y = e.gy; e.st = 'prowl'; e.stT = Math.round(70 / sp); shake = 10; sfx.slam(); burst(cx, fl - 2, '#c9b08a', 18, 2.4); if (e.phase === 2) for (const d of [-1, 1]) eshots.push({x:cx + d * 26, y:fl - 6, vx:d * 3, vy:0, life:180, r:4, dmg:1}); }
+  } else if (e.st === 'rush') {
+    if (e.stT > 0) { e.face = Math.sign(dx) || e.face; if (tick % 4 === 0) parts.push({x:cx - e.face * 20, y:fl - 2, vx:-e.face, vy:-.5, life:16, color:'#6b5d52', size:2}); }
+    else { const ov = e.x; e.x += e.face * 5 * sp; if (tick % 2) parts.push({x:cx - e.face * 24, y:fl - 4, vx:-e.face * .5, vy:-.4, life:18, color:'#ff7a3a', size:2}); if (e.x < T || e.x + e.w > room.pw - T) { e.x = ov; e.st = 'dazed'; e.stT = 70; shake = 12; sfx.slam(); burst(cx + e.face * 24, e.y + 10, '#8c7d6a', 20, 2.5); } }
+  } else if (e.st === 'dazed') { if (e.stT <= 0) { e.st = 'prowl'; e.stT = 40; } }
+  else if (e.st === 'howl') {
+    if (e.stT === 30) { sfx.roar(); shake = 8; const n = e.phase === 2 ? 3 : 2; if (enemies.filter(o => o.t === 'A' && !o.dead).length < 4) for (let i = 0; i < n; i++) enemies.push(makeEnemy('A', 6 + i * 22 + (Math.random() * 6 | 0), 15, true)); for (let i = 0; i < (e.phase === 2 ? 6 : 3); i++) eshots.push({x:pcx + (i - 2) * 40, y:T + 8, vx:0, vy:0, g:.09 + i * .015, life:200, r:3, dmg:1}); }
+    if (e.stT <= 0) { e.st = 'prowl'; e.stT = Math.round(60 / sp); }
+  }
+}
+const COUNCIL_SEATS = [[14, 5], [32, 3], [50, 5]];
+function councilAI(e) {
+  const F = foeFor(e), pcx = F.x + F.w / 2, pcy = F.y + F.h / 2, sp = e.phase === 2 ? 1.4 : 1;
+  e.stT--;
+  const seat = COUNCIL_SEATS[e.arm | 0]; e.x += (seat[0] * T - 15 - e.x) * .08; e.y += (seat[1] * T + Math.sin(e.anim * .05) * 6 - e.y) * .08;
+  if (e.dmgSince === undefined) e.dmgSince = 0;
+  if (e.lastLife !== undefined && e.life < e.lastLife) e.dmgSince += e.lastLife - e.life; e.lastLife = e.life;
+  e.rot = (e.rot || 0) + 1;
+  if (e.dmgSince >= 12 || e.rot > 320 / sp) { e.dmgSince = 0; e.rot = 0; e.arm = ((e.arm | 0) + 1 + (Math.random() < .5 ? 1 : 0)) % 3; sfx.clang(); toast = {text:'Another judge takes the floor', t:70}; }
+  if (e.stT > 0) return;
+  e.atks++; const r = Math.random();
+  const others = [0, 1, 2].filter(i => i !== (e.arm | 0)).map(i => COUNCIL_SEATS[i]);
+  if (r < .45) { for (const [sx, sy] of others) { const x = sx * T, y = sy * T + 18, a = Math.atan2(pcy - y, pcx - x); for (let k = -1; k <= (e.phase === 2 ? 1 : 0); k++) eshots.push({x, y, vx:Math.cos(a + k * .18) * 2.6, vy:Math.sin(a + k * .18) * 2.6, life:200, r:3, dmg:1, ghost:true}); } tone(520, .3, 'triangle', .03, 260, 0, 'sfx'); }
+  else if (r < .75) { const n = e.phase === 2 ? 7 : 5; for (let i = 0; i < n; i++) { const x = pcx + (i - (n - 1) / 2) * 30; if (x > T && x < room.pw - T) eshots.push({x, y:T + 8, vx:0, vy:0, g:.06 + (i % 3) * .02, life:220, r:3, dmg:1, note:true}); } sfx.creak(); }
+  else { const cx = e.x + 15, cy = e.y + 18; for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; eshots.push({x:cx, y:cy, vx:Math.cos(a) * 1.8, vy:Math.sin(a) * 1.8, life:150, r:3, dmg:1, ghost:true}); } blasts.push({x:cx, y:cy, r:40, life:16}); sfx.zap(); }
+  if (e.phase === 2 && e.atks % 4 === 0 && enemies.filter(o => o.t === 'z' && !o.dead).length < 2) enemies.push(makeEnemy('z', Math.random() < .5 ? 6 : 56, 15, true));
+  e.st = 'judge'; e.stT = Math.round(110 / sp);
+}
+function drawHound(e, fl) {
+  const x = Math.round(e.x), y = Math.round(e.y), f = e.face || 1, C = c => fl ? '#ffffff' : c, run = e.st === 'rush' && e.stT <= 0, ph = e.anim * (run ? .5 : .18);
+  ctx.save(); ctx.translate(x + e.w / 2, y + e.h); ctx.scale(f * 1.5, 1.5);
+  const leg = (lx, o) => { const a = Math.sin(ph + o) * (e.st === 'prowl' || run ? 5 : 1); ctx.fillStyle = C('#4a3424'); ctx.fillRect(lx + a * .4, -12, 4, 12); ctx.fillStyle = C('#5e4430'); ctx.fillRect(lx + a * .6 - 1, -2, 6, 2); };
+  leg(-16, 0); leg(8, Math.PI); leg(-12, Math.PI); leg(12, 0);
+  ctx.fillStyle = C('#5a3e28'); ctx.beginPath(); ctx.ellipse(0, -16, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = C('#7a5638'); ctx.beginPath(); ctx.ellipse(-4, -19, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = C('#4a3424'); ctx.beginPath(); ctx.moveTo(-22, -18); ctx.lineTo(-34, -24 + Math.sin(ph) * 2); ctx.lineTo(-22, -14); ctx.fill();
+  const jaw = e.st === 'howl' || e.st === 'crouch' ? 4 : 1;
+  ctx.fillStyle = C('#5a3e28'); ctx.beginPath(); ctx.moveTo(14, -22); ctx.lineTo(30, -20); ctx.lineTo(30, -16); ctx.lineTo(16, -12); ctx.fill();
+  ctx.fillStyle = C('#1a1210'); ctx.fillRect(18, -15 + jaw, 12, 3);
+  ctx.fillStyle = '#e8e2d0'; for (let i = 0; i < 4; i++) ctx.fillRect(20 + i * 3, -16, 1, 2);
+  ctx.fillStyle = C('#4a3424'); ctx.beginPath(); ctx.moveTo(16, -24); ctx.lineTo(19, -31); ctx.lineTo(22, -23); ctx.fill();
+  ctx.fillStyle = e.phase === 2 ? '#ff3a1a' : '#ffb04a'; ctx.fillRect(24, -21, 3, 2);
+  for (let i = 0; i < 7; i++) { ctx.fillStyle = i % 2 ? '#ff7a3a' : '#c43a14'; ctx.fillRect(-14 + i * 4, -26 + Math.sin(e.anim * .3 + i) * 2, 2, 4); }
+  ctx.restore();
+  if (tick % 4 === 0) parts.push({x:x + e.w / 2 + (Math.random() - .5) * 30, y:y + 2, vx:0, vy:-.7, life:20, color:Math.random() < .5 ? '#ff7a3a' : '#ffd27a', size:1});
+}
+function drawCouncil(e, fl) {
+  const sp = e.arm | 0;
+  COUNCIL_SEATS.forEach(([sx, sy], i) => {
+    const me = i === sp, x = me ? e.x + 15 : sx * T, y = me ? e.y : sy * T + Math.sin((e.anim || 0) * .05 + i * 2) * 6, C = c => me && fl ? '#ffffff' : c;
+    ctx.save(); ctx.globalAlpha = me ? 1 : .85;
+    if (me) { ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x, y + 20, 0, x, y + 20, 34); g.addColorStop(0, 'rgba(255,214,120,.35)'); g.addColorStop(1, 'rgba(255,180,60,0)'); ctx.fillStyle = g; ctx.fillRect(x - 34, y - 14, 68, 68); ctx.globalCompositeOperation = 'source-over'; }
+    ctx.fillStyle = C(['#7a2e3e', '#4e3a7a', '#2e5a7a'][i]); ctx.beginPath(); ctx.moveTo(x - 6, y + 6); ctx.lineTo(x - 15, y + 40); for (let k = 0; k <= 5; k++) ctx.lineTo(x - 15 + k * 6, y + 40 - (k % 2) * 3); ctx.lineTo(x + 6, y + 6); ctx.fill();
+    ctx.fillStyle = C('#c9a04a'); ctx.fillRect(x - 7, y + 14, 14, 2); ctx.fillRect(x - 1, y + 16, 2, 14);
+    ctx.fillStyle = C('#2a2024'); ctx.fillRect(x - 5, y - 14, 10, 16); ctx.fillStyle = C('#c9a04a'); ctx.fillRect(x - 6, y - 15, 12, 2);
+    ctx.fillStyle = C('#e6dccb'); ctx.fillRect(x - 4, y - 4, 8, 7); ctx.fillStyle = '#1a1214'; ctx.fillRect(x - 3, y - 2, 2, 1); ctx.fillRect(x + 1, y - 2, 2, 1); ctx.fillRect(x - 1, y + 1, 2, 1);
+    if (me) { ctx.fillStyle = '#ffd27a'; ctx.fillRect(x - 3, y - 2, 1, 1); ctx.fillRect(x + 2, y - 2, 1, 1); }
+    ctx.restore();
+  });
 }
 function choirAI(e) {
   const F = foeFor(e), pcx = F.x + F.w / 2, cx = e.x + e.w / 2, sp = e.phase === 2 ? 1.4 : 1, fl = floorUnder(cx);
@@ -3944,7 +4078,7 @@ function drawRBoss(e) {
   const fl = e.flash > 0 && e.flash % 4 < 2;
   ctx.save();
   if (e.st === 'dying') ctx.globalAlpha = Math.max(0, 1 - e.stT / 120);
-  if (e.kind === 'forge') drawForge(e, fl); else if (e.kind === 'eel') drawEel(e, fl); else if (e.kind === 'choir') drawChoir(e, fl); else if (e.kind === 'bell') drawBell(e, fl); else drawThorn(e, fl);
+  if (e.kind === 'forge') drawForge(e, fl); else if (e.kind === 'eel') drawEel(e, fl); else if (e.kind === 'choir') drawChoir(e, fl); else if (e.kind === 'bell') drawBell(e, fl); else if (e.kind === 'hound') drawHound(e, fl); else if (e.kind === 'council') drawCouncil(e, fl); else drawThorn(e, fl);
   ctx.restore();
 }
 function drawForge(e, fl) {
@@ -4050,7 +4184,7 @@ const openArea = (r, x0, y0, x1, y1) => { for (let y = Math.max(0, y0); y <= Mat
 function biomeBack(g, r) {
   if (!r.biome) return;
   const keep = document.createElement('canvas'); keep.width = r.pw; keep.height = r.ph; keep.getContext('2d').drawImage(g.canvas, 0, 0);
-  const tint = {foundry:['#4e5a6c', .7], drowned:['#2a7480', .78], garden:['#4a7a3a', .55], crypt:['#6a6080', .62], spire:['#8a7050', .5], ash:['#8a2a1a', .55]}[r.biome];
+  const tint = {foundry:['#4e5a6c', .7], drowned:['#2a7480', .78], garden:['#4a7a3a', .55], crypt:['#6a6080', .62], spire:['#8a7050', .5], ash:['#8a2a1a', .55], quarry:['#9a6a3a', .5], council:['#8a7a4a', .45]}[r.biome];
   g.save(); g.globalCompositeOperation = 'color'; g.globalAlpha = tint[1]; g.fillStyle = tint[0]; g.fillRect(0, 0, r.pw, r.ph);
   g.globalCompositeOperation = 'destination-in'; g.globalAlpha = 1; g.drawImage(keep, 0, 0); g.restore();
   if (!r.indoor) { g.fillStyle = r.biome === 'garden' ? 'rgba(30,50,20,.25)' : 'rgba(0,0,0,.2)'; g.fillRect(0, (r.h - 2) * T, r.pw, 2 * T); }
@@ -4082,6 +4216,11 @@ function biomeBack(g, r) {
       for (let k = 0; k < len * 4; k++) { g.fillStyle = k % 2 ? '#3a3e46' : '#5a5e66'; g.fillRect(x * T + 7 + (k % 2), T + k * 4, 2, 4); }
       g.strokeStyle = '#6a707a'; g.lineWidth = 2; g.beginPath(); g.arc(x * T + 8, T + len * 16 + 3, 4, 0, Math.PI); g.stroke();
     }
+  } else if (r.biome === 'quarry') {
+    for (let y = 2; y < r.h - 2; y += 3) { g.fillStyle = y % 2 ? 'rgba(120,80,40,.18)' : 'rgba(60,40,24,.22)'; g.fillRect(0, y * T + (y * 7) % 11, r.pw, 5); }
+    for (let i = 0; i < r.cw * 2; i++) { const x = 3 + Math.floor(H(i, 1, 99) * (r.w - 6)); if (!openArea(r, x - 1, 1, x + 1, 9)) continue; g.strokeStyle = '#4a3a2a'; g.lineWidth = 1; g.beginPath(); g.moveTo(x * T + 8, T); g.lineTo(x * T + 8, 9 * T); g.stroke(); g.fillStyle = '#5a4630'; g.fillRect(x * T + 2, 9 * T, 12, 8); g.fillStyle = '#7a6040'; g.fillRect(x * T + 2, 9 * T, 12, 2); }
+  } else if (r.biome === 'council') {
+    for (let x = 4; x < r.w - 4; x += 9) { if (!openArea(r, x, 1, x + 1, 8)) continue; g.fillStyle = 'rgba(40,30,20,.85)'; g.fillRect(x * T, T, 2 * T, 8 * T); g.fillStyle = 'rgba(200,170,90,.25)'; g.fillRect(x * T, T, 3, 8 * T); g.fillStyle = H(x, 2, 98) < .5 ? 'rgba(120,30,30,.7)' : 'rgba(40,40,90,.7)'; g.fillRect(x * T + 4, 2 * T, 2 * T - 8, 5 * T); g.fillStyle = 'rgba(220,190,110,.6)'; g.fillRect(x * T + 4, 7 * T - 4, 2 * T - 8, 2); g.fillRect(x * T + T - 2, 3 * T, 4, 4); }
   } else if (r.biome === 'ash') {
     for (let i = 0; i < r.cw * 3; i++) {
       const x = 2 + Math.floor(H(i, 1, 97) * (r.w - 4));
@@ -4258,6 +4397,8 @@ const DISTRICTS = {
   foundry:{name:'The Foundry', sub:'The city forged its chains here. The Colossi remembered.', rooms:'OUZ', grade:'rgba(255,110,30,.4)', col:'#ffa060'},
   drowned:{name:'The Drowned Quarter', sub:'They broke the dams. You had told them where the dams were.', rooms:'WSN', grade:'rgba(40,150,140,.45)', col:'#8ad8c8'},
   garden:{name:'The Queen’s Garden', sub:'The Council’s garden. You wanted it ash. It grew teeth instead.', rooms:'QMR', grade:'rgba(110,180,70,.4)', col:'#b8e08a'},
+  quarry:{name:'The Quarry', sub:'They cut the wall out of this hill. You showed the giants where it was thinnest.', rooms:'efd', grade:'rgba(200,120,60,.36)', col:'#e8a070'},
+  council:{name:'The Council Halls', sub:'Where they signed your mother’s exile. You remember every name.', rooms:'vw', grade:'rgba(200,170,90,.34)', col:'#e8d08a'},
   crypt:{name:'The Catacombs', sub:'Your mother is down here somewhere. You never visited.', rooms:'goc', grade:'rgba(120,100,160,.42)', col:'#cfc4f0'},
   spire:{name:'The Bell Spire', sub:'They rang it the night you opened the gate. Nobody came.', rooms:'sb', grade:'rgba(200,160,90,.36)', col:'#e8c88a'},
 };
@@ -4999,7 +5140,7 @@ function update() {
       const here = litHas(room.key, it.x);
       if (!here) {
         save.cp = {k:room.key, x:it.x, y:it.y}; save.lit = save.lit || {}; save.lit[room.key + ',' + it.x + ',' + it.y] = 1; persist(); p.hp = p.max; p.calm = 0;
-        toast = {text:'Lantern lit. Travel here from any lit lantern or the waystone in the Training Yard.', t:200}; sfx.raise(); sfx.heal(); burst(it.x*T + 8, it.y*T + 2, '#ffd27a', 24, 2);
+        toast = {text:'Lantern lit. You can travel here.', t:170}; sfx.raise(); sfx.heal(); burst(it.x*T + 8, it.y*T + 2, '#ffd27a', 24, 2);
       }
     }
     if (it.t === 'B' && mode === 'play') {
@@ -7235,8 +7376,10 @@ const BOSS_LIST = [
   {k:'thorn', say:'They promised me a garden. Look what grew.', room:'R', name:'The Thorn Queen', sub:'She bargained for her garden. It kept her.', from:'right'},
   {k:'choir', say:'Who opened the gate? A hundred mouths answer: you.', room:'c', name:'The Bone Choir', sub:'They sang for the city once. Now they sing for you.', from:'left'},
   {k:'bell', say:'I rang until my hands bled. You heard it. You stayed home.', room:'b', name:'The Bellwright', sub:'He rang it until his hands bled. Nobody came.', from:'left'},
+  {k:'hound', room:'d', name:'Ashmaw', sub:'They fed it the exiles. It still waits by the gate for more.', from:'right'},
+  {k:'council', say:'Warden. We sentenced your mother. Now we sentence you.', room:'w', name:'The Council', sub:'Three judges. One sentence. They never agreed on anything else.', from:'left'},
   {k:'ash', say:'Your sister is behind me. Come and take her.', room:'X', name:'The Ash-King', sub:'We had a deal, warden.', from:'right'}];
-makeRoom('BH', 'Hall of Statues', 40, 12, 3, 1, {indoor:true, dark:.6}, B => { B.solid(0, 16, 95, 17); for (let i = 0; i < 6; i++) B.solid(10 + i * 13, 14, 14 + i * 13, 15); B.put('P', 4, 15); });
+makeRoom('BH', 'Hall of Statues', 40, 12, 4, 1, {indoor:true, dark:.6}, B => { B.solid(0, 16, 127, 17); for (let i = 0; i < 8; i++) B.solid(10 + i * 13, 14, 14 + i * 13, 15); B.put('P', 4, 15); });
 makeRoom('PV', 'The Pit', 40, 14, 3, 2, {dark:.38, noGiants:true}, B => {
   B.solid(0, 34, 95, 35); B.solid(44, 26, 51, 33);
   B.ledge(6, 16, 29); B.ledge(79, 89, 29); B.ledge(20, 32, 24); B.ledge(63, 75, 24); B.ledge(4, 12, 19); B.ledge(42, 53, 19); B.ledge(83, 91, 19);
@@ -7329,7 +7472,7 @@ function startBossMode() {
 function bossSave(k) {
   const r = bossMode.real;
   save = Object.assign(fresh(), {worldV:4, clsChosen:true, cls:r.cls, look:r.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:r.whet, rations:r.rations || 0, ups:r.ups || {}, tree:r.tree || {},
-    districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true])), visited:{BH:true}, gateOpen:k === 'ash', cogs:3, seenBoss:{forge:1, eel:1, thorn:1, choir:1, bell:1, ash:1}});
+    districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true])), visited:{BH:true}, gateOpen:k === 'ash', cogs:3, seenBoss:{forge:1, eel:1, thorn:1, choir:1, bell:1, hound:1, council:1, ash:1}});
   save.hearts = Object.keys(r.bosses || {}).length; save.bosses = {};
 }
 function bossHall(msg) {
@@ -7383,6 +7526,8 @@ function statueImg(k, gold) {
     if (k === 'forge') drawForge({x:38, y:138 - 62, w:44, h:62, face:1, st:'idle', stT:0, anim:0, arm:0, phase:1, atks:0}, false);
     else if (k === 'thorn') drawThorn({x:38, y:138 - 64, w:44, h:64, open:.6, st:'guard', face:1}, false);
     else if (k === 'choir') drawChoir({x:33, y:62, w:54, h:60, anim:0, sing:1, phase:1, st:'float'}, false);
+    else if (k === 'hound') drawHound({x:34, y:138 - 40, w:52, h:30, face:1, anim:0, st:'prowl', phase:1}, false);
+    else if (k === 'council') { const keep = COUNCIL_SEATS.map(q => q.slice()); COUNCIL_SEATS[0] = [1.6, 3.6]; COUNCIL_SEATS[1] = [3.75, 2.4]; COUNCIL_SEATS[2] = [5.9, 3.6]; drawCouncil({x:45, y:38, w:30, h:40, arm:1, anim:0}, false); keep.forEach((q, i) => COUNCIL_SEATS[i] = q); }
     else if (k === 'bell') drawBell({x:34, y:138 - 74, w:52, h:74, face:1, arm:-.4, st:'walk', phase:1}, false);
     else if (k === 'eel') { R = {water:{y:9999}}; const hist = []; for (let i = 0; i < 40; i++) hist.push([60 + Math.sin(i * .25) * 22, 132 - i * 2.4]); drawEel({hist:[...hist].reverse(), hx:60 + Math.sin(-.25) * 22, hy:30, face:1, st:'idle'}, false); }
     else { const P = giantPose(60, 138 + 40, .48, 0, .2, .08); giantShape(P, '#21100c', 0, 0); giantDetails(P, {hot:.8, eye:1}); }
@@ -7538,7 +7683,7 @@ function drawVoice() {
   ctx.font = '8px Silkscreen, ui-monospace, monospace'; ctx.fillStyle = '#a0503a'; ctx.fillText('THE ASH-KING', VW / 2, VH - 62);
   ctx.restore();
 }
-const VOICE_BOSS = {forge:'That forge made the chains that held us out. You gave it to me. Thank you.', eel:'The deep was always ours. You only opened the door.', thorn:'Their queen bargained too. She was worse at it than you.', choir:'They prayed to be spared from us. Listen to them now.', bell:'He rang for help. I heard it. I came.'};
+const VOICE_BOSS = {forge:'That forge made the chains that held us out. You gave it to me. Thank you.', eel:'The deep was always ours. You only opened the door.', thorn:'Their queen bargained too. She was worse at it than you.', choir:'They prayed to be spared from us. Listen to them now.', bell:'He rang for help. I heard it. I came.', hound:'It was the city’s dog. The city fed it people like your mother.', council:'Your mother’s judges. I saved them for you. You are welcome.'};
 const VOICE_COG = ['One cog. The gate wants to open for you, warden.', 'Two. You are almost home.', 'Three. Come up, and we will talk terms again.'];
 function introBanner() { banner = {title:'Six notes lie in the ruins', sub:'Find them. They remember what you did.', color:'#e3d6bd', t:330}; }
 const VOICES = {v:{f:150, type:'square', vol:.02, var:.3, rate:2}, f:{f:104, type:'sawtooth', vol:.018, var:.22, rate:2},
