@@ -116,8 +116,8 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 .card.admin .kicker{color:#7ad8ff}.card.admin h2{color:#f2e2c4}
 .adl{font-family:var(--ui);font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:#a0907e;margin:10px 0 4px}
 .adrow{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
-.adb{font-family:var(--ui);font-size:.55rem;letter-spacing:.04em;padding:5px 8px;border:1px solid #ffffff22;background:#ffffff0a;color:#eadfd2;border-radius:2px;cursor:pointer}
-.adb:hover{background:#ffffff18}.adb.on{border-color:#7ad8ff;background:#7ad8ff22;color:#cfefff}
+.card.admin button.adb{display:inline-flex;width:auto;visibility:visible;opacity:1;line-height:1.2;font-family:var(--ui);font-size:.55rem;letter-spacing:.04em;padding:5px 8px;border:1px solid #ffffff22;background:#ffffff0a;color:#eadfd2;border-radius:2px;cursor:pointer}
+.card.admin button.adb:hover,.card.admin button.adb:focus-visible{background:#ffffff18;outline:1px solid #7ad8ff;box-shadow:none}.card.admin button.adb.on{border-color:#7ad8ff;background:#7ad8ff22;color:#cfefff}
 .card.admin select{font:.85rem Georgia,serif;padding:4px;background:#1e1612;color:#eadfd2;border:1px solid #ffffff22;max-width:260px}
 .card.admin .cf input{font:1rem ui-monospace,monospace;padding:6px 8px;background:#1e1612;color:#eadfd2;border:1px solid #ffffff33}
 .card.admin .small{font-size:.85rem;color:#7ad8ff;margin:8px 0 0}
@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.55';
+const VERSION = '0.1.56';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -7738,31 +7738,30 @@ function adminDo(what, arg) {
 function openAdmin() {
   if (binder.open || wardrobe.open || !(mode === 'play' || mode === 'note')) return;
   const opts = [{text:'Close', run:() => { adminMsg = ''; }}];
+  const sel = {room:room && room.key, cls:clsKey()};
+  const act = (a, label, on) => { const i = opts.length; opts.push({text:label, run:() => {
+    if (a === 'unlock') { const v = (sel.pass || '').trim().toLowerCase(); if (v === ADMIN_PASS) { try { localStorage.setItem('wallfall-admin', '1'); } catch (e) {} adminMsg = 'Unlocked on this device.'; } else adminMsg = 'That is not it.'; }
+    else adminDo(a, a === 'go' ? sel.room : a === 'cls' ? sel.cls : undefined);
+    if (a !== 'go' && a !== 'cls' && a !== 'kill' && a !== 'gate') openAdmin(); else { toast = {text:adminMsg, t:120}; adminMsg = ''; }
+  }}); return `<button class="opt adb${on ? ' on' : ''}" id="opt${i}" data-i="${i}" data-a="${a}">${label}</button>`; };
   let html = `<div class="card admin"><p class="kicker">Admin</p>`;
   if (!adminOn()) {
-    html += `<h2>Passphrase</h2><label class="cf"><input id="adPass" type="password" autocomplete="off"></label>${adminMsg ? `<p class="small">${esc(adminMsg)}</p>` : ''}<div class="adrow"><button class="adb" data-a="unlock">Unlock</button></div>`;
+    html += `<h2>Passphrase</h2><label class="cf"><input id="adPass" type="password" autocomplete="off"></label>${adminMsg ? `<p class="small">${esc(adminMsg)}</p>` : ''}<div class="adrow">${act('unlock', 'Unlock')}</div>`;
   } else {
-    const tg = (a, label, on) => `<button class="adb${on ? ' on' : ''}" data-a="${a}">${label}</button>`, b = (a, label) => `<button class="adb" data-a="${a}">${label}</button>`;
-    const rooms = Object.keys(DISTRICTS).map(d => `<optgroup label="${esc(DISTRICTS[d].name)}">${[...DISTRICTS[d].rooms].filter(k => ROOMS[k]).map(k => `<option value="${k}"${room && room.key === k ? ' selected' : ''}>${esc(ROOMS[k].name)}</option>`).join('')}</optgroup>`).join('');
-    const classes = GROUPS.map(([g, label]) => `<optgroup label="${label}">${Object.keys(CLASSES).filter(k => CLASSES[k].group === g).map(k => `<option value="${k}"${clsKey() === k ? ' selected' : ''}>${esc(CLASSES[k].name)}</option>`).join('')}</optgroup>`).join('');
+    const rooms = Object.keys(DISTRICTS).map(d => `<optgroup label="${esc(DISTRICTS[d].name)}">${[...DISTRICTS[d].rooms].filter(k => ROOMS[k]).map(k => `<option value="${k}"${sel.room === k ? ' selected' : ''}>${esc(ROOMS[k].name)}</option>`).join('')}</optgroup>`).join('');
+    const classes = GROUPS.map(([g, label]) => `<optgroup label="${label}">${Object.keys(CLASSES).filter(k => CLASSES[k].group === g).map(k => `<option value="${k}"${sel.cls === k ? ' selected' : ''}>${esc(CLASSES[k].name)}</option>`).join('')}</optgroup>`).join('');
     html += `<h2>Admin panel</h2>
-      <p class="adl">You</p><div class="adrow">${b('heal', 'Full heal')}${tg('god', 'God mode', ADMIN.god)}${tg('fly', 'Fly through walls', ADMIN.fly)}${tg('info', 'Show position', ADMIN.info)}${b('heart', '+1 heart')}</div>
-      <p class="adl">Abilities</p><div class="adrow">${tg('hook', 'Grapple', save.hook)}${tg('dbl', 'Double jump', save.dbl)}${tg('wall', 'Wall jump', save.wall)}${tg('whet', 'Whetstone', save.whet)}</div>
-      <p class="adl">Progress</p><div class="adrow">${b('cogs', 'Give 3 cogs')}${b('shards', '+500 shards')}${b('bosses', 'Beat district bosses')}${b('gate', 'Open the Last Gate')}${b('kill', 'Kill everything here')}</div>
-      <p class="adl">Go to</p><div class="adrow"><select id="adRoom">${rooms}</select>${b('go', 'Go')}</div>
-      <p class="adl">Class</p><div class="adrow"><select id="adCls">${classes}</select>${b('cls', 'Switch')}</div>
-      ${adminMsg ? `<p class="small" role="status">${esc(adminMsg)}</p>` : ''}<div class="adrow">${b('lock', 'Lock this device')}</div>`;
+      <p class="adl">You</p><div class="adrow">${act('heal', 'Full heal')}${act('god', 'God mode', ADMIN.god)}${act('fly', 'Fly through walls', ADMIN.fly)}${act('info', 'Show position', ADMIN.info)}${act('heart', '+1 heart')}</div>
+      <p class="adl">Abilities</p><div class="adrow">${act('hook', 'Grapple', save.hook)}${act('dbl', 'Double jump', save.dbl)}${act('wall', 'Wall jump', save.wall)}${act('whet', 'Whetstone', save.whet)}</div>
+      <p class="adl">Progress</p><div class="adrow">${act('cogs', 'Give 3 cogs')}${act('shards', '+500 shards')}${act('bosses', 'Beat district bosses')}${act('gate', 'Open the Last Gate')}${act('kill', 'Kill everything here')}</div>
+      <p class="adl">Go to</p><div class="adrow"><select id="adRoom">${rooms}</select>${act('go', 'Go')}</div>
+      <p class="adl">Class</p><div class="adrow"><select id="adCls">${classes}</select>${act('cls', 'Switch')}</div>
+      ${adminMsg ? `<p class="small" role="status">${esc(adminMsg)}</p>` : ''}<div class="adrow">${act('lock', 'Lock this device')}</div>`;
   }
   html += `<div class="opts"><button class="opt" id="opt0" data-i="0"><span class="t">Close</span></button></div></div>`;
   openDlg({opts, html});
-  const pass = document.getElementById('adPass'); if (pass) pass.focus();
-  dlgEl.querySelectorAll('.adb').forEach(bt => bt.addEventListener('click', () => {
-    const a = bt.dataset.a;
-    if (a === 'unlock') { if ((pass && pass.value.trim().toLowerCase()) === ADMIN_PASS) { try { localStorage.setItem('wallfall-admin', '1'); } catch (e) {} adminMsg = 'Unlocked on this device.'; } else adminMsg = 'That is not it.'; }
-    else adminDo(a, a === 'go' ? document.getElementById('adRoom').value : a === 'cls' ? document.getElementById('adCls').value : undefined);
-    const stay = a !== 'go' && a !== 'cls' && a !== 'kill' && a !== 'gate';
-    if (stay) openAdmin(); else { pick(0); toast = {text:adminMsg, t:120}; adminMsg = ''; }
-  }));
+  const pass = document.getElementById('adPass'); if (pass) { pass.addEventListener('input', () => sel.pass = pass.value); pass.focus(); }
+  for (const [id, k] of [['adRoom', 'room'], ['adCls', 'cls']]) { const el = document.getElementById(id); if (el) { sel[k] = el.value; el.addEventListener('change', () => sel[k] = el.value); } }
 }
 function drawAdminInfo() {
   if (!ADMIN.info && !ADMIN.god && !ADMIN.fly) return;
@@ -8163,7 +8162,7 @@ function openDlg({kicker, title, body, opts, html, voice}) {
   focusOpt();
   if (voice && VOICES[voice]) { startTyper(VOICES[voice]); speak((body || []).filter(Boolean).join(' ') || [...dlgEl.querySelectorAll('.card p.body')].map(q => q.textContent).join(' '), voice); }
 }
-function focusOpt() { const b = dlgEl.querySelectorAll('.opt')[dlg.idx]; if (b) b.focus({preventScroll:true}); }
+function focusOpt() { const b = dlgEl.querySelector(`.opt[data-i="${dlg.idx}"]`) || dlgEl.querySelectorAll('.opt')[dlg.idx]; if (b && b.focus) b.focus({preventScroll:true}); }
 function pick(i) {
   const o = dlg.opts[i]; if (!dlg.open || !o || o.disabled) return; hushTTS();
   stopTyper(true); dlg.open = false; dlgEl.hidden = true; dlgEl.innerHTML = '';

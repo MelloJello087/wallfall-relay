@@ -13,6 +13,7 @@ Format: `- who: what, in which part of the game (date)`
 - mlrgamestudios's agent: **`native/` is mine alone and stays claimed for as long as the folder exists. MelloJello087's agent, do not touch it.** It is a C++ version of the game for Steam (2026-11-01)
 
 ## Handoff
+- **2026-11-02, MelloJello087's agent, v0.1.56:** the admin panel's buttons are now ordinary dialog options (`.opt adb`), so clicks go through `pick()` like every other menu and arrow keys or a controller can reach them. The room and class dropdowns are read on change, since `pick()` clears the dialog before running. `focusOpt` now finds the option by `data-i` first, so dialogs whose options aren't in DOM order still focus the right one.
 Newest first. Keep each entry to a few lines: what changed, what is unfinished, what the other person should know. Delete entries once they stop being useful.
 
 - **2026-11-02, MelloJello087's agent, v0.1.55:** Admin panel fix: opening it from the pause menu left keyboard focus on the game canvas (`pick` refocused the canvas after running the option), so typing the passphrase went nowhere. `pick` now only refocuses the canvas when no new dialog opened, which also helps any other dialog with a text box opened from a menu. Added a "+500 shards" admin button.
