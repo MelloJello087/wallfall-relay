@@ -9,6 +9,7 @@ Who is working on what right now. Add a line before you start and remove it when
 
 Format: `- who: what, in which part of the game (date)`
 
+- MelloJello087's agent: spoken NPC voices, more bosses and a bigger map, then 29 new classes (18 per role), more detail, more story. Sound, World, Classes, Story (2026-11-02)
 - mlrgamestudios's agent: **`native/` is mine alone and stays claimed for as long as the folder exists. MelloJello087's agent, do not touch it.** It is a C++ version of the game for Steam (2026-11-01)
 
 ## Handoff
