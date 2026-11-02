@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.50';
+const VERSION = '0.1.51';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -7220,8 +7220,8 @@ function setVol(k, v) {
 function openSound(back) {
   const rows = [['master', 'Master volume'], ['music', 'Music'], ['sfx', 'Sound effects'], ['voice', 'Voices']];
   const html = `<div class="card soundcard"><p class="kicker">Settings</p><h2>Sound</h2>${rows.map(([k, l]) => `<label class="vrow"><span class="vl">${l}</span><input type="range" min="0" max="100" step="1" value="${Math.round(VOL[k] * 100)}" data-k="${k}" aria-label="${l}"><span class="vv" id="vv-${k}">${VOL[k] ? Math.round(VOL[k] * 100) + '%' : 'Off'}</span></label>`).join('')}
-    <div class="opts"><button class="opt" id="opt0" data-i="0"><span class="t">Done</span></button></div></div>`;
-  openDlg({opts:[{text:'Done', run:() => back && back()}], html});
+    <div class="opts"><button class="opt" id="opt0" data-i="0"><span class="t">Spoken voices: ${ttsOn ? 'on' : 'off'}</span>${hasTTS() ? '' : '<span class="tone">This browser has none</span>'}</button><button class="opt" id="opt1" data-i="1"><span class="t">Done</span></button></div></div>`;
+  openDlg({opts:[{text:'Spoken voices', run:() => { ttsOn = !ttsOn; try { localStorage.setItem('wallfall-tts', ttsOn ? '1' : '0'); } catch (e) {} if (ttsOn) speak('The city is still burning.', 'f'); openSound(back); }}, {text:'Done', run:() => back && back()}], html});
   let last = 0;
   dlgEl.querySelectorAll('.vrow input').forEach(r => r.addEventListener('input', () => {
     const k = r.dataset.k, v = +r.value / 100; setVol(k, v); document.getElementById('vv-' + k).textContent = v ? Math.round(v * 100) + '%' : 'Off';
@@ -7448,6 +7448,7 @@ function drawBintro() {
   if (b.t < 280) { ctx.globalAlpha = .45 + .25 * Math.sin(tick * .1); txt('Any key to skip', VW - 10, VH - 22, 8, '#c9b8a8', 'right'); ctx.globalAlpha = 1; }
   const a = Math.max(0, Math.min(1, (b.t - 60) / 30, (290 - b.t) / 30));
   if (a <= 0) return;
+  if (b.B.say && b.t === 121) speak(b.B.say, b.B.k === 'ash' ? 'ash' : 'boss');
   if (b.B.say && b.t > 120) { const n = Math.min(b.B.say.length, Math.floor((b.t - 120) * .8)); ctx.save(); ctx.globalAlpha = a; ctx.font = 'italic 12px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText('“' + b.B.say.slice(0, n) + (n >= b.B.say.length ? '”' : ''), VW / 2 + 1, VH - 47); ctx.fillStyle = '#f2e2c4'; ctx.fillText('“' + b.B.say.slice(0, n) + (n >= b.B.say.length ? '”' : ''), VW / 2, VH - 48); ctx.restore(); if (n < b.B.say.length && tick % 3 === 0 && /[a-z]/i.test(b.B.say[n])) blip({f:70, type:'sawtooth', vol:.022, var:.25}, b.B.say[n]); }
   ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = '30px "IM Fell English SC", "IM Fell English", Georgia, serif'; ctx.fillStyle = '#000'; ctx.fillText(b.B.name, VW / 2 + 1, 59); ctx.fillStyle = '#f2e2c4'; ctx.fillText(b.B.name, VW / 2, 58);
@@ -7522,7 +7523,7 @@ function drawTitle() {
 let voiceQ = [], voiceCur = null;
 function voice(text, delay = 0) { voiceQ.push({text, delay, t:0}); }
 function voiceTick() {
-  if (!voiceCur && voiceQ.length && mode === 'play') { if (voiceQ[0].delay > 0) voiceQ[0].delay--; else { voiceCur = voiceQ.shift(); if (ac && soundOn) { tone(38, 1.6, 'sawtooth', .05, 30); tone(57, 1.2, 'sine', .04, 50, .1); } } }
+  if (!voiceCur && voiceQ.length && mode === 'play') { if (voiceQ[0].delay > 0) voiceQ[0].delay--; else { voiceCur = voiceQ.shift(); speak(voiceCur.text, 'ash'); if (ac && soundOn) { tone(38, 1.6, 'sawtooth', .05, 30); tone(57, 1.2, 'sine', .04, 50, .1); } } }
   if (voiceCur && ++voiceCur.t > 300) voiceCur = null;
 }
 function drawVoice() {
@@ -7543,8 +7544,23 @@ function introBanner() { banner = {title:'Six notes lie in the ruins', sub:'Find
 const VOICES = {v:{f:150, type:'square', vol:.02, var:.3, rate:2}, f:{f:104, type:'sawtooth', vol:.018, var:.22, rate:2},
   t:{f:440, type:'triangle', vol:.034, var:.35, rate:2}, o:{f:86, type:'square', vol:.018, var:.14, rate:3}, s:{f:124, type:'triangle', vol:.04, var:.45, rate:3},
   i:{f:180, type:'square', vol:.018, var:.25, rate:2}, n:{f:210, type:'triangle', vol:.03, var:.3, rate:3}, p:{f:96, type:'sine', vol:.05, var:.2, rate:3}};
-let typer = null;
+let typer = null, ttsOn = true;
+try { ttsOn = localStorage.getItem('wallfall-tts') !== '0'; } catch (e) {}
+const hasTTS = () => typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined';
+const TTS = {v:{p:.9, r:.95, i:0}, f:{p:.7, r:.9, i:1}, t:{p:1.6, r:1.1, i:2}, o:{p:.5, r:.8, i:3}, s:{p:1.2, r:1.05, i:4}, i:{p:1.1, r:1, i:5}, n:{p:1.35, r:1, i:6}, p:{p:.6, r:.85, i:7}, ash:{p:.1, r:.72, i:8}, boss:{p:.35, r:.82, i:9}};
+function speak(text, who) {
+  if (!ttsOn || !hasTTS() || !text) return;
+  try {
+    speechSynthesis.cancel();
+    const P = TTS[who] || TTS.f, u = new SpeechSynthesisUtterance(text.replace(/[“”]/g, ''));
+    const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)); if (vs.length) u.voice = vs[P.i % vs.length];
+    u.pitch = P.p; u.rate = P.r; u.volume = Math.max(0, Math.min(1, (VOL.master ?? 1) * (VOL.voice ?? 1)));
+    if (u.volume > 0) speechSynthesis.speak(u);
+  } catch (e) {}
+}
+const hushTTS = () => { try { if (hasTTS()) speechSynthesis.cancel(); } catch (e) {} };
 function blip(V, ch) {
+  if (ttsOn && hasTTS()) return;
   const k = (ch.toLowerCase().charCodeAt(0) * 7) % 6, vow = /[aeiou]/i.test(ch);
   const f = V.f * (1 + k * V.var / 5) * (vow ? 1.12 : 1);
   tone(f, .055, V.type, V.vol, f * .86, 0, 'voice');
@@ -7584,11 +7600,11 @@ function openDlg({kicker, title, body, opts, html, voice}) {
   dlgEl.hidden = false;
   dlgEl.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => pick(+b.dataset.i)));
   focusOpt();
-  if (voice && VOICES[voice]) startTyper(VOICES[voice]);
+  if (voice && VOICES[voice]) { startTyper(VOICES[voice]); speak((body || []).filter(Boolean).join(' ') || [...dlgEl.querySelectorAll('.card p.body')].map(q => q.textContent).join(' '), voice); }
 }
 function focusOpt() { const b = dlgEl.querySelectorAll('.opt')[dlg.idx]; if (b) b.focus({preventScroll:true}); }
 function pick(i) {
-  const o = dlg.opts[i]; if (!dlg.open || !o || o.disabled) return;
+  const o = dlg.opts[i]; if (!dlg.open || !o || o.disabled) return; hushTTS();
   stopTyper(true); dlg.open = false; dlgEl.hidden = true; dlgEl.innerHTML = '';
   if (mode === 'note') mode = 'play';
   audio(); if (o.run) o.run();
