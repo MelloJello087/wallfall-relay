@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.54';
+const VERSION = '0.1.55';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -7725,6 +7725,7 @@ function adminDo(what, arg) {
     whet:() => { save.whet = !save.whet; return 'Whetstone ' + (save.whet ? 'on' : 'off'); },
     heart:() => { save.rations = (save.rations || 0) + 1; p.max = maxHp(); p.hp = p.max; return 'One more heart'; },
     cogs:() => { save.cogs = 3; return 'All three gate cogs'; },
+    shards:() => { save.shards = (save.shards || 0) + 500; persist(); return '+500 ember shards'; },
     bosses:() => { save.bosses = save.bosses || {}; for (const k in REG) if (REG[k].boss) save.bosses[k] = true; save.hearts = Object.keys(save.bosses).length; p.max = maxHp(); p.hp = p.max; return 'District bosses marked beaten'; },
     gate:() => { save.cogs = 3; if (!save.gateOpen) raiseGate(); return 'The Last Gate is open'; },
     kill:() => { let n = 0; for (const e of enemies) if (!e.dead && !e.prop && !e.dummy && !e.crate && e.t !== 'boss') { e.hp = 0; killCheck(e); n++; } return n + ' killed'; },
@@ -7747,7 +7748,7 @@ function openAdmin() {
     html += `<h2>Admin panel</h2>
       <p class="adl">You</p><div class="adrow">${b('heal', 'Full heal')}${tg('god', 'God mode', ADMIN.god)}${tg('fly', 'Fly through walls', ADMIN.fly)}${tg('info', 'Show position', ADMIN.info)}${b('heart', '+1 heart')}</div>
       <p class="adl">Abilities</p><div class="adrow">${tg('hook', 'Grapple', save.hook)}${tg('dbl', 'Double jump', save.dbl)}${tg('wall', 'Wall jump', save.wall)}${tg('whet', 'Whetstone', save.whet)}</div>
-      <p class="adl">Progress</p><div class="adrow">${b('cogs', 'Give 3 cogs')}${b('bosses', 'Beat district bosses')}${b('gate', 'Open the Last Gate')}${b('kill', 'Kill everything here')}</div>
+      <p class="adl">Progress</p><div class="adrow">${b('cogs', 'Give 3 cogs')}${b('shards', '+500 shards')}${b('bosses', 'Beat district bosses')}${b('gate', 'Open the Last Gate')}${b('kill', 'Kill everything here')}</div>
       <p class="adl">Go to</p><div class="adrow"><select id="adRoom">${rooms}</select>${b('go', 'Go')}</div>
       <p class="adl">Class</p><div class="adrow"><select id="adCls">${classes}</select>${b('cls', 'Switch')}</div>
       ${adminMsg ? `<p class="small" role="status">${esc(adminMsg)}</p>` : ''}<div class="adrow">${b('lock', 'Lock this device')}</div>`;
@@ -8168,7 +8169,7 @@ function pick(i) {
   stopTyper(true); dlg.open = false; dlgEl.hidden = true; dlgEl.innerHTML = '';
   if (mode === 'note') mode = 'play';
   audio(); if (o.run) o.run();
-  try { cv.focus({preventScroll:true}); } catch (e) {}
+  if (!dlg.open) try { cv.focus({preventScroll:true}); } catch (e) {}
 }
 function dlgKey(e) {
   if (e.target && e.target.tagName === 'INPUT') {
