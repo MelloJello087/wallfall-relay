@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.48';
+const VERSION = '0.1.49';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -7131,7 +7131,7 @@ function drawCut() {
 /* ---------- Title screen ---------- */
 const hasProgress = () => save.clsChosen && (save.frames > 300 || save.notes > 0);
 function openTitle() {
-  mode = 'title'; if (pvp) { pvp = null; p.fury = p.swift = 0; }
+  mode = 'title'; if (pvp) { save = pvp.real; pvp = null; p.fury = p.swift = 0; p.max = maxHp(); p.hp = p.max; }
   const opts = [], btn = (text, run) => { opts.push({text, run}); return `<button class="opt" id="opt${opts.length - 1}" data-i="${opts.length - 1}"><span class="t">${esc(text)}</span></button>`; };
   let html = `<div class="titlemenu"><div class="opts">`;
   if (slotList().length) html += btn('Continue', () => openSaves());
@@ -7248,11 +7248,13 @@ const PV_POWERS = [[47, 25, 'fury'], [11, 28, 'heal'], [84, 28, 'heal'], [39, 8,
 const PV_KIND = {heal:{col:'#ff6a5a', name:'Heart'}, fury:{col:'#ff3a1a', name:'Fury'}, swift:{col:'#7ad8ff', name:'Swift'}, aegis:{col:'#fff0b8', name:'Aegis'}};
 function enterPvp() {
   if (!NET.on || pvp || bossMode) return;
-  pvp = {back:null, kills:0, deaths:0, seq:0, out:[], seen:{}, pd:{}, cd:{}, by:null, by2:null, pw:PV_POWERS.map(() => 0)};
+  const real = save;
+  save = Object.assign(fresh(), {worldV:4, cls:real.cls, look:real.look, lookChosen:true, lookV2:true, clsChosen:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:true, districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true]))});
+  pvp = {real, back:null, kills:0, deaths:0, seq:0, out:[], seen:{}, pd:{}, cd:{}, by:null, by2:null, pw:PV_POWERS.map(() => 0)};
   enterRoom('PV'); pvpSpawn(); banner = {title:'The Pit', sub:'Friends are just enemies who have not had the chance.', color:'#ff5a3a', t:220};
 }
 function leavePvp() {
-  if (!pvp) return; const b = pvp.back; pvp = null; p.fury = p.swift = 0;
+  if (!pvp) return; const b = pvp.back; save = pvp.real; pvp = null; p.fury = p.swift = 0;
   if (!b) { p.max = maxHp(); p.hp = p.max; startAt('T'); openTitle(); return; }
   enterRoom(ROOMS[b.k] ? b.k : 'T'); p.x = b.x; p.y = b.y; p.vx = p.vy = 0; p.max = maxHp(); p.hp = p.max; p.inv = 60; snapCam();
 }
