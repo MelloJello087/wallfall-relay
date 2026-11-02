@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.58';
+const VERSION = '0.1.59';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -878,6 +878,7 @@ const curAtk = () => p.atkOv || (p.lash ? LASH : cls().atk);
 const MOVE_K = .82;
 const GRAV = .36, FALL = 6.2, JUMP = -7.1, AIRJUMP = -6.1;
 const airJ = () => save.dbl ? (cls().airJumps || 1) : 0;
+const dashN = () => cls().dashes + (save.dash2 ? 1 : 0);
 const WBMP = {
   blade:["........#", ".......#.", "......#..", ".....#...", "..#.#....", "...#.....", "..#.#....", ".#.......", "#........"],
   staff:["......##.", ".....####", "......##.", ".....#...", "....#....", "...#.....", "..#......", ".#.......", "#........"],
@@ -1711,7 +1712,7 @@ function openClassPick() {
 }
 function chooseClass(k) {
   save.cls = k; save.clsChosen = true; persist();
-  p.max = maxHp(); p.hp = p.max; p.dashLeft = cls().dashes; p.plate = true; p.shield = 0; p.orbit = p.hold = p.souls = p.whirl = p.static = p.rage = p.dig = p.mend = p.slow = p.mirror = p.phoenix = p.stone = p.glide = 0;
+  p.max = maxHp(); p.hp = p.max; p.dashLeft = dashN(); p.plate = true; p.shield = 0; p.orbit = p.hold = p.souls = p.whirl = p.static = p.rage = p.dig = p.mend = p.slow = p.mirror = p.phoenix = p.stone = p.glide = 0;
   toast = {text:CLASSES[k].name, t:120};
   if (save.notes === 0) introBanner();
   if (!save.lookChosen) setTimeout(openWardrobe, 0);
@@ -1832,7 +1833,7 @@ function closeWardrobe() {
 }
 
 /* ---------- State ---------- */
-const fresh = () => ({worldV:4, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}, lit:{}, grave:null, tree:{}, roam:false, diff:'normal'});
+const fresh = () => ({worldV:5, mems:0, dash2:false, cp:null, bosses:{}, hearts:0, arenas:{}, cogs:0, gateOpen:false, bossDead:false, whet:false, cls:null, talked:{}, gone:{}, notes:0, found:{}, tide:0, ember:0, flags:{}, str:1, hook:false, dbl:false, wall:false, seenIntro:false, districts:{}, seenBoss:{}, rations:0, items:{}, visited:{}, won:false, frames:0, deaths:0, shards:0, ups:{}, caches:{}, lit:{}, grave:null, tree:{}, roam:false, diff:'normal'});
 const SLOTS = 5, slotKey = i => i ? 'wallfall-save-' + i : 'wallfall-save';
 let slot = 0; try { slot = Math.max(0, Math.min(SLOTS - 1, +localStorage.getItem('wallfall-slot') || 0)); } catch (e) {}
 let SAVE_KEY = slotKey(slot);
@@ -2138,7 +2139,7 @@ function applyWorld(w, fresh) {
       if (g.f === 'on') setBars(R.cfg.bars);
       if (g.f === 'done') {
         setBars(null);
-        if (!(save.bosses || {})[R.key] && R.cfg.boss) { save.bosses = save.bosses || {}; save.bosses[R.key] = true; save.hearts = Object.keys(save.bosses).length; persist(); p.max = maxHp(); p.hp = p.max; const B = BOSSES[R.cfg.boss]; banner = {title:B.heart, sub:'You can take one more hit.', color:B.color, t:300}; sfx.pick(); }
+        if (!(save.bosses || {})[R.key] && R.cfg.boss) { save.bosses = save.bosses || {}; save.bosses[R.key] = true; save.hearts = Object.keys(save.bosses).length; persist(); p.max = maxHp(); p.hp = p.max; const B = BOSSES[R.cfg.boss]; banner = {title:B.heart, sub:bossGift(), color:B.color, t:420}; sfx.pick(); }
       }
       R.fight = g.f;
     }
@@ -2813,6 +2814,7 @@ function renderLegend() {
 rebuildKeymap();
 let binder = {open:false, cap:null};
 addEventListener('keydown', e => {
+  if (e.code === 'Escape' && mode === 'mem' && mem) { e.preventDefault(); mem.skip = true; return; }
   if (e.code === 'Escape' && !dlg.open && !binder.open && !wardrobe.open) { const fr = document.querySelector('.frame'); if (fr && fr.classList.contains('fakefs')) { fr.classList.remove('fakefs'); return; } if (mode === 'play') { e.preventDefault(); openPause(); return; } }
   if (e.code === 'Escape' && dlg.open && dlg.pause && !e.repeat) { e.preventDefault(); pick(0); return; }
   if (e.code === 'Backquote' && !e.repeat && !binder.open && !wardrobe.open) { e.preventDefault(); if (dlg.open && dlgEl.querySelector('.card.admin')) pick(0); else if (!dlg.open && mode === 'play') openAdmin(); return; }
@@ -3361,9 +3363,9 @@ function updateBoss() {
       b.kneel = Math.min(1.7, b.t / 70); b.eye = Math.max(0, 1.2 - b.t / 110);
       if (b.t % 6 === 0) burst(b.x + (Math.random() - .5) * 40, b.y - Math.random() * 90, '#ff7a2e', 8, 2.5);
       if (b.t % 30 === 0) { shake = 10; sfx.slam(); }
-      if (b.t === 40 && !bossMode) voice('It’s too late. Wren is gone.', 260);
+      if (b.t === 40 && !bossMode) voice('It’s too late. Wren is gone.');
       if (b.t === 180 && bossMode) { setBars(null); bossWon('ash'); }
-      if (b.t === 300 && !bossMode) { save.bossDead = true; persist(); setBars(null); finish('crown'); }
+      if (b.t === 400 && !bossMode) { save.bossDead = true; persist(); setBars(null); playMem(MEM_LAST, () => finish('crown')); }
       break;
   }
   if (b.phase >= 4 && !['dying', 'summon'].includes(b.state) && b.t % 110 === 55) bfx.push({k:'rock', x:pcx + (Math.random() - .5) * 80, y:-30, vy:0, warn:50});
@@ -3775,7 +3777,7 @@ function regionUpdate(ax, atkBox) {
     if (f.sq > 0) f.sq--;
     const fx = f.x * T, top = (f.y + 1) * T - 10;
     if (p.vy >= 0 && p.x + p.w > fx + 2 && p.x < fx + 14 && p.y + p.h >= top && p.y + p.h <= (f.y + 1) * T + 1) {
-      p.vy = -11.2; p.onGround = false; p.noCut = 34; p.air = airJ(); p.dashLeft = cls().dashes; p.coyote = 0; f.sq = 14;
+      p.vy = -11.2; p.onGround = false; p.noCut = 34; p.air = airJ(); p.dashLeft = dashN(); p.coyote = 0; f.sq = 14;
       sfx.boing(); burst(fx + 8, top + 4, '#ffd0f0', 10, 1.8);
     }
   }
@@ -3865,13 +3867,20 @@ function bossHit(e) {
     for (const o of enemies) if (o !== e && !o.prop && !o.dummy) { o.dead = true; burst(o.x + o.w / 2, o.y + o.h / 2, '#ff7a2e', 10, 2); }
   }
 }
+const GIFTS = [['dbl', 'Wingbone', 'Jump again in the air.'], ['wall', 'Iron Claws', 'Cling to walls and leap off them.'], ['dash2', 'Ember Step', 'Dash once more before you land.'], ['hook', 'Grapple Line', 'Pull yourself up to iron rings.'], ['whet', 'Whetstone', 'Every weapon hits one point harder.']];
+function bossGift() {
+  const g = GIFTS.find(g => !save[g[0]]);
+  if (!g) { gainShards(120, p.x + p.w / 2, p.y); return 'One more heart, and 120 ember shards.'; }
+  save[g[0]] = true; if (g[0] === 'dbl') p.air = airJ(); if (g[0] === 'dash2') p.dashLeft = dashN(); persist();
+  return `One more heart, and the ${g[1]}: ${g[2]}`;
+}
 function bossFelled(e) {
   if (bossMode) { e.dead = true; R.fight = 'done'; setBars(null); burst(e.x + e.w / 2, e.y + e.h / 2, BOSSES[e.kind].color, 50, 3.5); bossWon(e.kind); return; }
   e.dead = true; R.fight = 'done'; setBars(null); dropShards(e, 40);
   save.bosses = save.bosses || {}; save.bosses[R.key] = true; save.hearts = Object.keys(save.bosses).length; persist();
   p.max = maxHp(); p.hp = p.max; sfx.pick(); musSting('clear');
   const B = BOSSES[e.kind];
-  banner = {title:B.heart, sub:'You can take one more hit. The way out is open.', color:B.color, t:330};
+  banner = {title:B.heart, sub:bossGift(), color:B.color, t:420};
   if (VOICE_BOSS[e.kind]) voice(VOICE_BOSS[e.kind], 200);
   burst(e.x + e.w / 2, e.y + e.h / 2, B.color, 50, 3.5);
 }
@@ -5236,9 +5245,10 @@ function update() {
   if (mode === 'note') { clearHits(); return; }
   if (bossMode && mode === 'play') bossMode.t += room.key === 'BH' ? 0 : 1;
   if (mode === 'cut') { cutUpdate(); clearHits(); return; }
+  if (mode === 'mem') { if (mem) memTick(); else mode = 'play'; clearHits(); return; }
   if (mode === 'bintro') { bintroTick(); clearHits(); return; }
   if (mode === 'title') { updateParts(); if (!dlg.open && !binder.open && !wardrobe.open) openTitle(); clearHits(); return; }
-  if (mode === 'won') { ringT++; if (epi) { epi.t++; if (epi.t > 260 && (wakeReq || Object.keys(hit).some(q => hit[q]))) { epi = null; wakeReq = false; showEnding(ending); } } else if (hit.restart) newGame(); clearHits(); updateParts(); return; }
+  if (mode === 'won') { ringT++; if (epi) { epi.t++; if (epi.t <= 420) wakeReq = false; else if (wakeReq || Object.keys(hit).some(q => hit[q])) { epi = null; wakeReq = false; showEnding(ending); } } else if (hit.restart) newGame(); clearHits(); updateParts(); return; }
   if (mode === 'dead') {
     if (modeT > 0) modeT--;
     if (p.downed && modeT <= 0) { p.downed = false; fallFully(); persist(); modeT = 100; wakeReq = false; }
@@ -5303,7 +5313,7 @@ function update() {
     p.hook.t++;
     if (d < 10 || p.hook.t > 45 || p.jbuf > 0) {
       const jumped = p.jbuf > 0;
-      p.hook = null; p.vy = jumped ? JUMP : -6; p.noCut = 24; p.vx *= .5; p.air = airJ(); p.dashLeft = cls().dashes; p.jbuf = 0; sfx.jump();
+      p.hook = null; p.vy = jumped ? JUMP : -6; p.noCut = 24; p.vx *= .5; p.air = airJ(); p.dashLeft = dashN(); p.jbuf = 0; sfx.jump();
     } else { p.vx = dx / d * 8; p.vy = dy / d * 8; if (dx) p.face = Math.sign(dx); }
   } else if (p.dashT > 0) {
     p.dashT--; p.vx = p.face * 6.3; p.vy = 0;
@@ -5322,7 +5332,7 @@ function update() {
     if (held.down && p.onGround && standingOnLedge()) { p.drop = 10; p.jbuf = 0; p.onGround = false; }
     else if (!p.onGround && swimStroke()) {}
     else if (p.onGround || p.coyote > 0) { p.vy = JUMP; p.jbuf = 0; p.coyote = 0; sfx.jump(); }
-    else if (p.wallT > 0) { p.vy = -6.5; p.vx = -p.wallS * 3.8; p.face = -p.wallS; p.lock = 8; p.wallT = 0; p.jbuf = 0; p.air = airJ(); p.dashLeft = cls().dashes; sfx.jump(); burst(p.x + (p.wallS > 0 ? p.w : 0), p.y + p.h/2, '#b8a890', 6, 1.2); }
+    else if (p.wallT > 0) { p.vy = -6.5; p.vx = -p.wallS * 3.8; p.face = -p.wallS; p.lock = 8; p.wallT = 0; p.jbuf = 0; p.air = airJ(); p.dashLeft = dashN(); sfx.jump(); burst(p.x + (p.wallS > 0 ? p.w : 0), p.y + p.h/2, '#b8a890', 6, 1.2); }
     else if (p.air > 0) { p.air--; p.vy = AIRJUMP; p.jbuf = 0; sfx.air(); burst(p.x + p.w/2, p.y + p.h, '#ffd6a0', 10, 1.5); }
   }
 
@@ -5337,7 +5347,7 @@ function update() {
   if (p.glide > 0 && !p.onGround && held.jump && p.vy > 1.1) p.vy = 1.1;
   if (cls().stomp && !was && p.onGround && fv > 5.5) { const sx = p.x + p.w / 2; hitArea(inCircle(sx, p.y + p.h, 44), skillDmg(2), e => Math.sign(e.x + e.w / 2 - sx) * 10, '#9a948c'); shake = Math.max(shake, 6); burst(sx, p.y + p.h, '#9a948c', 16, 2.4); sfx.slam(); p.glide = 0; }
   if (p.dive && p.onGround) { p.dive = false; p.atkT = 0; shake = Math.max(shake, 4); burst(p.x + p.w/2, p.y + p.h, '#8c7d6a', 12, 2); sfx.slam(); }
-  if (p.onGround) { p.coyote = 6; p.air = airJ(); if (p.atkT < 12) p.spin = 0; if (p.dashT === 0) p.dashLeft = cls().dashes; if (!was) burst(p.x + p.w/2, p.y + p.h, '#6b5d52', 4, 1); }
+  if (p.onGround) { p.coyote = 6; p.air = airJ(); if (p.atkT < 12) p.spin = 0; if (p.dashT === 0) p.dashLeft = dashN(); if (!was) burst(p.x + p.w/2, p.y + p.h, '#6b5d52', 4, 1); }
   p.run = p.onGround && Math.abs(p.vx) > .4 ? p.run + 1 : 0;
   p.walk = p.run ? (p.walk || 0) + Math.abs(p.vx) : 0;
   if (p.atkT > 0) p.atkT--;
@@ -5345,7 +5355,7 @@ function update() {
   if (onSpikes() && !ADMIN.god && !ADMIN.fly) {
     p.hp--; shake = 8; sfx.hurt(); burst(p.x + p.w/2, p.y + p.h, '#ff6a4a', 14);
     if (p.hp <= 0) { die(); return; }
-    p.x = entry.x; p.y = entry.y; p.vx = p.vy = 0; p.inv = 70; p.dashT = 0; p.dashLeft = cls().dashes; p.hook = null; mode = 'respawn'; modeT = 24; snapCam();
+    p.x = entry.x; p.y = entry.y; p.vx = p.vy = 0; p.inv = 70; p.dashT = 0; p.dashLeft = dashN(); p.hook = null; mode = 'respawn'; modeT = 24; snapCam();
     return;
   }
 
@@ -5366,7 +5376,7 @@ function update() {
       const dmg = playerDmg(A);
       if (p.dive) { p.dive = false; p.atkT = 0; p.vy = -6.6; p.noCut = 14; p.air = Math.max(p.air, 1); }
       e.hp -= dmg; e.flash = 12; sfx.hit(); shake = A.shake || 3; if (e.dummy) dummyHit(e, dmg);
-      if (A.pogo) { p.vy = -6.8; p.noCut = 14; p.air = Math.max(p.air, airJ()); p.dashLeft = cls().dashes; p.atkT = 0; burst(p.x + p.w / 2, p.y + p.h, '#ffcf8a', 8, 1.6); }
+      if (A.pogo) { p.vy = -6.8; p.noCut = 14; p.air = Math.max(p.air, airJ()); p.dashLeft = dashN(); p.atkT = 0; burst(p.x + p.w / 2, p.y + p.h, '#ffcf8a', 8, 1.6); }
       if (A.low && e.t !== 'boss' && !e.prop) e.stun = Math.max(e.stun || 0, 40);
       if (cls().drag && !e.prop) e.slowT = 120;
       if (cls().plague && !e.prop) e.bleed = Math.max(e.bleed || 0, 200);
@@ -5384,7 +5394,7 @@ function update() {
   }
   updateShots();
   updateClassFx();
-  skillTick(); moveTick(); shardTick(); voiceTick(); bossTick();
+  skillTick(); moveTick(); shardTick(); voiceTick(); bossTick(); memCheck();
   regionUpdate(ax, atkBox);
   ventUpdate(); dropsUpdate();
   updateEShots(atkBox);
@@ -5395,7 +5405,7 @@ function update() {
       const bx = bossBoxes(boss), head = overlap(atkBox, bx.head);
       if (head || overlap(atkBox, bx.body)) {
         boss.hitCd = A.dur; bossDamage(playerDmg(A), head);
-        if (A.pogo) { p.vy = -6.8; p.noCut = 14; p.air = Math.max(p.air, airJ()); p.dashLeft = cls().dashes; p.atkT = 0; }
+        if (A.pogo) { p.vy = -6.8; p.noCut = 14; p.air = Math.max(p.air, airJ()); p.dashLeft = dashN(); p.atkT = 0; }
         if (p.dive) { p.dive = false; p.atkT = 0; p.vy = -6.6; p.noCut = 14; p.air = Math.max(p.air, 1); } shake = Math.max(shake, A.shake || 3);
         if (!p.onGround && !A.pogo && !p.dive) airLaunch(A);
       }
@@ -5410,7 +5420,7 @@ function update() {
     if (itemLive(room, it)) {
       const id = room.key + it.t + it.x;
       if (!save.items[id] && overlap(p, {x:it.x*T + 2, y:it.y*T + 2, w:12, h:12})) {
-        const I = ITEMS[it.t]; save.items[id] = true;
+        const I = ITEMS[it.t]; save.items[id] = true; const dup = save[{G:'hook', Y:'dbl', H:'wall', Q:'whet'}[it.t]];
         if (it.t === 'G') save.hook = true;
         if (it.t === 'Y') { save.dbl = true; p.air = airJ(); }
         if (it.t === 'H') save.wall = true;
@@ -5418,7 +5428,8 @@ function update() {
         if (it.t === 'C') save.cogs = (save.cogs || 0) + 1;
         if (it.t === 'R') { save.rations++; p.max = maxHp(); p.hp = p.max; }
         persist();
-        banner = {title:I.title, sub:it.t === 'C' ? `Cog ${save.cogs} of 3. The winch needs all three.` : I.sub, color:I.color, t:330}; sfx.pick(); burst(it.x*T + 8, it.y*T + 8, I.color, 30, 3);
+        banner = {title:I.title, sub:dup ? 'You already carry one. It breaks into ember shards.' : it.t === 'C' ? `Cog ${save.cogs} of 3. The winch needs all three.` : I.sub, color:I.color, t:330}; sfx.pick(); burst(it.x*T + 8, it.y*T + 8, I.color, 30, 3);
+        if (dup) { gainShards(50, it.x*T + 8, it.y*T + 8); persist(); }
       }
     }
     if (it.t === 'N' && !save.found[room.key] && mode === 'play' && overlap(p, {x:it.x*T + 3, y:it.y*T + 3, w:10, h:10})) {
@@ -7700,7 +7711,7 @@ function render() {
   if (mode !== 'bintro') drawHUD(); drawPvpHud(); drawDistrictCard(); drawVoice(); drawAdminInfo(); drawBintro();
   if (mode === 'respawn') { ctx.fillStyle = `rgba(10,6,5,${modeT / 24})`; ctx.fillRect(0, 0, VW, VH); }
   if (boss && room && room.key === 'X' && boss.phase > 1 && mode !== 'won') { ctx.fillStyle = `rgba(255,50,10,${.03 * (boss.phase - 1) + .02 * Math.sin(tick * .05)})`; ctx.fillRect(0, 0, VW, VH); }
-  drawEpilogue();
+  drawEpilogue(); drawMem();
   if (mode === 'dead' && p.downed) {
     ctx.fillStyle = 'rgba(40,8,4,.45)'; ctx.fillRect(0, 0, VW, VH);
     ctx.font = '26px "IM Fell English SC", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -7924,7 +7935,7 @@ function adminDo(what, arg) {
     heart:() => { save.rations = (save.rations || 0) + 1; p.max = maxHp(); p.hp = p.max; return 'One more heart'; },
     cogs:() => { save.cogs = 3; return 'All three gate cogs'; },
     shards:() => { save.shards = (save.shards || 0) + 500; persist(); return '+500 ember shards'; },
-    bosses:() => { save.bosses = save.bosses || {}; for (const k in REG) if (REG[k].boss) save.bosses[k] = true; save.hearts = Object.keys(save.bosses).length; p.max = maxHp(); p.hp = p.max; return 'District bosses marked beaten'; },
+    bosses:() => { save.bosses = save.bosses || {}; for (const k in REG) if (REG[k].boss) save.bosses[k] = true; save.hearts = Object.keys(save.bosses).length; save.mems = Math.max(save.mems || 0, MEMS.length); p.max = maxHp(); p.hp = p.max; return 'District bosses marked beaten'; },
     gate:() => { save.cogs = 3; if (!save.gateOpen) raiseGate(); return 'The Last Gate is open'; },
     kill:() => { let n = 0; for (const e of enemies) if (!e.dead && !e.prop && !e.dummy && !e.crate && e.t !== 'boss') { e.hp = 0; killCheck(e); n++; } return n + ' killed'; },
     go:() => { const sp = safeSpot(arg); enterRoom(arg); p.x = sp.x * T + 2; p.y = (sp.y + 1) * T - p.h; p.vx = p.vy = 0; p.hook = null; snapCam(); return 'Went to ' + ROOMS[arg].name; },
@@ -8007,7 +8018,7 @@ const PV_KIND = {heal:{col:'#ff6a5a', name:'Heart'}, fury:{col:'#ff3a1a', name:'
 function enterPvp() {
   if (!NET.on || pvp || bossMode) return;
   const real = save;
-  save = Object.assign(fresh(), {worldV:4, cls:real.cls, look:real.look, lookChosen:true, lookV2:true, clsChosen:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:true, districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true]))});
+  save = Object.assign(fresh(), {worldV:5, dash2:true, mems:99, cls:real.cls, look:real.look, lookChosen:true, lookV2:true, clsChosen:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:true, districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true]))});
   pvp = {real, back:null, kills:0, deaths:0, seq:0, out:[], seen:{}, pd:{}, cd:{}, by:null, by2:null, pw:PV_POWERS.map(() => 0)};
   enterRoom('PV'); pvpSpawn(); banner = {title:'The Pit', sub:'Friends are just enemies who have not had the chance.', color:'#ff5a3a', t:220};
 }
@@ -8084,7 +8095,7 @@ function startBossMode() {
 }
 function bossSave(k) {
   const r = bossMode.real;
-  save = Object.assign(fresh(), {worldV:4, clsChosen:true, cls:r.cls, look:r.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:r.whet, rations:r.rations || 0, ups:r.ups || {}, tree:r.tree || {},
+  save = Object.assign(fresh(), {worldV:5, dash2:true, mems:99, clsChosen:true, cls:r.cls, look:r.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, whet:r.whet, rations:r.rations || 0, ups:r.ups || {}, tree:r.tree || {},
     districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true])), visited:{BH:true}, gateOpen:k === 'ash', cogs:3, seenBoss:{forge:1, eel:1, thorn:1, choir:1, bell:1, hound:1, council:1, ash:1}});
   save.hearts = Object.keys(r.bosses || {}).length; save.bosses = {};
 }
@@ -8305,7 +8316,7 @@ const VOICES = {v:{f:150, type:'square', vol:.02, var:.3, rate:2}, f:{f:104, typ
 let typer = null, ttsOn = true;
 try { ttsOn = localStorage.getItem('wallfall-tts') !== '0'; } catch (e) {}
 const hasTTS = () => typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined';
-const TTS = {v:{p:.9, r:.95, i:0}, f:{p:.7, r:.9, i:1}, t:{p:1.6, r:1.1, i:2}, o:{p:.5, r:.8, i:3}, s:{p:1.2, r:1.05, i:4}, i:{p:1.1, r:1, i:5}, n:{p:1.35, r:1, i:6}, p:{p:.6, r:.85, i:7}, ash:{p:.1, r:.72, i:8}, boss:{p:.35, r:.82, i:9}};
+const TTS = {v:{p:.9, r:.95, i:0}, f:{p:.7, r:.9, i:1}, t:{p:1.6, r:1.1, i:2}, o:{p:.5, r:.8, i:3}, s:{p:1.2, r:1.05, i:4}, i:{p:1.1, r:1, i:5}, n:{p:1.35, r:1, i:6}, p:{p:.6, r:.85, i:7}, ash:{p:.1, r:.72, i:8}, boss:{p:.35, r:.82, i:9}, wren:{p:1.6, r:.95, i:10}};
 function speak(text, who) {
   if (!ttsOn || !hasTTS() || !text) return;
   try {
@@ -8348,12 +8359,12 @@ function startTyper(V) {
     if (i >= spans.length) stopTyper(false);
   }, 30)};
 }
-function openDlg({kicker, title, body, opts, html, voice}) {
+function openDlg({kicker, title, body, opts, html, voice, lock}) {
   stopTyper(false); dlgEl.classList.remove('ontitle'); dlgEl.classList.remove('talking');
   if (mode === 'play') mode = 'note';
   for (const k in held) held[k] = false;
   document.querySelectorAll('#touch button.on').forEach(b => b.classList.remove('on'));
-  dlg = {open:true, opts, idx:Math.max(0, opts.findIndex(o => !o.disabled))};
+  dlg = {open:true, opts, idx:Math.max(0, opts.findIndex(o => !o.disabled)), lock:lock ? performance.now() + lock : 0};
   dlgEl.innerHTML = html || `<div class="card"><p class="kicker">${esc(kicker)}</p><h2>${esc(title)}</h2>${body.filter(Boolean).map(t => `<p class="body">${esc(t)}</p>`).join('')}<div class="opts">${opts.map((o, i) => `<button class="opt" id="opt${i}" data-i="${i}"${o.disabled ? ' disabled' : ''}><span class="n">${i + 1}</span><span class="t">${esc(o.text)}${o.tag ? `<em>${esc(o.tag)}</em>` : ''}</span></button>`).join('')}</div></div>`;
   dlgEl.hidden = false;
   dlgEl.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => pick(+b.dataset.i)));
@@ -8362,7 +8373,7 @@ function openDlg({kicker, title, body, opts, html, voice}) {
 }
 function focusOpt() { const b = dlgEl.querySelector(`.opt[data-i="${dlg.idx}"]`) || dlgEl.querySelectorAll('.opt')[dlg.idx]; if (b && b.focus) b.focus({preventScroll:true}); }
 function pick(i) {
-  const o = dlg.opts[i]; if (!dlg.open || !o || o.disabled) return; hushTTS();
+  const o = dlg.opts[i]; if (!dlg.open || !o || o.disabled || dlg.lock > performance.now()) return; hushTTS();
   stopTyper(true); dlg.open = false; dlgEl.hidden = true; dlgEl.innerHTML = '';
   if (mode === 'note') mode = 'play';
   audio(); if (o.run) o.run();
@@ -8451,13 +8462,82 @@ function applyGateOpen() {
   r.cache = null; r.mini = null; r.exits = null; ROOMS.a.exits = null; r.gateOpened = true; DOORS.G.add('a'); DOORS.a.add('G');
 }
 let epi = null;
+const MEMS = [
+  {scene:'wall', sky:'#c8683a', lines:[['', 'You are nine. Wren is four, and she will not let go of your sleeve.'], ['wren', 'Is the wall going to fall down?'], ['', 'You tell her nothing gets past the wall. You believe it.'], ['wren', 'Then I’ll live right next to it. Forever.']]},
+  {scene:'market', sky:'#d8a050', lines:[['', 'The market, the summer the river froze late.'], ['wren', 'Mother says you get the last honey cake because you’re oldest.'], ['', 'You split it. She eats hers, then half of yours.'], ['wren', 'When I’m big I’ll buy you a whole cart of them.']]},
+  {scene:'rain', sky:'#3a4050', lines:[['', 'The night the Council walked Mother out through the Outer Gate.'], ['wren', 'Where are they taking her?'], ['', 'You hold your hands over Wren’s ears so she won’t hear the bar drop.'], ['wren', 'You won’t go too. Promise.'], ['', 'You promise.']]},
+  {scene:'room', sky:'#2a2030', lines:[['', 'Wren learns to read from the Council’s proclamations, peeled off the walls.'], ['wren', 'This one says Mother was a traitor. Was she?'], ['', 'You don’t answer. She folds the paper very small and keeps it anyway.']]},
+  {scene:'wall', sky:'#e8a070', lines:[['', 'The morning you take the warden’s oath, Wren sews a ribbon into your cloak.'], ['wren', 'So the wall knows you belong to someone.'], ['', 'You never take it out.']]},
+  {scene:'gate', sky:'#a8482a', lines:[['', 'The week before. Wren finds you at the Outer Gate after your watch.'], ['wren', 'You look at it like it owes you something.'], ['wren', 'Whatever you’re thinking. Don’t.'], ['', 'You tell her to go home. She goes.']]},
+  {scene:'room', sky:'#1e1828', lines:[['', 'The last night. Wren falls asleep against your shoulder, the way she did when she was four.'], ['wren', 'Wake me when you’re back.'], ['', 'You leave before she wakes. The key is already on your belt.']]},
+];
+const MEM_LAST = {scene:'alone', sky:'#c8683a', lines:[['wren', 'Is the wall going to fall down?'], ['', 'You told her nothing gets past the wall.'], ['', 'You were the wall.']]};
+let mem = null, memWait = 0;
+function playMem(m, done) { mem = {m, i:0, t:0, done, back:mode}; mode = 'mem'; hushTTS(); for (const k in held) held[k] = false; wakeReq = false; sayMem(); }
+function sayMem() { const L = mem.m.lines[mem.i]; if (L && L[0] === 'wren') speak(L[1], 'wren'); }
+function memTick() {
+  mem.t++; updateParts();
+  const L = mem.m.lines[mem.i], full = mem.t * .7 >= L[1].length, go = wakeReq || Object.keys(hit).some(k => hit[k]); wakeReq = false;
+  if (mem.skip || (go && full && mem.t > 40 && mem.i >= mem.m.lines.length - 1)) { const d = mem.done; hushTTS(); mode = 'play'; mem = null; memWait = 0; if (d) d(); return; }
+  if (go && !full) mem.t = 9999;
+  else if (go && mem.t > 40) { mem.i++; mem.t = 0; sayMem(); }
+}
+function memCheck() {
+  if (bossMode || pvp || mode !== 'play' || dlg.open || banner || voiceCur || voiceQ.length || (arena && arena.stage !== 'idle' && arena.stage !== 'done') || (R && R.fight === 'on') || (boss && room && room.key === 'X') || !p.onGround) { memWait = 0; return; }
+  const n = Object.keys(save.bosses || {}).length;
+  if ((save.mems || 0) >= Math.min(n, MEMS.length)) return;
+  if (++memWait < 90) return;
+  const m = MEMS[save.mems || 0]; save.mems = (save.mems || 0) + 1; persist(); playMem(m);
+}
+function drawMemScene(m, k) {
+  const g = ctx.createLinearGradient(0, 0, 0, VH); g.addColorStop(0, m.sky); g.addColorStop(1, '#0a0605'); ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  const gy = 196, kid = (x, y, s, c, sit) => { ctx.fillStyle = c; ctx.fillRect(x - 3 * s, y - 14 * s, 6 * s, 6 * s); ctx.fillRect(x - 4 * s, y - 8 * s, 8 * s, sit ? 6 * s : 8 * s); if (!sit) { ctx.fillRect(x - 3 * s, y, 2 * s, 4 * s); ctx.fillRect(x + 1 * s, y, 2 * s, 4 * s); } else ctx.fillRect(x - 4 * s, y - 2 * s, 9 * s, 2 * s); };
+  ctx.fillStyle = '#100a08';
+  if (m.scene === 'wall' || m.scene === 'alone') {
+    ctx.fillStyle = 'rgba(255,220,160,.5)'; ctx.beginPath(); ctx.arc(VW * .7, gy - 30, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#100a08'; ctx.fillRect(0, gy, VW, VH - gy); for (let x = 0; x < VW; x += 22) ctx.fillRect(x, gy - 8, 12, 8);
+    if (m.scene === 'wall') kid(VW / 2 - 14, gy - 8, 1.4, '#140c0a', true);
+    kid(VW / 2 + 10, gy - 8, 1, '#140c0a', true);
+  } else if (m.scene === 'market') {
+    ctx.fillRect(0, gy, VW, VH - gy); for (let i = 0; i < 5; i++) { const x = 30 + i * 100; ctx.fillRect(x, gy - 40, 4, 40); ctx.fillRect(x + 56, gy - 40, 4, 40); ctx.fillStyle = i % 2 ? '#3a1810' : '#24100a'; ctx.beginPath(); ctx.moveTo(x - 6, gy - 40); ctx.lineTo(x + 66, gy - 40); ctx.lineTo(x + 30, gy - 58); ctx.fill(); ctx.fillStyle = '#100a08'; }
+    kid(VW / 2 - 10, gy - 4, 1.4, '#140c0a'); kid(VW / 2 + 12, gy - 4, 1, '#140c0a');
+  } else if (m.scene === 'rain') {
+    ctx.fillRect(0, gy, VW, VH - gy); ctx.fillRect(VW / 2 + 60, gy - 120, 90, 120); ctx.fillStyle = '#060404'; ctx.fillRect(VW / 2 + 80, gy - 100, 50, 100); ctx.fillStyle = '#100a08';
+    kid(VW / 2 - 40, gy - 4, 1.4, '#140c0a'); kid(VW / 2 - 26, gy - 4, 1, '#140c0a');
+    ctx.strokeStyle = 'rgba(180,190,210,.25)'; ctx.lineWidth = 1; ctx.beginPath(); for (let i = 0; i < 60; i++) { const x = (i * 53 + k * 3) % VW, y = (i * 37 + k * 9) % VH; ctx.moveTo(x, y); ctx.lineTo(x - 2, y + 8); } ctx.stroke();
+  } else if (m.scene === 'room') {
+    ctx.fillRect(0, 0, VW, VH); ctx.fillStyle = m.sky; ctx.fillRect(VW / 2 - 40, 60, 80, 60); ctx.fillStyle = '#100a08'; ctx.fillRect(VW / 2 - 1, 60, 2, 60); ctx.fillRect(VW / 2 - 40, 89, 80, 2);
+    const fl = .7 + .3 * Math.sin(k * .3) * Math.sin(k * .13); ctx.fillStyle = `rgba(255,170,90,${.22 * fl})`; ctx.beginPath(); ctx.arc(VW / 2 - 80, gy - 20, 60, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#ffcf70'; ctx.fillRect(VW / 2 - 81, gy - 26, 2, 4);
+    kid(VW / 2 - 10, gy, 1.4, '#2a1a14', true); kid(VW / 2 + 8, gy, 1, '#2a1a14', true);
+  } else if (m.scene === 'gate') {
+    ctx.fillRect(0, gy, VW, VH - gy); ctx.fillRect(VW / 2 - 110, gy - 150, 220, 150); ctx.fillStyle = '#060404'; ctx.fillRect(VW / 2 - 60, gy - 120, 120, 120); ctx.fillStyle = '#2a1a14'; for (let x = VW / 2 - 56; x < VW / 2 + 60; x += 12) ctx.fillRect(x, gy - 118, 3, 118); ctx.fillStyle = '#100a08';
+    kid(VW / 2 - 20, gy - 4, 1.4, '#140c0a'); kid(VW / 2 - 70, gy - 4, 1.1, '#140c0a');
+  }
+}
+function drawMem() {
+  if (!mem || mode !== 'mem') return;
+  const L = mem.m.lines[mem.i], first = mem.i === 0, fade = first ? Math.min(1, mem.t / 40) : 1;
+  ctx.save(); ctx.globalAlpha = fade; drawMemScene(mem.m, tick);
+  ctx.fillStyle = 'rgba(60,40,20,.25)'; ctx.fillRect(0, 0, VW, VH);
+  const vg = ctx.createRadialGradient(VW / 2, VH / 2, 80, VW / 2, VH / 2, 300); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.85)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, VW, VH);
+  ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, VH - 74, VW, 74);
+  const shown = L[1].slice(0, Math.floor(mem.t * .7)), w = L[0] === 'wren';
+  ctx.font = (w ? '' : 'italic ') + '13px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const words = (w ? '“' + shown : shown).split(' '), rows = ['']; for (const wd of words) { if (ctx.measureText(rows[rows.length - 1] + ' ' + wd).width > VW - 60) rows.push(wd); else rows[rows.length - 1] = (rows[rows.length - 1] + ' ' + wd).trim(); }
+  if (w && shown.length >= L[1].length) rows[rows.length - 1] += '”';
+  rows.forEach((r, i) => { ctx.fillStyle = w ? '#f2d8b0' : '#c8b8a6'; ctx.fillText(r, VW / 2, VH - 44 + (i - (rows.length - 1) / 2) * 16); });
+  if (w) { ctx.font = '8px Silkscreen, ui-monospace, monospace'; ctx.fillStyle = '#d89a6a'; ctx.fillText('WREN', VW / 2, VH - 66); }
+  if (mem.t * .7 >= L[1].length && mem.t > 40) { ctx.globalAlpha = .35 + .2 * Math.sin(tick * .08); txt(mem.i < mem.m.lines.length - 1 ? 'click' : 'click to return', VW - 40, VH - 10, 7, '#a08a76', 'center'); }
+  ctx.globalAlpha = .35; txt('Esc to skip', 34, VH - 10, 7, '#a08a76', 'center');
+  ctx.restore();
+}
 function drawEpilogue() {
   if (!epi || mode !== 'won') return;
   const t = epi.t;
   ctx.fillStyle = `rgba(0,0,0,${Math.min(1, t / 90)})`; ctx.fillRect(0, 0, VW, VH);
   const a = Math.max(0, Math.min(1, (t - 110) / 60));
   if (a > 0) { ctx.save(); ctx.globalAlpha = a; ctx.font = 'italic 15px "IM Fell English", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#d8ccc0'; ctx.fillText('You tried your hardest, yet it was never enough.', VW / 2, VH / 2); ctx.restore(); }
-  if (t > 260) { ctx.globalAlpha = .3 + .2 * Math.sin(tick * .06); txt('click to continue', VW / 2, VH - 30, 8, '#8a7a6a', 'center'); ctx.globalAlpha = 1; }
+  if (t > 420) { ctx.globalAlpha = .3 + .2 * Math.sin(tick * .06); txt('click to continue', VW / 2, VH - 30, 8, '#8a7a6a', 'center'); ctx.globalAlpha = 1; }
 }
 function finish(k) {
   mode = 'won'; ending = k; ringT = 0; save.won = true; persist(); banner = null;
@@ -8474,7 +8554,7 @@ function showEnding(k) {
     body = ['The first Colossus dies in the doorway you opened for it. Its body is still smoking when the rest of them step around it, into the city, and you understand that they will never be yours to command.',
       f.wren || f.wrenCity ? "By dawn the inner city is full of giants. Wren's street is among the first to fall." :
         f.use ? 'Wren comes to the gatehouse to bargain, just as you planned. You keep her talking until it is too late to run.' :
-        'By dawn the Council towers are rubble, and the people who signed your mother\'s exile are gone with them.',
+        'By dawn the Council towers are rubble, and the people who signed your mother\'s exile are gone with them. So is Wren\'s street.',
       f.oriel ? "Oriel's warrant is paid in full." : null,
       f.secret ? 'You tore out the only page that explained the horn. No one will ever learn how to turn them back.' : null,
       f.promise ? 'Somewhere in the cellars a boy is still waiting for the gate to close.' : null,
@@ -8498,7 +8578,7 @@ function showEnding(k) {
       f.mother ? 'Somewhere out here is the place your mother was left. You mean to find it.' : null];
   }
   const n = {crown:'1', low:'2', silent:'3'}[k];
-  openDlg({kicker:`Ending ${n} of 3 · ${save.notes}/6 notes · ${time} · cruelty ${save.tide} · remorse ${save.ember}`, title, body,
+  openDlg({lock:2500, kicker:`Ending ${n} of 3 · ${save.notes}/6 notes · ${time} · cruelty ${save.tide} · remorse ${save.ember}`, title, body,
     opts:[{text:'Keep exploring', tag:'The city is still burning. Wander it.', run:() => { save.roam = true; persist(); epi = null; ending = null; mode = 'play'; startAt('T'); banner = {title:'The city is yours', sub:'Nothing is waiting for you now. Go where you like.', color:'#ff8a3d', t:260}; }}, {text:'Start again', tag:'Begins a new game', run:newGame}]});
 }
 
@@ -8919,7 +8999,7 @@ function start(data) {
     if (save.won && !save.roam) { save = fresh(); persist(); }
     startAt('T');
   }
-  if (save.worldV !== 2 && save.worldV !== 3 && save.worldV !== 4) {
+  if (save.worldV !== 2 && save.worldV !== 3 && save.worldV !== 4 && save.worldV !== 5) {
     save.items = {}; let r = save.rations || 0, c = save.cogs || 0;
     for (const rm of RLIST) for (const e of rm.ents) {
       const id = rm.key + e.t + e.x;
@@ -8937,6 +9017,7 @@ function start(data) {
     if (room.key !== 'T') startAt('T');
     save.worldV = 4; persist();
   }
+  if (save.worldV === 4) { const n = Object.keys(save.bosses || {}).length; save.mems = n; for (const g of GIFTS.slice(0, n)) save[g[0]] = true; save.worldV = 5; persist(); }
   applyGateOpen(); if (save.gateOpen) gateLiftT = 999;
   if (!save.lookV2) { if (save.look && save.look.hood === 'crimson') save.look.hood = 'class'; save.lookV2 = true; persist(); }
   parts = []; openTitle();
