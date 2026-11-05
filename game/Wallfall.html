@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.61';
+const VERSION = '0.1.62';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -878,7 +878,7 @@ const curAtk = () => p.atkOv || (p.lash ? LASH : cls().atk);
 const MOVE_K = .82;
 const GRAV = .36, FALL = 6.2, JUMP = -7.1, AIRJUMP = -6.1;
 const airJ = () => save.dbl ? (cls().airJumps || 1) : 0;
-const dashN = () => cls().dashes + (save.dash2 ? 1 : 0);
+const dashN = () => cls().dashes + (save.dash2 ? 1 : 0) + runB('wing');
 const WBMP = {
   blade:["........#", ".......#.", "......#..", ".....#...", "..#.#....", "...#.....", "..#.#....", ".#.......", "#........"],
   staff:["......##.", ".....####", "......##.", ".....#...", "....#....", "...#.....", "..#......", ".#.......", "#........"],
@@ -939,7 +939,7 @@ const TREE = {
 const TREE_COST = [40, 80, 140, 220];
 const treeHas = (g, i) => !!(save && save.tree && save.tree[g + i]);
 const treeOn = (g, i) => treeHas(g, i) && cls().group === g;
-const hasteK = () => 1 - .12 * upLv('haste');
+const hasteK = () => 1 - .12 * upLv('haste') - .14 * runB('focus');
 const CACHES = [['H', 23, 4, 8], ['C', 4, 3, 8], ['D', 22, 3, 15], ['B', 19, 3, 8], ['I', 150, 3, 8], ['F', 119, 7, 15], ['O', 56, 2, 8], ['W', 89, 3, 8], ['Q', 86, 5, 15],
   ['K', 11, 3, 8], ['E', 16, 13, 15], ['V', 42, 2, 15], ['J', 42, 3, 8], ['L', 38, 3, 15], ['U', 26, 6, 15], ['M', 13, 4, 15], ['S', 57, 4, 15], ['Y', 49, 6, 8], ['n', 2, 5, 25], ['t', 57, 6, 12], ['e', 29, 3, 15], ['f', 24, 19, 12], ['v', 31, 6, 15], ['g', 33, 5, 15], ['o', 13, 6, 8], ['s', 24, 9, 15]];
 let sparks = [], shardShow = null, shardFlash = 0;
@@ -962,6 +962,7 @@ function dropShards(e, n) {
   for (let i = 0; i < k; i++) gems.push({rk:room.key, x:cx, y:cy, vx:(Math.random() - .5) * 3.2, vy:-2 - Math.random() * 2.5, t:0, n:Math.floor(n / k) + (i < n % k ? 1 : 0)});
 }
 function gainShards(n, x, y) {
+  n = Math.round(n * (1 + .5 * runB('greed')));
   save.shards = (save.shards || 0) + n;
   for (let i = 0; i < Math.min(n, 6); i++) sparks.push({x, y, vx:(Math.random() - .5) * 2, vy:-1 - Math.random() * 2, t:14, v:i === 0 ? n : 0});
 }
@@ -1086,7 +1087,7 @@ function airLaunch(A) {
 }
 function playerDmg(A) {
   const C = cls();
-  return A.dmg + (save.str || 1) - 1 + (save.whet ? 1 : 0) + (p.lunge ? 1 : 0) + (p.dive ? 1 : 0) + (C.frenzy && p.hp <= p.max / 2 ? 1 : 0) + (C.crit && p.critSwing && p.atkT > 0 ? 2 : 0) + (p.song > 0 ? 1 : 0) + upLv('edge') + (treeOn('attack', 3) ? 1 : 0);
+  return A.dmg + (save.str || 1) - 1 + (save.whet ? 1 : 0) + (p.lunge ? 1 : 0) + (p.dive ? 1 : 0) + (C.frenzy && p.hp <= p.max / 2 ? 1 : 0) + (C.crit && p.critSwing && p.atkT > 0 ? 2 : 0) + (p.song > 0 ? 1 : 0) + upLv('edge') + (treeOn('attack', 3) ? 1 : 0) + runB('edge');
 }
 function hitEnemy(e, dmg, kx) {
   e.hp -= dmg; e.flash = 12; if (e.dummy) dummyHit(e, dmg);
@@ -3015,7 +3016,7 @@ function zGuard(e) {
 }
 function killCheck(e) { if (e.hp <= 0 && !e.dead && zBlock(e) && !e.blew) { e.hp = e.hp0; zGuard(e); return; } if (e.hp <= 0 && !e.dead) { e.dead = true;
   if (e.crate) { crateBroken(e); return; }
-  if (!e.dummy && !e.prop) { dropShards(e); if (e.champ) dropShards(e); if (run) run.kills++; }
+  if (!e.dummy && !e.prop) { dropShards(e); if (e.champ) dropShards(e); if (run) { run.kills++; if (runB('vamp') && run.kills % 12 === 0 && p.hp < p.max) { p.hp++; sfx.heal(); } if (runB('boom') && Math.random() < .25 + .15 * runB('boom')) run.booms.push({x:e.x + e.w / 2, y:e.y + e.h / 2}); } }
   if (!e.dummy && !e.crate && cls().atk.type === 'summon' && Math.random() < .2) summonThrall(e.x + e.w/2, e.y + e.h);
   if (!e.dummy && treeOn('attack', 1) && (p.kills8 = (p.kills8 || 0) + 1) % 8 === 0 && p.hp < p.max) { p.hp++; sfx.heal(); pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'+1'}); }
   if (!e.dummy && !e.prop && cls().herbs && Math.random() < .35) herbs.push({rk:room.key, x:e.x + e.w / 2, y:e.y + e.h - 2});
@@ -3210,6 +3211,7 @@ function updateArena() {
         a.stage = 'done'; save.arenas[a.key] = true; persist(); setBars(null); sfx.pick(); musSting('clear');
         if (a.cfg.quiet) toast = {text:'The bars rise', t:90}; else banner = {title:'The bars rise', sub:a.cfg.doneSub || 'A gate cog lies where the last of them fell.', color:'#e8c48a', t:240};
         if (a.cfg.reward) { gainShards(a.cfg.reward, p.x + p.w / 2, p.y); persist(); }
+        if (run) runCleared(a);
         if (!a.cfg.noCog) voice(VOICE_COG[Math.min(2, Object.keys(save.arenas).filter(k => ARENAS[k] && !ARENAS[k].noCog).length - 1)] || VOICE_COG[0], 160);
       }
     }
@@ -4643,6 +4645,7 @@ function drawDistrictCard() {
 }
 function enterRoom(key) {
   room = ROOMS[key];
+  if (runB('aegis')) p.shield = Math.max(p.shield || 0, 99999);
   if (save && treeOn('defense', 2) && !bossMode) p.shield = Math.max(p.shield || 0, 99999);
   if (!save.visited[key] && key !== 'PV') { save.visited[key] = true; persist(); }
   if (!districtEnter(key)) toast = {text:room.name, t:150}; else toast = null;
@@ -5172,6 +5175,7 @@ function applyAid(kind, amt) {
 }
 function die() {
   if (p.phoenix > 0) { p.phoenix = 0; p.hp = Math.min(p.max, 3); p.inv = 120; mode = 'play'; burst(p.x + p.w / 2, p.y + 10, '#ffb04a', 40, 3.2); burst(p.x + p.w / 2, p.y + 10, '#fff0b8', 20, 2); shake = 10; sfx.fire(); sfx.heal(); pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:50, txt:'REBORN'}); return; }
+  if (run && run.wind > 0) { run.wind--; p.hp = Math.min(p.max, 2); p.inv = 120; mode = 'play'; burst(p.x + p.w / 2, p.y + 10, '#ffd27a', 36, 3); sfx.heal(); pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:50, txt:'SECOND WIND'}); return; }
   if (pvp) { pvp.deaths++; pvp.by2 = pvp.by; mode = 'dead'; modeT = 70; p.downed = false; wakeReq = false; if (pvp.byName) toast = {text:pvp.byName + ' killed you', t:120}; return; }
   p.downed = NET.on && NET.peers.some(q => q.s.rk === room.key && q.s.md === 'play' && (CLASSES[q.s.c] || {}).group === 'support');
   mode = 'dead'; modeT = p.downed ? 600 : 100; save.deaths++; wakeReq = false;
@@ -5221,7 +5225,7 @@ function hurt(fromX, dmg = 1) {
   if (cls().brace && held.down && p.onGround && Math.sign(fromX - (p.x + p.w / 2)) === p.face) { p.inv = 24; sfx.clang(); burst(p.x + p.w / 2 + p.face * 9, p.y + 10, '#c9d2dc', 10, 2); return; }
   if (cls().fore && p.foreRoom !== room.key) { p.foreRoom = room.key; p.inv = 60; pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:40, txt:'FORESEEN'}); burst(p.x + p.w / 2, p.y + 10, '#8ad0ff', 14, 2); sfx.zap(); return; }
   if (p.hold > 0) { const cx = p.x + p.w / 2, cy = p.y + p.h / 2; p.inv = 20; sfx.clang(); burst(cx + Math.sign(fromX - cx) * 8, cy, '#ffd27a', 10, 2); hitArea(inCircle(cx, cy, 30), 1, e => Math.sign(e.x + e.w / 2 - cx) * 14, '#ffd27a'); return; }
-  if (cls().thorns) { const cx = p.x + p.w / 2, cy = p.y + p.h / 2; hitArea(inCircle(cx, cy, 34), 2, e => Math.sign(e.x + e.w / 2 - cx) * 9, '#7aff9a'); burst(cx, cy, '#5a8a3a', 10, 2); }
+  if (cls().thorns || runB('thorns')) { const cx = p.x + p.w / 2, cy = p.y + p.h / 2; hitArea(inCircle(cx, cy, 34), 2, e => Math.sign(e.x + e.w / 2 - cx) * 9, '#7aff9a'); burst(cx, cy, '#5a8a3a', 10, 2); }
   if (p.shield > 0) { p.shield = 0; p.inv = 40; sfx.clang(); burst(p.x + p.w / 2, p.y + 10, '#fff0b8', 16, 2.4); pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'AEGIS'}); return; }
   if (cls().armor && p.plate) { p.plate = false; p.inv = 50; sfx.clang(); shake = 5; burst(p.x + p.w / 2, p.y + 10, '#aab2ba', 14, 2.2); pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'PLATE'}); return; }
   if (cls().block && p.atkT === 0 && !p.dive && Math.sign(fromX - (p.x + p.w/2)) === p.face) {
@@ -5298,7 +5302,7 @@ function update() {
   else if (use && p.onGround && nearEnt('&')) { useDone(); p.vx = 0; openShrine(); }
   else if (use && p.onGround && nearEnt('M')) { useDone(); p.vx = 0; openWardrobe(); }
   if (hit.attack && p.atkCd === 0) {
-    const C = cls(), A = C.atk; p.atkT = A.dur; p.atkCd = Math.round(A.cd * (treeOn('attack', 0) ? .85 : 1)); p.lash = false; p.lunge = false; p.up = !!held.up && !held.down;
+    const C = cls(), A = C.atk; p.atkT = A.dur; p.atkCd = Math.round(A.cd * (treeOn('attack', 0) ? .85 : 1) * (1 - .14 * runB('quick'))); p.lash = false; p.lunge = false; p.up = !!held.up && !held.down;
     if (C.crit) { p.swingN = (p.swingN || 0) + 1; p.critSwing = p.swingN % 3 === 0; }
     p.atkOv = null; p.variant = attackVariant(C, A);
     if (A.type === 'melee' && p.variant) { p.atkOv = meleeVariant(A, p.variant); p.atkT = p.atkOv.dur; }
@@ -5384,6 +5388,8 @@ function update() {
       if (A.pogo) { p.vy = -6.8; p.noCut = 14; p.air = Math.max(p.air, airJ()); p.dashLeft = dashN(); p.atkT = 0; burst(p.x + p.w / 2, p.y + p.h, '#ffcf8a', 8, 1.6); }
       if (A.low && e.t !== 'boss' && !e.prop) e.stun = Math.max(e.stun || 0, 40);
       if (cls().drag && !e.prop) e.slowT = 120;
+      if (runB('burn') && !e.prop) e.bleed = Math.max(e.bleed || 0, 160);
+      if (runB('frost') && !e.prop) e.slowT = Math.max(e.slowT || 0, 150);
       if (cls().plague && !e.prop) e.bleed = Math.max(e.bleed || 0, 200);
       if (cls().ignite && p.hp <= p.max / 2 && !e.prop) e.bleed = Math.max(e.bleed || 0, 160);
       if (p.critSwing && cls().crit) { pops.push({x:e.x + e.w / 2, y:e.y - 6, v:0, life:30, txt:'CRIT'}); burst(e.x + e.w / 2, e.y + e.h / 2, '#ffd65a', 10, 2.2); }
@@ -7934,35 +7940,48 @@ const saveProf = () => { try { localStorage.setItem('wallfall-profile', JSON.str
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const pickR = (rnd, a) => a[Math.floor(rnd() * a.length)];
 function standSpots(r, x0, x1) { const out = []; for (let x = Math.max(2, x0); x <= Math.min(r.w - 3, x1); x++) for (let y = 2; y < r.h - 1; y++) if (r.grid[y][x] === '.' && r.grid[y - 1][x] === '.' && '#-'.includes(r.grid[y + 1][x])) { out.push([x, y]); break; } return out; }
-function genRoom(key, f, i, gx, gy, kind, rnd, vault) {
-  const F = FLOORS[f], L = ROOMS[F.look], tall = kind === 'climb' || kind === 'drop', one = tall || ['start', 'rest', 'gate', 'vault'].includes(kind);
-  const cw = one ? 1 : kind === 'elite' ? 3 : 2, ch = tall ? 2 : 1, name = {gate:'The Way Up', rest:'A Quiet Room', vault:'A Hidden Room'}[kind] || DISTRICTS[F.d].name;
-  makeRoom(key, name, gx, gy, cw, ch, {indoor:L.indoor, biome:L.biome, dark:L.dark, skin:L.skin, noGiants:true}, B => {
+const TWISTS = {
+  swarm:{name:'Swarm', sub:'Small and many.'}, champs:{name:'Embers in the blood', sub:'Fewer of them. All of them burning.'}, rain:{name:'Ember rain', sub:'Watch for shadows on the floor.'},
+  dark:{name:'Lights out', sub:'Stay close to your own light.'}, haste:{name:'Frenzy', sub:'They move faster than they should.'}, guard:{name:'The Brute', sub:'Something big, and its pack.'}, clock:{name:'Against the clock', sub:'Clear it in 45 seconds for a second chest.'},
+};
+function mirrorRoom(r) {
+  r.grid = r.grid.map(row => row.split('').reverse().join(''));
+  for (const e of r.ents) e.x = r.w - 1 - e.x;
+  r.crumbleTiles = r.crumbleTiles.map(([x, y]) => [r.w - 1 - x, y]);
+}
+function genRoom(key, f, kind, gx, gy, rnd, opt = {}) {
+  const F = FLOORS[f], L = ROOMS[F.look], shaft = kind === 'shaft', cw = shaft || kind === 'vault' ? 1 : 2, ch = shaft ? 2 : 1;
+  const name = {gate:'The Way Up', rest:'A Quiet Room', vault:'A Hidden Room', shaft:'The Stair'}[kind] || DISTRICTS[F.d].name;
+  makeRoom(key, name, gx, gy, cw, ch, {indoor:L.indoor, biome:L.biome, dark:L.dark, skin:L.skin, noGiants:f !== 0}, B => {
     const w = B.w, haz = (a, c, y) => { if (F.hz === 'slag') B.slag(a, c, y + 1); else B[F.hz](a, c, y); }, R0 = n => Math.floor(rnd() * n);
     if (kind === 'vault') {
-      B.solid(0, 0, w - 1, 1); B.solid(0, 16, w - 1, 17); B.clear(12, 16, 15, 17); B.ledge(4, 9, 12); B.ledge(19, 26, 11);
-      B.put('R', 22, 10); B.put('O', 4, 15); B.put('O', 6, 15); B.put('O', 26, 15); return;
+      B.solid(0, 0, w - 1, 1); B.solid(0, 16, w - 1, 17); B.clear(0, 13, 0, 15); B.ledge(8, 13, 12); B.ledge(18, 26, 10);
+      B.put('R', 22, 9); B.put('O', 6, 15); B.put('O', 20, 15); B.put('O', 27, 15); B.put('$', 14, 15); return;
     }
-    if (tall) {
-      const up = kind === 'climb', style = pickR(rnd, ['zig', 'shaft', 'crumble', 'rings']);
-      B.solid(0, 34, w - 1, 35);
-      if (up) { B.clear(0, 31, 0, 33); B.clear(w - 1, 13, w - 1, 15); B.solid(24, 16, w - 1, 17); }
-      else { B.clear(0, 13, 0, 15); B.solid(0, 16, 6, 17); B.clear(w - 1, 31, w - 1, 33); haz(11, 20, 33); }
-      let side = R0(2);
-      for (let y = up ? 30 : 20; y > 17 && y < 33; y += up ? -(3 + R0(2)) : 3 + R0(2)) {
-        const x = side ? 13 + R0(5) : 2 + R0(4), len = side ? 6 + R0(3) : 7 + R0(3);
-        if (style === 'crumble' && rnd() < .6) B.crumble(x, x + len, y); else B.ledge(x, x + len, y);
+    if (shaft) {
+      const style = pickR(rnd, ['zig', 'zig', 'crumble', 'rings']);
+      B.solid(0, 34, w - 1, 35); B.clear(0, 31, 0, 33); B.clear(0, 13, 0, 15); B.solid(0, 16, 7, 17);
+      if (opt.vault) { B.clear(w - 1, 13, w - 1, 15); B.solid(w - 8, 16, w - 1, 17); }
+      let side = 1;
+      for (let y = 30; y > 18; y -= 3 + R0(2)) {
+        const x = side ? 13 + R0(5) : 4 + R0(4), len = side ? 6 + R0(3) : 7 + R0(3);
+        if (style === 'crumble' && rnd() < .5) B.crumble(x, x + len, y); else B.ledge(x, x + len, y);
         side = 1 - side;
       }
-      if (style === 'shaft') { B.solid(14, 20, 16, 29); B.ledge(9, 13, 25); B.ledge(17, 21, 22); }
-      if (style === 'rings') { B.put('a', 8, 26); B.put('a', 22, 20); B.put('a', 10, 12); }
-      else if (rnd() < .6) B.put('a', 16, up ? 8 : 24);
+      if (style === 'rings') { B.put('a', 16, 22); B.put('a', 12, 10); }
+      if (f > 0 && rnd() < .6) B.put('j', 10 + R0(12), 12 + R0(8));
       return;
     }
     B.solid(0, 16, w - 1, 17);
-    if (i > 0) B.clear(0, 13, 0, 15);
+    if (kind !== 'start') B.clear(0, 13, 0, 15);
     if (kind !== 'gate') B.clear(w - 1, 13, w - 1, 15);
-    if (kind === 'start' || kind === 'rest' || kind === 'gate') { B.ledge(10, 15, 12); B.ledge(18, 22, 9); if (kind === 'rest') { B.put('O', 6, 15); B.put('O', 25, 15); } return; }
+    if (kind === 'start') B.put('P', 4, 15);
+    if (kind === 'start' || kind === 'rest' || kind === 'gate') {
+      B.ledge(12, 18, 12); B.ledge(24, 30, 9); B.ledge(38, 44, 11); B.solid(48, 14, 53, 15);
+      if (kind === 'rest') { B.put('!', 30, 15); B.put('O', 8, 15); B.put('O', 56, 15); }
+      if (kind === 'gate') B.put('>', w - 8, 15);
+      return;
+    }
     const arch = pickR(rnd, F.arch);
     if (arch === 'roofs') {
       let x = 7;
@@ -7975,7 +7994,7 @@ function genRoom(key, f, i, gx, gy, kind, rnd, vault) {
       for (let n = 0; n < w / 14; n++) { const lx = 6 + R0(w - 16); B.ledge(lx, lx + 3 + R0(4), pickR(rnd, [7, 5])); }
     } else if (arch === 'bridge') {
       const a = 7, c = w - 8; B.clear(a, 16, c, 16); haz(a, c, 16);
-      for (let x = a + 3 + R0(3); x < c - 3; x += 7 + R0(5)) { const top = 12 + R0(3); if (rnd() < .5) B.solid(x, top, x + 1 + R0(2), 16); else B.ledge(x - 1, x + 3, top); }
+      for (let x = a + 3 + R0(3); x < c - 2; x += 6 + R0(3)) { const top = 12 + R0(3); if (rnd() < .5) B.solid(x, top, x + 1 + R0(2), 16); else B.ledge(x - 1, x + 3, top); }
       for (let x = a + 5; x < c - 4; x += 11 + R0(6)) B.ledge(x, x + 4 + R0(3), 8 + R0(2));
       for (let x = a + 10; x < c - 6; x += 14 + R0(6)) B.put('a', x, 3 + R0(2));
     } else if (arch === 'cavern') {
@@ -8009,21 +8028,40 @@ function genRoom(key, f, i, gx, gy, kind, rnd, vault) {
     if (F.vents) for (let n = 0; n < 2; n++) B.put('F', 10 + R0(w - 20), 15);
     if (F.crush && rnd() < .6) B.put('Z', 12 + R0(w - 24), 1);
     if (F.flowers) for (let n = 0; n < 2; n++) B.put('*', 8 + R0(w - 16), 15);
-    if (vault) { B.clear(11, 0, 16, 9); B.ledge(9, 13, 12); B.ledge(14, 18, 8); B.ledge(10, 14, 4); }
   });
   const r = ROOMS[key];
-  if (F.vents || F.crush || F.flowers) {
-    r.ents = r.ents.filter(e => !('FZ*'.includes(e.t)) || (e.t === 'Z' ? r.grid[1][e.x] === '.' && r.grid[2][e.x] === '.' : r.grid[e.y][e.x] === '.' && r.grid[e.y + 1][e.x] === '#'));
-    REG[key] = {};
-  }
+  r.ents = r.ents.filter(e => !('FZ*'.includes(e.t)) || (e.t === 'Z' ? r.grid[1][e.x] === '.' && r.grid[2][e.x] === '.' : r.grid[e.y][e.x] === '.' && r.grid[e.y + 1][e.x] === '#'));
+  if (F.vents || F.crush || F.flowers) REG[key] = {};
+  if (opt.flip) mirrorRoom(r);
+  DECO[key] = genDeco(r, f, kind, rnd);
   return r;
 }
-function genWaves(r, f, rnd, elite) {
-  const pool = FLOORS[f].pool, spots = standSpots(r, 10, r.w - 4).filter(([x, y]) => y > 3), waves = [], nw = 2 + (f > 1 ? 1 : 0) + (elite ? 1 : 0);
+function genDeco(r, f, kind, rnd) {
+  const R0 = n => Math.floor(rnd() * n), d = {props:[], torches:[], chains:[], banners:[]}, free = (x, y) => r.grid[y] && r.grid[y][x] === '.';
+  const floorSpots = standSpots(r, 3, r.w - 4).filter(([x, y]) => free(x, y));
+  for (let n = 0; n < r.cw * 3; n++) { if (!floorSpots.length) break; const [x, y] = pickR(rnd, floorSpots); d.props.push([pickR(rnd, ['crate', 'barrel', 'rubble', 'rubble', f === 0 ? 'cart' : 'crate']), x, y]); }
+  for (let n = 0; n < r.cw * r.ch * 2; n++) { const x = 3 + R0(r.w - 6), y = 4 + R0(r.h - 9); if (free(x, y) && free(x, y + 1)) d.torches.push([x, y]); }
+  if (r.indoor) {
+    d.arches = [8, 8, 10, 6, 8][f];
+    if (f === 1) d.pipes = Array.from({length:r.cw * 2}, () => [3 + R0(r.w - 6), 2]);
+    for (let n = 0; n < r.cw * 2; n++) { const x = 3 + R0(r.w - 6); let len = 0; while (len < 8 && free(x, 1 + len * 4) && free(x, 4 + len * 4)) len++; if (len > 1) d.chains.push([x, 1, Math.min(len, 3 + R0(4))]); }
+    for (let n = 0; n < r.cw; n++) { const x = 4 + R0(r.w - 8), y = 3 + R0(4); if (free(x, y)) d.banners.push([x, y]); }
+  } else {
+    d.facades = []; for (let x = 2; x < r.w - 8; x += 9 + R0(5)) d.facades.push([x, x + 6 + R0(4), 5 + R0(6), R0(2)]);
+    d.banners = [[4 + R0(r.w - 8), 6 + R0(4)]];
+    if (kind !== 'shaft') { d.braziers = []; for (let n = 0; n < 2; n++) { if (!floorSpots.length) break; const [x, y] = pickR(rnd, floorSpots); d.braziers.push([x, y]); } }
+  }
+  return d;
+}
+function genWaves(r, f, rnd, elite, twist) {
+  let pool = FLOORS[f].pool; const spots = standSpots(r, 8, r.w - 8).filter(([x, y]) => y > 3), waves = [], nw = 2 + (f > 1 ? 1 : 0) + (elite ? 1 : 0);
+  if (twist === 'swarm') pool = ['A', 'r', 'j', 'L', 'A'];
   for (let wv = 0; wv < nw; wv++) {
-    const n = 2 + Math.floor(f / 2) + Math.floor(rnd() * 2) + (elite ? 1 : 0), list = [];
+    let n = 2 + Math.floor(f / 2) + Math.floor(rnd() * 2) + (elite ? 1 : 0); const list = [];
+    if (twist === 'swarm') n *= 2; if (twist === 'champs') n = Math.max(2, Math.ceil(n / 2));
+    if (twist === 'guard' && wv === nw - 1 && spots.length) { const [x, y] = pickR(rnd, spots); list.push(['u', x, y, true]); n = 3; pool = ['A', 'r', 'L']; }
     for (let j = 0; j < n; j++) {
-      const t = pickR(rnd, pool), champ = (elite || f > 0) && rnd() < .08 + f * .04 + (elite ? .15 : 0);
+      const t = pickR(rnd, pool), champ = twist === 'champs' || (elite || f > 0) && rnd() < .08 + f * .04 + (elite ? .15 : 0);
       if ('jlm'.includes(t)) list.push([t, 6 + Math.floor(rnd() * (r.w - 12)), 3 + Math.floor(rnd() * 4), champ]);
       else if (spots.length) { const [x, y] = pickR(rnd, spots); list.push([t, x, y, champ]); }
     }
@@ -8032,27 +8070,72 @@ function genWaves(r, f, rnd, elite) {
   return waves;
 }
 function genFloor(f) {
-  for (const k of run.keys) { const r = ROOMS[k]; if (r) for (let y = 0; y < r.ch; y++) for (let x = 0; x < r.cw; x++) delete BYPOS[(r.gx + x) + ',' + (r.gy + y)]; delete ROOMS[k]; delete ARENAS[k]; delete REG[k]; delete save.arenas[k]; }
-  run.keys = []; run.floor = f;
-  const rnd = rng(run.seed * 31 + f * 7919), mid = () => pickR(rnd, ['climb', 'drop', 'fight', 'climb']);
-  const plan = f === FLOORS.length - 1 ? ['start', 'rest', 'gate'] : ['start', 'fight', mid(), 'fight', 'rest', mid(), 'fight', 'elite', 'gate'];
-  const vaultAt = plan.findIndex((k, j) => k === 'fight' && j > 1 && rnd() < .6);
-  let gx = 0, gy = 400 + f * 10;
-  plan.forEach((kind, i) => {
-    const key = 'r' + f + '_' + i, ry = kind === 'climb' ? gy - 1 : gy, r = genRoom(key, f, i, gx, ry, kind, rnd, i === vaultAt);
+  for (const k of run.keys) { const r = ROOMS[k]; if (r) for (let y = 0; y < r.ch; y++) for (let x = 0; x < r.cw; x++) delete BYPOS[(r.gx + x) + ',' + (r.gy + y)]; delete ROOMS[k]; delete ARENAS[k]; delete REG[k]; delete DECO[k]; delete save.arenas[k]; }
+  run.keys = []; run.floor = f; run.chests = []; run.altar = null; run.rain = []; run.booms = [];
+  const rnd = rng(run.seed * 31 + f * 7919), last = f === FLOORS.length - 1;
+  const plan = last ? ['start', 'rest', 'gate'] : ['start', 'fight', 'fight', 'rest', 'fight', 'fight', 'elite', 'gate'];
+  const base = 400 + f * 30, tw = Object.keys(TWISTS);
+  let vaultLeft = last ? 0 : 1;
+  plan.forEach((kind, L) => {
+    const gy = base - L, flip = L % 2 === 1, key = 'r' + f + '_' + L, r = genRoom(key, f, kind, 0, gy, rnd, {flip});
     run.keys.push(key);
-    if (i === vaultAt) { const vk = 'r' + f + '_v'; genRoom(vk, f, i, gx, gy - 1, 'vault', rnd); run.keys.push(vk); }
-    gx += r.cw; if (kind === 'climb') gy -= 1; if (kind === 'drop') gy += 1;
-    if (kind === 'fight' || kind === 'climb' || kind === 'drop' || kind === 'elite') {
-      const inRows = kind === 'climb' ? [31, 33] : [13, 15], outRows = kind === 'drop' ? [31, 33] : [13, 15];
-      ARENAS[key] = {name:kind === 'elite' ? 'The Hard Room' : 'Ambush', quiet:kind !== 'elite', sub:'Bigger ones, with embers in them.', noCog:true, reward:12 + f * 8 + (kind === 'elite' ? 20 : 0), doneSub:'The way on is open.',
-        inside:() => p.x > 3 * T && p.x < room.pw - 3 * T, bars:[[0, 0, inRows[0], inRows[1]], [r.w - 1, r.w - 1, outRows[0], outRows[1]]], waves:genWaves(r, f, rnd, kind === 'elite')};
+    if (kind === 'fight' || kind === 'elite') {
+      const twist = kind === 'elite' ? null : rnd() < .75 ? pickR(rnd, tw) : null, T0 = twist && TWISTS[twist];
+      ARENAS[key] = {name:kind === 'elite' ? 'The Hard Room' : T0 ? T0.name : 'Ambush', quiet:!T0 && kind !== 'elite', sub:kind === 'elite' ? 'More of them, and more burning.' : T0 ? T0.sub : '', twist, noCog:true, reward:10 + f * 6 + (kind === 'elite' ? 20 : 0), doneSub:'A chest is waiting.',
+        inside:() => p.x > 3 * T && p.x < room.pw - 3 * T, bars:[[0, 0, 13, 15], [r.w - 1, r.w - 1, 13, 15]], waves:genWaves(r, f, rnd, kind === 'elite', twist)};
     }
-    if (kind === 'rest') r.rest = true;
-    if (kind === 'gate') run.portal = {k:key, x:24, y:15};
+    if (kind === 'rest') { r.rest = true; const e = r.ents.find(e => e.t === '!'); if (e) run.altar = {k:key, x:e.x, y:e.y}; }
+    if (kind === 'gate') { const e = r.ents.find(e => e.t === '>'); run.portal = {k:key, x:e.x, y:e.y}; }
+    if (L < plan.length - 1) {
+      const side = L % 2 === 0 ? 1 : -1, sk = 'r' + f + '_s' + L, vault = vaultLeft > 0 && L > 0 && rnd() < .35;
+      genRoom(sk, f, 'shaft', side > 0 ? 2 : -1, gy - 1, rnd, {flip:side < 0, vault}); run.keys.push(sk);
+      if (vault) { vaultLeft--; const vk = 'r' + f + '_v' + L; genRoom(vk, f, 'vault', side > 0 ? 3 : -2, gy - 1, rnd, {flip:side < 0}); run.keys.push(vk); }
+    }
   });
-  startAt(run.keys[0]); p.x = 4 * T; p.face = 1; snapCam();
-  banner = {title:'Floor ' + (f + 1), sub:f === FLOORS.length - 1 ? 'The Ash-King is waiting.' : 'Clear the rooms. Find the way up.', color:'#ff8a3d', t:220};
+  startAt(run.keys[0]); p.face = 1; snapCam();
+  banner = {title:'Floor ' + (f + 1), sub:last ? 'The Ash-King is waiting.' : 'Climb. Something is always waiting.', color:'#ff8a3d', t:220};
+}
+/* ---------- Boons ---------- */
+const BOONS = {
+  edge:{name:'Whetted Grudge', d:'Your attacks hit one harder.', max:3}, quick:{name:'Quick Hands', d:'You attack faster.', max:3}, focus:{name:'Cold Focus', d:'Skills come back sooner.', max:3},
+  heart:{name:'Iron Ration', d:'One more heart, and you heal.', max:4}, mend:{name:'Ash Poultice', d:'Heal a heart after every room you clear.', max:2}, aegis:{name:'Warden’s Ward', d:'The first hit in every room is turned aside.', max:1},
+  thorns:{name:'Thornmail', d:'Whatever hits you is cut back.', max:1}, wind:{name:'Second Wind', d:'Once, you get up again when you fall.', max:2}, burn:{name:'Ember Edge', d:'Your hits set foes burning.', max:1},
+  frost:{name:'Grave Chill', d:'Your hits slow foes.', max:1}, vamp:{name:'Blood Price', d:'Every twelve kills mends a heart.', max:2}, greed:{name:'Gilded Ash', d:'Half again as many shards.', max:2},
+  boom:{name:'Volatile', d:'Foes sometimes burst when they die.', max:2}, wing:{name:'Ember Step', d:'One more dash in the air.', max:2},
+};
+const runB = k => (typeof run !== 'undefined' && run && run.boons && run.boons[k]) || 0;
+function boonChoices(n) {
+  const ks = Object.keys(BOONS).filter(k => runB(k) < BOONS[k].max), out = [];
+  while (out.length < n && ks.length) out.push(ks.splice(Math.floor(Math.random() * ks.length), 1)[0]);
+  return out;
+}
+function takeBoon(k) {
+  run.boons[k] = (run.boons[k] || 0) + 1; sfx.pick();
+  if (k === 'heart') { save.rations = (save.rations || 0) + 1; p.max = maxHp(); p.hp = Math.min(p.max, p.hp + 2); }
+  if (k === 'wind') run.wind = (run.wind || 0) + 1;
+  if (k === 'aegis') p.shield = Math.max(p.shield || 0, 99999);
+  if (k === 'wing') p.dashLeft = dashN();
+  toast = {text:BOONS[k].name, t:120};
+}
+function openChest(c, n) {
+  c.open = true; burst(c.x * T + 8, c.y * T + 4, '#ffd27a', 24, 2.6); sfx.horn2();
+  const ks = boonChoices(n || 3);
+  if (!ks.length) { gainShards(60, c.x * T + 8, c.y * T); return; }
+  openDlg({lock:600, kicker:'A chest', title:'Take one', body:['The rest crumble to ash when you close the lid.'],
+    opts:ks.map(k => ({text:BOONS[k].name + (runB(k) ? ' ' + 'I'.repeat(runB(k) + 1) : ''), tag:BOONS[k].d, run:() => takeBoon(k)}))});
+}
+function runCleared(a) {
+  if (runB('mend')) { p.hp = Math.min(p.max, p.hp + runB('mend')); sfx.heal(); }
+  const s = standSpots(room, Math.floor(room.w / 2) - 6, Math.floor(room.w / 2) + 6), at = s.length ? s[Math.floor(s.length / 2)] : [Math.floor(room.w / 2), 15];
+  run.chests.push({k:room.key, x:at[0], y:at[1], open:false});
+  if (a.cfg.twist === 'clock' && a.clockT < 45 * 60) { const s2 = standSpots(room, at[0] + 4, at[0] + 10); if (s2.length) run.chests.push({k:room.key, x:s2[0][0], y:s2[0][1], open:false}); toast = {text:'In time. A second chest.', t:140}; }
+}
+function runAltar() {
+  const f = run.floor, heal = 30 + f * 15, buy = 70 + f * 25, have = save.shards || 0;
+  openDlg({kicker:'An ember altar', title:'It wants shards', body:[`You carry ${have} shards.`],
+    opts:[{text:'Mend every heart', tag:heal + ' shards', disabled:have < heal || p.hp >= p.max, run:() => { save.shards -= heal; p.hp = p.max; sfx.heal(); }},
+      {text:'Open a chest', tag:buy + ' shards', disabled:have < buy, run:() => { save.shards -= buy; openChest({x:run.altar.x, y:run.altar.y}); }},
+      {text:'Leave it'}]});
 }
 /* ---------- Run enemies ---------- */
 function runFoeAI(e, F, pcx, pcy) {
@@ -8113,13 +8196,13 @@ function runSave(real) {
 function startRun() {
   if (run) return;
   const real = save; leaveTitle();
-  run = {real, seed:Math.floor(Math.random() * 1e9), floor:0, keys:[], kills:0, t:0, bossesBeat:0, portal:null, memPending:false, back:{k:room ? room.key : 'T'}};
+  run = {real, seed:Math.floor(Math.random() * 1e9), floor:0, keys:[], kills:0, t:0, bossesBeat:0, portal:null, memPending:false, back:{k:room ? room.key : 'T'}, boons:{}, wind:0, chests:[], altar:null, rain:[], booms:[]};
   save = runSave(real); prof.runs++; saveProf();
   mode = 'play'; genFloor(0);
 }
 function runBoss() {
   const f = run.floor, k = pickR(rng(run.seed + f * 104729), FLOORS[f].boss), B = BOSS_LIST.find(b => b.k === k);
-  run.portal = null; run.bossKey = B.room; save.seenBoss[k] = 1;
+  run.portal = null; run.bossKey = B.room; save.seenBoss[k] = 1; run.chests = []; run.altar = null; run.rain = [];
   if (k === 'ash') { save.bossDead = false; }
   const r = ROOMS[B.room]; enterRoom(B.room);
   if (boss) boss.hp = boss.max = BOSS_HP;
@@ -8132,19 +8215,63 @@ function runBossDown(e) {
   if (prof.mems < MEMS.length) run.memPending = true;
   run.portal = {k:room.key, x:Math.round((e.x + e.w / 2) / T), y:Math.min(room.h - 3, Math.floor((e.y + e.h) / T) - 1), up:true};
   const s = standSpots(room, run.portal.x - 6, run.portal.x + 6); if (s.length) { const [x, y] = s[Math.floor(s.length / 2)]; run.portal.x = x; run.portal.y = y; }
+  const c = standSpots(room, run.portal.x + 4, run.portal.x + 12).concat(standSpots(room, run.portal.x - 12, run.portal.x - 4)); if (c.length) run.chests.push({k:room.key, x:c[0][0], y:c[0][1], open:false});
 }
 function runTick() {
   run.t++;
+  if (run.rk !== room.key) { run.rk = room.key; run.rain = []; }
   if (room.rest && !room.rested && mode === 'play') { room.rested = true; p.hp = Math.min(p.max, p.hp + 2); sfx.heal(); toast = {text:'You catch your breath', t:120}; }
-  const P = run.portal; if (!P || P.k !== room.key || mode !== 'play') return;
-  if (Math.abs(p.x + p.w / 2 - (P.x * T + 8)) < 20 && Math.abs(p.y + p.h - (P.y + 1) * T) < 24 && useHit()) { useDone(); sfx.horn2(); if (P.up) genFloor(run.floor + 1); else runBoss(); }
+  const near = (o, r = 20) => o && o.k === room.key && Math.abs(p.x + p.w / 2 - (o.x * T + 8)) < r && Math.abs(p.y + p.h - (o.y + 1) * T) < 24;
+  if (mode === 'play') {
+    const P = run.portal;
+    if (near(P) && useHit()) { useDone(); sfx.horn2(); if (P.up) genFloor(run.floor + 1); else runBoss(); return; }
+    for (const c of run.chests) if (!c.open && near(c, 16) && useHit()) { useDone(); openChest(c); return; }
+    if (near(run.altar) && useHit()) { useDone(); runAltar(); return; }
+  }
+  for (const b of run.booms.splice(0)) explode({x:b.x, y:b.y, radius:32, dmg:1 + runB('boom'), life:1});
+  const A = arena, tw = A && A.stage === 'fight' && A.cfg.twist;
+  if (A && A.stage === 'fight') A.clockT = (A.clockT || 0) + 1;
+  if (tw === 'rain' && run.t % 34 === 0) { const x = cam.x + 20 + Math.random() * (VW - 40); run.rain.push({x, y:cam.y - 12, vy:0, warn:46, fy:floorBelow(x, cam.y)}); }
+  if (tw === 'haste' && run.t % 3 === 0) for (const e of enemies) if (!e.dead && !e.prop && !e.crate && e.t !== 'boss' && !(e.spawn > 0)) updateEnemy(e);
+  for (const r of run.rain) {
+    if (r.warn > 0) { r.warn--; continue; }
+    r.vy += .35; r.y += r.vy;
+    if (r.y >= r.fy - 4) { r.dead = true; burst(r.x, r.fy - 2, '#ff8a2a', 12, 2); if (Math.abs(p.x + p.w / 2 - r.x) < 12 && p.y + p.h > r.fy - 30) hurt(r.x, 1); }
+  }
+  run.rain = run.rain.filter(r => !r.dead && !(A && A.stage === 'done' && r.warn > 0));
 }
 function drawRunPortal(cx, cy) {
-  const P = run && run.portal; if (!P || P.k !== room.key) return;
-  const x = P.x * T + 8 - cx, y = (P.y + 1) * T - cy;
-  ctx.fillStyle = '#1a0e0a'; ctx.fillRect(x - 12, y - 34, 24, 34); ctx.fillStyle = '#3a2a22'; ctx.fillRect(x - 14, y - 36, 4, 36); ctx.fillRect(x + 10, y - 36, 4, 36); ctx.fillRect(x - 14, y - 38, 28, 4);
-  ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x, y - 16, 0, x, y - 16, 22); g.addColorStop(0, `rgba(255,150,70,${.55 + .15 * Math.sin(tick * .1)})`); g.addColorStop(1, 'rgba(255,90,30,0)'); ctx.fillStyle = g; ctx.fillRect(x - 22, y - 38, 44, 44); ctx.globalCompositeOperation = 'source-over';
-  if (Math.abs(p.x + p.w / 2 - (P.x * T + 8)) < 20 && Math.abs(p.y + p.h - (P.y + 1) * T) < 24) promptBubble(keyOf('interact'), P.up ? 'Climb' : 'Face it', x, y - 52, '#ff8a3d');
+  if (!run) return;
+  const P = run.portal, near = (o, r = 20) => Math.abs(p.x + p.w / 2 - (o.x * T + 8)) < r && Math.abs(p.y + p.h - (o.y + 1) * T) < 24;
+  for (const r of run.rain) {
+    if (r.warn > 0) { ctx.fillStyle = `rgba(20,6,2,${.3 + .3 * Math.sin(tick * .5)})`; ctx.beginPath(); ctx.ellipse(r.x - cx, r.fy - cy - 1, 9, 2.5, 0, 0, Math.PI * 2); ctx.fill(); }
+    else { ctx.fillStyle = '#4b3f37'; ctx.fillRect(r.x - cx - 4, r.y - cy - 4, 8, 8); ctx.fillStyle = '#ff8a2a'; ctx.fillRect(r.x - cx - 2, r.y - cy - 2, 4, 4); }
+  }
+  for (const c of run.chests) if (c.k === room.key) {
+    const x = c.x * T + 8 - cx, y = (c.y + 1) * T - cy;
+    ctx.fillStyle = '#2a1a0e'; ctx.fillRect(x - 10, y - 13, 20, 13); ctx.fillStyle = c.open ? '#3a2614' : '#6a4422'; ctx.fillRect(x - 9, y - 12, 18, 11);
+    ctx.fillStyle = '#c9a04a'; ctx.fillRect(x - 10, y - 9, 20, 2); ctx.fillRect(x - 2, y - 10, 4, 5);
+    if (c.open) { ctx.fillStyle = '#2a1a0e'; ctx.fillRect(x - 10, y - 19, 20, 5); }
+    else { ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x, y - 8, 0, x, y - 8, 22); g.addColorStop(0, `rgba(255,200,90,${.35 + .15 * Math.sin(tick * .1)})`); g.addColorStop(1, 'rgba(255,150,40,0)'); ctx.fillStyle = g; ctx.fillRect(x - 22, y - 30, 44, 44); ctx.globalCompositeOperation = 'source-over';
+      if (near(c, 16)) promptBubble(keyOf('interact'), 'Open', x, y - 30, '#ffd27a'); }
+  }
+  const al = run.altar; if (al && al.k === room.key) {
+    const x = al.x * T + 8 - cx, y = (al.y + 1) * T - cy;
+    ctx.fillStyle = '#2e2622'; ctx.fillRect(x - 9, y - 16, 18, 16); ctx.fillStyle = '#4a3e36'; ctx.fillRect(x - 11, y - 18, 22, 4);
+    ctx.fillStyle = (tick >> 3) % 2 ? '#ff8a2a' : '#ffcf70'; ctx.fillRect(x - 3, y - 24, 6, 6);
+    if (near(al)) promptBubble(keyOf('interact'), 'Offer shards', x, y - 38, '#ff8a3d');
+  }
+  if (P && P.k === room.key) {
+    const x = P.x * T + 8 - cx, y = (P.y + 1) * T - cy;
+    ctx.fillStyle = '#1a0e0a'; ctx.fillRect(x - 12, y - 34, 24, 34); ctx.fillStyle = '#3a2a22'; ctx.fillRect(x - 14, y - 36, 4, 36); ctx.fillRect(x + 10, y - 36, 4, 36); ctx.fillRect(x - 14, y - 38, 28, 4);
+    ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x, y - 16, 0, x, y - 16, 22); g.addColorStop(0, `rgba(255,150,70,${.55 + .15 * Math.sin(tick * .1)})`); g.addColorStop(1, 'rgba(255,90,30,0)'); ctx.fillStyle = g; ctx.fillRect(x - 22, y - 38, 44, 44); ctx.globalCompositeOperation = 'source-over';
+    if (near(P)) promptBubble(keyOf('interact'), P.up ? 'Climb' : 'Face it', x, y - 52, '#ff8a3d');
+  }
+  if (arena && arena.stage === 'fight' && arena.cfg.twist === 'dark') {
+    const px = p.x + p.w / 2 - cx, py = p.y + p.h / 2 - cy, g = ctx.createRadialGradient(px, py, 30, px, py, 120);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(4,2,2,.94)'); ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  }
+  if (arena && arena.stage === 'fight' && arena.cfg.twist === 'clock') { const left = Math.max(0, 45 - Math.floor((arena.clockT || 0) / 60)); txt(left ? left + 's' : 'too slow', VW / 2, 40, 10, left ? '#ffd27a' : '#8a7a6a', 'center'); }
 }
 function endRun(won) {
   if (!run) return;
