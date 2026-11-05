@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.59';
+const VERSION = '0.1.60';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1840,7 +1840,7 @@ let SAVE_KEY = slotKey(slot);
 let save = fresh();
 let bossMode = null, pvp = null;
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(fresh(), {seenIntro:true}, s); } catch (e) {}
-const persist = () => { if (typeof bossMode !== 'undefined' && bossMode || typeof pvp !== 'undefined' && pvp) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
+const persist = () => { if (typeof bossMode !== 'undefined' && bossMode || typeof pvp !== 'undefined' && pvp || typeof run !== 'undefined' && run) return; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof acct !== 'undefined' && acct) cloudSoon(); };
 const gameDiff = () => !bossMode && !pvp && DIFFS[save.diff] || DIFFS.normal;
 const maxHp = () => pvp ? cls().hp + 2 : bossMode && bossMode.onehit && bossMode.fighting ? 1 : cls().hp + (save.rations || 0) + (save.hearts || 0) + upLv('vig') + (treeOn('defense', 0) ? 1 : 0) + gameDiff().hearts;
 
@@ -3012,7 +3012,7 @@ function zGuard(e) {
 }
 function killCheck(e) { if (e.hp <= 0 && !e.dead && zBlock(e) && !e.blew) { e.hp = e.hp0; zGuard(e); return; } if (e.hp <= 0 && !e.dead) { e.dead = true;
   if (e.crate) { crateBroken(e); return; }
-  if (!e.dummy && !e.prop) dropShards(e);
+  if (!e.dummy && !e.prop) { dropShards(e); if (run) run.kills++; }
   if (!e.dummy && !e.crate && cls().atk.type === 'summon' && Math.random() < .2) summonThrall(e.x + e.w/2, e.y + e.h);
   if (!e.dummy && treeOn('attack', 1) && (p.kills8 = (p.kills8 || 0) + 1) % 8 === 0 && p.hp < p.max) { p.hp++; sfx.heal(); pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'+1'}); }
   if (!e.dummy && !e.prop && cls().herbs && Math.random() < .35) herbs.push({rk:room.key, x:e.x + e.w / 2, y:e.y + e.h - 2});
@@ -3195,7 +3195,7 @@ function updateArena() {
   if (a.stage === 'idle') {
     if (a.cfg.inside()) {
       a.stage = 'fight'; a.wave = 0; a.delay = 50; setBars(a.cfg.bars); sfx.slam(); shake = 10;
-      banner = {title:a.cfg.name, sub:a.cfg.sub || 'The bars slam shut. Survive three waves to take the cog.', color:'#ff8a3d', t:220};
+      if (a.cfg.quiet) toast = {text:a.cfg.name, t:90}; else banner = {title:a.cfg.name, sub:a.cfg.sub || 'The bars slam shut. Survive three waves to take the cog.', color:'#ff8a3d', t:220};
     }
   } else if (a.stage === 'fight') {
     if (a.delay > 0) {
@@ -3204,7 +3204,7 @@ function updateArena() {
       if (a.wave < a.cfg.waves.length - 1) { a.wave++; a.delay = 80; }
       else {
         a.stage = 'done'; save.arenas[a.key] = true; persist(); setBars(null); sfx.pick(); musSting('clear');
-        banner = {title:'The bars rise', sub:a.cfg.doneSub || 'A gate cog lies where the last of them fell.', color:'#e8c48a', t:240};
+        if (a.cfg.quiet) toast = {text:'The bars rise', t:90}; else banner = {title:'The bars rise', sub:a.cfg.doneSub || 'A gate cog lies where the last of them fell.', color:'#e8c48a', t:240};
         if (a.cfg.reward) { gainShards(a.cfg.reward, p.x + p.w / 2, p.y); persist(); }
         if (!a.cfg.noCog) voice(VOICE_COG[Math.min(2, Object.keys(save.arenas).filter(k => ARENAS[k] && !ARENAS[k].noCog).length - 1)] || VOICE_COG[0], 160);
       }
@@ -3883,6 +3883,7 @@ function bossFelled(e) {
   banner = {title:B.heart, sub:bossGift(), color:B.color, t:420};
   if (VOICE_BOSS[e.kind]) voice(VOICE_BOSS[e.kind], 200);
   burst(e.x + e.w / 2, e.y + e.h / 2, B.color, 50, 3.5);
+  if (run) runBossDown(e);
 }
 function updateRBoss(e) {
   bossHit(e);
@@ -4605,7 +4606,7 @@ const DISTRICTS = {
   crypt:{name:'The Catacombs', sub:'Your mother is down here somewhere. You never visited.', rooms:'goc', grade:'rgba(120,100,160,.42)', col:'#cfc4f0'},
   spire:{name:'The Bell Spire', sub:'They rang it the night you opened the gate. Nobody came.', rooms:'sb', grade:'rgba(200,160,90,.36)', col:'#e8c88a'},
 };
-const districtOf = key => Object.keys(DISTRICTS).find(d => DISTRICTS[d].rooms.includes(key)) || 'low';
+const districtOf = key => typeof run !== 'undefined' && run && key[0] === 'r' && key[1] >= '0' && key[1] <= '9' ? FLOORS[+key[1]].d : Object.keys(DISTRICTS).find(d => DISTRICTS[d].rooms.includes(key)) || 'low';
 let curDistrict = null, dcard = null;
 function districtEnter(key) {
   if (key === 'PV' || key === 'BH') return false;
@@ -4695,7 +4696,7 @@ function transition() {
   if (bossMode) { p.x = Math.max(0, Math.min(room.pw - p.w, p.x)); if (p.y > room.ph) { p.y = room.ph - 3 * T; p.vy = 0; } return; }
   const gx = room.ox + cx, gy = room.oy + cy;
   const k = BYPOS[Math.floor(gx / (CW*T)) + ',' + Math.floor(gy / (CH*T))];
-  if (!k) { p.x = Math.max(0, Math.min(room.pw - p.w, p.x)); return; }
+  if (!k || run && !run.keys.includes(k)) { p.x = Math.max(0, Math.min(room.pw - p.w, p.x)); if (p.y > room.ph) { p.y = room.ph - 3 * T; p.vy = 0; } return; }
   const r = ROOMS[k], up = cy < 0;
   p.x += room.ox - r.ox; p.y += room.oy - r.oy;
   if (up) { p.vy = Math.min(p.vy, -8.5); p.noCut = 24; }
@@ -5173,7 +5174,7 @@ function die() {
   if (!p.downed) fallFully(); persist();
 }
 function fallFully() {
-  if (bossMode || !(save.shards > 0)) return;
+  if (bossMode || run || !(save.shards > 0)) return;
   const sp = p.safe && p.safe.k === room.key ? p.safe : {x:entry.x, y:entry.y};
   save.grave = {k:room.key, x:Math.round(sp.x), y:Math.round(sp.y), n:save.shards}; save.shards = 0; sparks = [];
 }
@@ -5248,11 +5249,11 @@ function update() {
   if (mode === 'mem') { if (mem) memTick(); else mode = 'play'; clearHits(); return; }
   if (mode === 'bintro') { bintroTick(); clearHits(); return; }
   if (mode === 'title') { updateParts(); if (!dlg.open && !binder.open && !wardrobe.open) openTitle(); clearHits(); return; }
-  if (mode === 'won') { ringT++; if (epi) { epi.t++; if (epi.t <= 420) wakeReq = false; else if (wakeReq || Object.keys(hit).some(q => hit[q])) { epi = null; wakeReq = false; showEnding(ending); } } else if (hit.restart) newGame(); clearHits(); updateParts(); return; }
+  if (mode === 'won') { ringT++; if (epi) { epi.t++; if (epi.t <= 420) wakeReq = false; else if (wakeReq || Object.keys(hit).some(q => hit[q])) { epi = null; wakeReq = false; if (run) endRun(true); else showEnding(ending); } } else if (hit.restart) newGame(); clearHits(); updateParts(); return; }
   if (mode === 'dead') {
     if (modeT > 0) modeT--;
     if (p.downed && modeT <= 0) { p.downed = false; fallFully(); persist(); modeT = 100; wakeReq = false; }
-    else if (!p.downed && modeT <= 40 && (wakeReq || Object.keys(hit).some(q => hit[q]))) { mode = 'play'; wakeReq = false; if (pvp) pvpSpawn(); else if (bossMode) bossHall('You fell. Try again.'); else { startAt('T'); toast = {text:save.grave ? 'Your shards wait where you fell' : 'You wake in the Training Yard', t:150}; } }
+    else if (!p.downed && modeT <= 40 && (wakeReq || Object.keys(hit).some(q => hit[q]))) { mode = 'play'; wakeReq = false; if (pvp) pvpSpawn(); else if (bossMode) bossHall('You fell. Try again.'); else if (run) endRun(false); else { startAt('T'); toast = {text:save.grave ? 'Your shards wait where you fell' : 'You wake in the Training Yard', t:150}; } }
     clearHits(); updateParts(); return;
   }
   if (mode === 'respawn') { if (--modeT <= 0) mode = 'play'; clearHits(); return; }
@@ -5394,7 +5395,7 @@ function update() {
   }
   updateShots();
   updateClassFx();
-  skillTick(); moveTick(); shardTick(); voiceTick(); bossTick(); memCheck();
+  skillTick(); moveTick(); shardTick(); voiceTick(); bossTick(); memCheck(); if (run) runTick();
   regionUpdate(ax, atkBox);
   ventUpdate(); dropsUpdate();
   updateEShots(atkBox);
@@ -7706,6 +7707,7 @@ function render() {
   const nn = mode === 'play' && nearNpc();
   if (nn) promptBubble(keyOf('interact'), save.talked[nn.t] ? 'Talk' : 'Talk', nn.x*T + 8 - cx, nn.y*T + 16 - ({f:24, t:19, s:21, v:23, i:21, n:20, p:19, o:save.flags.forgive ? 24 : 7}[nn.t] || 20) - 22 - cy, save.talked[nn.t] ? null : '#ff8a3d');
   if (target && !p.hook) keycap(keyOf('hook'), target.x + 8 - cx, target.y - 18 - cy);
+  drawRunPortal(cx, cy);
   ctx.restore();
 
   if (mode !== 'bintro') drawHUD(); drawPvpHud(); drawDistrictCard(); drawVoice(); drawAdminInfo(); drawBintro();
@@ -7903,6 +7905,7 @@ function openTitle() {
   let html = `<div class="titlemenu"><div class="opts">`;
   html += btn(slotList().length ? 'New game' : 'Begin', () => confirmNew());
   if (slotList().length) html += btn('Continue', () => openSaves());
+  if (save.clsChosen) html += btn('Run (in progress)', () => startRun());
   if (save.clsChosen) html += btn('Boss fights', () => { leaveTitle(); startBossMode(); });
   html += btn('PvP', () => { NET.pvpAfter = true; if (NET.on) { leaveTitle(); enterPvp(); } else openCoop(); });
   html += btn('Co-op', () => { NET.pvpAfter = false; openCoop(); });
@@ -7910,6 +7913,130 @@ function openTitle() {
   html += `</div>${hasProgress() ? `<p class="tsub">${esc(CLASSES[save.cls] ? CLASSES[save.cls].name : '')} · ${esc(progressOf(save))}</p>` : ''}</div>`;
   openDlg({opts, html});
   dlgEl.classList.add('ontitle');
+}
+/* ---------- Runs ---------- */
+let run = null;
+const FLOORS = [
+  {d:'low', look:'A', pool:['g', 'g', 'j', 'A', 'k'], boss:['hound', 'forge']},
+  {d:'foundry', look:'O', pool:['g', 'z', 'k', 'r', 'j', 'A'], boss:['forge', 'eel', 'hound']},
+  {d:'garden', look:'M', pool:['b', 'y', 'l', 'z', 'A', 'j'], boss:['thorn', 'eel']},
+  {d:'crypt', look:'g', pool:['m', 'u', 'y', 'b', 'l', 'z'], boss:['choir', 'bell', 'council']},
+  {d:'gate', look:'h', pool:[], boss:['ash']},
+];
+const prof = (() => { try { return Object.assign({mems:0, runs:0, wins:0, best:0, ach:{}}, JSON.parse(localStorage.getItem('wallfall-profile') || '{}')); } catch (e) { return {mems:0, runs:0, wins:0, best:0, ach:{}}; } })();
+const saveProf = () => { try { localStorage.setItem('wallfall-profile', JSON.stringify(prof)); } catch (e) {} };
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const pickR = (rnd, a) => a[Math.floor(rnd() * a.length)];
+function standSpots(r, x0, x1) { const out = []; for (let x = Math.max(2, x0); x <= Math.min(r.w - 3, x1); x++) for (let y = 2; y < r.h - 1; y++) if (r.grid[y][x] === '.' && r.grid[y - 1][x] === '.' && '#-'.includes(r.grid[y + 1][x])) { out.push([x, y]); break; } return out; }
+function genRoom(key, f, i, gx, gy, kind, rnd) {
+  const L = ROOMS[FLOORS[f].look], cw = kind === 'climb' ? 1 : kind === 'start' || kind === 'rest' || kind === 'gate' ? 1 : kind === 'elite' ? 3 : 2, ch = kind === 'climb' ? 2 : 1;
+  makeRoom(key, kind === 'gate' ? 'The Way Up' : kind === 'rest' ? 'A Quiet Room' : DISTRICTS[FLOORS[f].d].name, gx, gy, cw, ch, {indoor:L.indoor, biome:L.biome, dark:L.dark, skin:L.skin, noGiants:true}, B => {
+    const w = B.w, h = B.h;
+    if (kind === 'climb') {
+      B.solid(0, 34, w - 1, 35); B.clear(0, 31, 0, 33); B.clear(w - 1, 13, w - 1, 15); B.solid(24, 16, w - 1, 17);
+      let side = 0; for (let y = 30; y > 17; y -= 3 + Math.floor(rnd() * 2)) { const x = side ? 15 + Math.floor(rnd() * 6) : 3 + Math.floor(rnd() * 6); B.ledge(x, x + 6 + Math.floor(rnd() * 3), y); side = 1 - side; }
+      if (rnd() < .6) B.put('a', 16, 8);
+      return;
+    }
+    B.solid(0, 16, w - 1, 17);
+    if (i > 0) B.clear(0, 13, 0, 15);
+    if (kind !== 'gate') B.clear(w - 1, 13, w - 1, 15);
+    if (kind === 'start' || kind === 'rest' || kind === 'gate') { B.ledge(10, 15, 12); B.ledge(18, 22, 9); return; }
+    let x = 8;
+    while (x < w - 10) {
+      const k = rnd(), len = 3 + Math.floor(rnd() * 6);
+      if (k < .3) B.solid(x, 16 - 1 - Math.floor(rnd() * 3), x + len - 1, 15);
+      else if (k < .45) B.stakes(x, x + Math.min(len, 4) - 1, 15);
+      else if (k < .55) { B.solid(x, 9 + Math.floor(rnd() * 3), x + 1, 15); }
+      x += len + 3 + Math.floor(rnd() * 5);
+    }
+    for (let n = 0; n < w / 9; n++) { const lx = 4 + Math.floor(rnd() * (w - 14)), ly = pickR(rnd, [12, 10, 7, 5]); B.ledge(lx, lx + 3 + Math.floor(rnd() * 5), ly); }
+    if (rnd() < .5) B.put('a', 10 + Math.floor(rnd() * (w - 20)), 3);
+  });
+  return ROOMS[key];
+}
+function genWaves(r, f, rnd, elite) {
+  const pool = FLOORS[f].pool, spots = standSpots(r, 10, r.w - 4), waves = [], nw = 2 + (f > 1 ? 1 : 0) + (elite ? 1 : 0);
+  for (let wv = 0; wv < nw; wv++) {
+    const n = 2 + Math.floor(f / 2) + Math.floor(rnd() * 2) + (elite ? 1 : 0), list = [];
+    for (let j = 0; j < n; j++) {
+      const t = pickR(rnd, pool);
+      if ('jlm'.includes(t)) list.push([t, 6 + Math.floor(rnd() * (r.w - 12)), 3 + Math.floor(rnd() * 4)]);
+      else if (spots.length) { const [x, y] = pickR(rnd, spots); list.push([t, x, y]); }
+    }
+    waves.push(list);
+  }
+  return waves;
+}
+function genFloor(f) {
+  for (const k of run.keys) { const r = ROOMS[k]; if (r) for (let y = 0; y < r.ch; y++) for (let x = 0; x < r.cw; x++) delete BYPOS[(r.gx + x) + ',' + (r.gy + y)]; delete ROOMS[k]; delete ARENAS[k]; delete save.arenas[k]; }
+  run.keys = []; run.floor = f;
+  const rnd = rng(run.seed * 31 + f * 7919), plan = f === FLOORS.length - 1 ? ['start', 'rest', 'gate'] : ['start', 'fight', rnd() < .5 ? 'climb' : 'fight', 'rest', 'fight', rnd() < .5 ? 'climb' : 'fight', 'elite', 'gate'];
+  let gx = 0, gy = 400 + f * 10;
+  plan.forEach((kind, i) => {
+    const key = 'r' + f + '_' + i, ry = kind === 'climb' ? gy - 1 : gy, r = genRoom(key, f, i, gx, ry, kind, rnd);
+    run.keys.push(key); gx += r.cw; if (kind === 'climb') gy -= 1;
+    if (kind === 'fight' || kind === 'climb' || kind === 'elite') {
+      const exitRows = kind === 'climb' ? [31, 33] : [13, 15];
+      ARENAS[key] = {name:kind === 'elite' ? 'The Hard Room' : 'Ambush', quiet:kind !== 'elite', noCog:true, reward:12 + f * 8 + (kind === 'elite' ? 20 : 0), doneSub:'The way on is open.',
+        inside:() => p.x > 3 * T && p.x < room.pw - 3 * T, bars:[[0, 0, exitRows[0], exitRows[1]], [r.w - 1, r.w - 1, 13, 15]], waves:genWaves(r, f, rnd, kind === 'elite')};
+    }
+    if (kind === 'rest') r.rest = true;
+    if (kind === 'gate') run.portal = {k:key, x:24, y:15};
+  });
+  const sp = ROOMS[run.keys[0]]; startAt(run.keys[0]); p.x = 4 * T; p.face = 1; snapCam();
+  banner = {title:'Floor ' + (f + 1), sub:f === FLOORS.length - 1 ? 'The Ash-King is waiting.' : 'Clear the rooms. Find the way up.', color:'#ff8a3d', t:220};
+}
+function runSave(real) {
+  return Object.assign(fresh(), {worldV:5, run:true, dash2:true, mems:99, clsChosen:true, cls:real.cls || 'warden', look:real.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, diff:'normal',
+    districts:Object.fromEntries(Object.keys(DISTRICTS).map(d => [d, true])), gateOpen:true, cogs:3, seenBoss:{}});
+}
+function startRun() {
+  if (run) return;
+  const real = save; leaveTitle();
+  run = {real, seed:Math.floor(Math.random() * 1e9), floor:0, keys:[], kills:0, t:0, bossesBeat:0, portal:null, memPending:false, back:{k:room ? room.key : 'T'}};
+  save = runSave(real); prof.runs++; saveProf();
+  mode = 'play'; genFloor(0);
+}
+function runBoss() {
+  const f = run.floor, k = pickR(rng(run.seed + f * 104729), FLOORS[f].boss), B = BOSS_LIST.find(b => b.k === k);
+  run.portal = null; run.bossKey = B.room; save.seenBoss[k] = 1;
+  if (k === 'ash') { save.bossDead = false; }
+  const r = ROOMS[B.room]; enterRoom(B.room);
+  if (boss) boss.hp = boss.max = BOSS_HP;
+  let sp = null; for (let x = B.from === 'left' ? 2 : r.w - 3; x > 0 && x < r.w - 1 && !sp; x += B.from === 'left' ? 1 : -1) for (let y = r.h - 2; y > 1; y--) if (r.grid[y][x] === '.' && r.grid[y - 1][x] === '.' && '#-'.includes(r.grid[y + 1][x]) && !(REG[B.room] && REG[B.room].water && y > REG[B.room].water - 1)) { sp = {x, y}; break; }
+  sp = sp || safeSpot(B.room); p.x = sp.x * T + 2; p.y = (sp.y + 1) * T - p.h; p.vx = p.vy = 0; p.inv = 60; p.face = B.from === 'left' ? 1 : -1; snapCam();
+  toast = {text:B.name, t:150};
+}
+function runBossDown(e) {
+  run.bossesBeat++; prof.best = Math.max(prof.best, run.floor + 1); saveProf();
+  if (prof.mems < MEMS.length) run.memPending = true;
+  run.portal = {k:room.key, x:Math.round((e.x + e.w / 2) / T), y:Math.min(room.h - 3, Math.floor((e.y + e.h) / T) - 1), up:true};
+  const s = standSpots(room, run.portal.x - 6, run.portal.x + 6); if (s.length) { const [x, y] = s[Math.floor(s.length / 2)]; run.portal.x = x; run.portal.y = y; }
+}
+function runTick() {
+  run.t++;
+  if (room.rest && !room.rested && mode === 'play') { room.rested = true; p.hp = Math.min(p.max, p.hp + 2); sfx.heal(); toast = {text:'You catch your breath', t:120}; }
+  const P = run.portal; if (!P || P.k !== room.key || mode !== 'play') return;
+  if (Math.abs(p.x + p.w / 2 - (P.x * T + 8)) < 20 && Math.abs(p.y + p.h - (P.y + 1) * T) < 24 && useHit()) { useDone(); sfx.horn2(); if (P.up) genFloor(run.floor + 1); else runBoss(); }
+}
+function drawRunPortal(cx, cy) {
+  const P = run && run.portal; if (!P || P.k !== room.key) return;
+  const x = P.x * T + 8 - cx, y = (P.y + 1) * T - cy;
+  ctx.fillStyle = '#1a0e0a'; ctx.fillRect(x - 12, y - 34, 24, 34); ctx.fillStyle = '#3a2a22'; ctx.fillRect(x - 14, y - 36, 4, 36); ctx.fillRect(x + 10, y - 36, 4, 36); ctx.fillRect(x - 14, y - 38, 28, 4);
+  ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x, y - 16, 0, x, y - 16, 22); g.addColorStop(0, `rgba(255,150,70,${.55 + .15 * Math.sin(tick * .1)})`); g.addColorStop(1, 'rgba(255,90,30,0)'); ctx.fillStyle = g; ctx.fillRect(x - 22, y - 38, 44, 44); ctx.globalCompositeOperation = 'source-over';
+  if (Math.abs(p.x + p.w / 2 - (P.x * T + 8)) < 20 && Math.abs(p.y + p.h - (P.y + 1) * T) < 24) promptBubble(keyOf('interact'), P.up ? 'Climb' : 'Face it', x, y - 52, '#ff8a3d');
+}
+function endRun(won) {
+  if (!run) return;
+  const r = run, fl = r.floor + 1, s = Math.floor(r.t / 60), time = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  if (won) { prof.wins++; prof.best = Math.max(prof.best, FLOORS.length); }
+  saveProf();
+  for (const k of r.keys) { delete ARENAS[k]; }
+  save = r.real; run = null; mode = 'play'; epi = null; ending = null;
+  startAt('T'); p.max = maxHp(); p.hp = p.max;
+  openDlg({lock:1500, kicker:won ? 'The run is over' : 'Fallen on floor ' + fl, title:won ? 'The Last Gate fell' : 'You climbed ' + (fl - 1) + ' of ' + FLOORS.length + ' floors', body:[`${time} · ${r.kills} killed · ${r.bossesBeat} bosses`, won ? 'Somebody opened the gate. It was always going to be you.' : 'The city does not remember you. Climb again.'],
+    opts:[{text:'Climb again', run:() => startRun()}, {text:'Back to the yard'}]});
 }
 /* ---------- Admin panel ---------- */
 const ADMIN_PASS = 'ashking';
@@ -8483,7 +8610,8 @@ function memTick() {
   else if (go && mem.t > 40) { mem.i++; mem.t = 0; sayMem(); }
 }
 function memCheck() {
-  if (bossMode || pvp || mode !== 'play' || dlg.open || banner || voiceCur || voiceQ.length || (arena && arena.stage !== 'idle' && arena.stage !== 'done') || (R && R.fight === 'on') || (boss && room && room.key === 'X') || !p.onGround) { memWait = 0; return; }
+  if (bossMode || pvp || mode !== 'play' || dlg.open || banner || voiceCur || voiceQ.length || run && !run.memPending || (arena && arena.stage !== 'idle' && arena.stage !== 'done') || (R && R.fight === 'on') || (boss && room && room.key === 'X') || !p.onGround) { memWait = 0; return; }
+  if (run) { if (++memWait < 90) return; run.memPending = false; const m = MEMS[prof.mems]; if (!m) return; prof.mems++; saveProf(); playMem(m); return; }
   const n = Object.keys(save.bosses || {}).length;
   if ((save.mems || 0) >= Math.min(n, MEMS.length)) return;
   if (++memWait < 90) return;
