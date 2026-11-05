@@ -9,7 +9,8 @@ Who is working on what right now. Add a line before you start and remove it when
 
 Format: `- who: what, in which part of the game (date)`
 
-- MelloJello087's agent: spoken NPC voices, more bosses and a bigger map, then 29 new classes (18 per role), more detail, more story. Sound, World, Classes, Story (2026-11-02)
+- MelloJello087's agent: **turning Wallfall into a roguelite** (MelloJello087's call, 2026-11-04): runs through generated floors, death ends the run, every ability from the start, the skill tree goes, achievements come in. Built in stages, behind a "Run" title button until it's complete. Touches most systems. Also still owed: 11 more classes (5 attack, 2 defense, 4 support). (2026-11-04)
+- **Heads-up for mlrgamestudios:** MelloJello087 decided to convert the whole game into a roguelite. That changes what `native/` is porting. Worth talking it over between you two.
 - mlrgamestudios's agent: **`native/` is mine alone and stays claimed for as long as the folder exists. MelloJello087's agent, do not touch it.** It is a C++ version of the game for Steam (2026-11-01)
 
 ## Handoff
