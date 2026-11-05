@@ -295,7 +295,7 @@ button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 
 <script>
 (() => {
-const VERSION = '0.1.60';
+const VERSION = '0.1.61';
 document.getElementById('ver').textContent = 'v' + VERSION;
 const cv = document.getElementById('game');
 let ctx = cv.getContext('2d');
@@ -1169,7 +1169,7 @@ function drawThralls() {
     ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(122,255,154,.12)'; ctx.fillRect(x - 3, y - 2, 16, 20); ctx.globalCompositeOperation = 'source-over';
   }
 }
-const SMALL = 'grjcleA';
+const SMALL = 'grjcleAL';
 function smallFoe(x, y, dir, up, range) {
   let best = null, bd = range;
   for (const e of enemies) {
@@ -2994,6 +2994,9 @@ function makeEnemy(t, x, y, spawn) {
   else if (t === 'm') e = {t, x:x*T, y:y*T, w:14, h:18, hp:4, ph:Math.random() * 6, cd:90 + Math.random() * 60, st:'drift', stT:0, face:1};
   else if (t === 'z') e = {t, x:x*T, y:(y + 1)*T - 22, w:16, h:22, vx:0, vy:0, hp:5, onGround:false, face:-1, cd:60, st:'walk', stT:0, hp0:5};
   else if (t === 'A') e = {t, x:x*T + 3, y:(y + 1)*T - 9, w:10, h:9, vx:0, vy:0, hp:1, onGround:false, face:-1, cd:0, st:'creep', stT:0, ph:Math.random() * 6};
+  else if (t === 'L') e = {t, x:x*T + 1, y:(y + 1)*T - 12, w:14, h:12, vx:0, vy:0, hp:3, onGround:false, face:-1, st:'idle', stT:0, cd:40, ph:Math.random() * 6};
+  else if (t === 'D') e = {t, x:x*T + 1, y:(y + 1)*T - 16, w:14, h:16, vx:0, vy:0, hp:4, onGround:false, face:-1, st:'idle', stT:0, cd:60 + Math.random() * 60};
+  else if (t === 'N') e = {t, x:x*T + 2, y:(y + 1)*T - 22, w:12, h:22, vx:0, vy:0, hp:5, onGround:false, face:-1, cd:90, cast:0, sum:0};
   else e = {t:'k', x:x*T, y:(y + 1)*T - 16, w:16, h:16, hp:4, cd:50 + Math.random() * 60, face:-1, mouth:0};
   e.flash = 0; e.spawn = spawn ? 40 : 0; if (spawn && t === 'j') { e.aggro = true; e.cd = 30 + Math.random() * 60; }
   return e;
@@ -3012,7 +3015,7 @@ function zGuard(e) {
 }
 function killCheck(e) { if (e.hp <= 0 && !e.dead && zBlock(e) && !e.blew) { e.hp = e.hp0; zGuard(e); return; } if (e.hp <= 0 && !e.dead) { e.dead = true;
   if (e.crate) { crateBroken(e); return; }
-  if (!e.dummy && !e.prop) { dropShards(e); if (run) run.kills++; }
+  if (!e.dummy && !e.prop) { dropShards(e); if (e.champ) dropShards(e); if (run) run.kills++; }
   if (!e.dummy && !e.crate && cls().atk.type === 'summon' && Math.random() < .2) summonThrall(e.x + e.w/2, e.y + e.h);
   if (!e.dummy && treeOn('attack', 1) && (p.kills8 = (p.kills8 || 0) + 1) % 8 === 0 && p.hp < p.max) { p.hp++; sfx.heal(); pops.push({x:p.x + p.w / 2, y:p.y - 6, v:0, life:30, txt:'+1'}); }
   if (!e.dummy && !e.prop && cls().herbs && Math.random() < .35) herbs.push({rk:room.key, x:e.x + e.w / 2, y:e.y + e.h - 2});
@@ -3045,6 +3048,7 @@ function updateEnemy(e) {
   if (e.t === 'boss') { updateRBoss(e); return; }
   if ('rwlcbymzA'.includes(e.t)) { const F = foeFor(e); updateFoe(e, F, F.x + F.w / 2, F.y + F.h / 2); return; }
   const F = foeFor(e), pcx = F.x + F.w/2, pcy = F.y + F.h/2;
+  if ('LDN'.includes(e.t)) { runFoeAI(e, F, pcx, pcy); return; }
   if (e.t === 'g') {
     e.vy = Math.min(e.vy + .5, 8);
     const pdx = pcx - (e.x + e.w/2), chasing = Math.abs(pdx) < 130 && Math.abs((F.y + F.h) - (e.y + e.h)) < 24;
@@ -3199,7 +3203,7 @@ function updateArena() {
     }
   } else if (a.stage === 'fight') {
     if (a.delay > 0) {
-      if (--a.delay === 0) { a.waveT = 0; for (const [t, x, y] of a.cfg.waves[a.wave]) enemies.push(makeEnemy(t, x, y, true)); toast = {text:`Wave ${a.wave + 1} of ${a.cfg.waves.length}`, t:100}; sfx.horn2(); }
+      if (--a.delay === 0) { a.waveT = 0; for (const [t, x, y, ch] of a.cfg.waves[a.wave]) { const e = makeEnemy(t, x, y, true); if (ch && e.hp < 999) { e.hp = Math.ceil(e.hp * 2.5); if (e.hp0) e.hp0 = e.hp; e.champ = true; } enemies.push(e); } toast = {text:`Wave ${a.wave + 1} of ${a.cfg.waves.length}`, t:100}; sfx.horn2(); }
     } else if (!enemies.some(e => !e.dummy && !e.crate && !e.dead)) {
       if (a.wave < a.cfg.waves.length - 1) { a.wave++; a.delay = 80; }
       else {
@@ -6992,6 +6996,7 @@ function drawPlayer() {
 }
 function drawEnemy(e) {
   if (e.spawn > 0) drawSpawn(e);
+  if (e.champ) { ctx.globalCompositeOperation = 'lighter'; const cx = e.x + e.w / 2, cy = e.y + e.h / 2, r = Math.max(e.w, e.h) * .9 + Math.sin(tick * .15) * 2, g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, 'rgba(255,120,40,.4)'); g.addColorStop(1, 'rgba(255,60,20,0)'); ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2); ctx.globalCompositeOperation = 'source-over'; if (tick % 5 === 0) parts.push({x:e.x + Math.random() * e.w, y:e.y + e.h * Math.random(), vx:0, vy:-.6, life:18, color:'#ff8a3d', size:1}); }
   drawEnemyBody(e); drawUpStrike(e);
   ctx.globalAlpha = 1;
 }
@@ -7019,6 +7024,7 @@ function drawEnemyBody(e) {
   }
   const x = Math.round(e.x), y = Math.round(e.y), fl = e.flash > 0 && e.flash % 4 < 2;
   if ('rwlcbymzA'.includes(e.t)) { drawFoe(e, x, y, fl); return; }
+  if ('LDN'.includes(e.t)) { drawRunFoe(e, x, y, fl); return; }
   if (e.t === 'g') {
     const d = e.vx >= 0 ? 1 : -1, st = (tick >> 3) % 2, sw = Math.round(Math.sin(tick * .15) * 1.5);
     const X = (dx, w) => d > 0 ? x + dx : x + 14 - dx - w;
@@ -7917,75 +7923,188 @@ function openTitle() {
 /* ---------- Runs ---------- */
 let run = null;
 const FLOORS = [
-  {d:'low', look:'A', pool:['g', 'g', 'j', 'A', 'k'], boss:['hound', 'forge']},
-  {d:'foundry', look:'O', pool:['g', 'z', 'k', 'r', 'j', 'A'], boss:['forge', 'eel', 'hound']},
-  {d:'garden', look:'M', pool:['b', 'y', 'l', 'z', 'A', 'j'], boss:['thorn', 'eel']},
-  {d:'crypt', look:'g', pool:['m', 'u', 'y', 'b', 'l', 'z'], boss:['choir', 'bell', 'council']},
-  {d:'gate', look:'h', pool:[], boss:['ash']},
+  {d:'low', look:'A', hz:'stakes', arch:['roofs', 'roofs', 'bridge', 'pillars', 'tiers'], pool:['g', 'g', 'j', 'A', 'k', 'r', 'L'], boss:['hound', 'forge']},
+  {d:'foundry', look:'O', hz:'slag', arch:['cavern', 'bridge', 'pillars', 'tiers'], vents:true, crush:true, pool:['g', 'z', 'k', 'r', 'D', 'u', 'L', 'j'], boss:['forge', 'eel', 'hound']},
+  {d:'garden', look:'M', hz:'thorns', arch:['cavern', 'bridge', 'roofs', 'tiers'], flowers:true, pool:['b', 'y', 'l', 'z', 'A', 'L', 'N', 'D'], boss:['thorn', 'eel']},
+  {d:'crypt', look:'g', hz:'stakes', arch:['cavern', 'cavern', 'pillars', 'bridge'], crumble:true, pool:['m', 'u', 'y', 'b', 'l', 'N', 'L', 'D', 'A'], boss:['choir', 'bell', 'council']},
+  {d:'gate', look:'h', hz:'stakes', arch:['pillars'], pool:[], boss:['ash']},
 ];
 const prof = (() => { try { return Object.assign({mems:0, runs:0, wins:0, best:0, ach:{}}, JSON.parse(localStorage.getItem('wallfall-profile') || '{}')); } catch (e) { return {mems:0, runs:0, wins:0, best:0, ach:{}}; } })();
 const saveProf = () => { try { localStorage.setItem('wallfall-profile', JSON.stringify(prof)); } catch (e) {} };
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const pickR = (rnd, a) => a[Math.floor(rnd() * a.length)];
 function standSpots(r, x0, x1) { const out = []; for (let x = Math.max(2, x0); x <= Math.min(r.w - 3, x1); x++) for (let y = 2; y < r.h - 1; y++) if (r.grid[y][x] === '.' && r.grid[y - 1][x] === '.' && '#-'.includes(r.grid[y + 1][x])) { out.push([x, y]); break; } return out; }
-function genRoom(key, f, i, gx, gy, kind, rnd) {
-  const L = ROOMS[FLOORS[f].look], cw = kind === 'climb' ? 1 : kind === 'start' || kind === 'rest' || kind === 'gate' ? 1 : kind === 'elite' ? 3 : 2, ch = kind === 'climb' ? 2 : 1;
-  makeRoom(key, kind === 'gate' ? 'The Way Up' : kind === 'rest' ? 'A Quiet Room' : DISTRICTS[FLOORS[f].d].name, gx, gy, cw, ch, {indoor:L.indoor, biome:L.biome, dark:L.dark, skin:L.skin, noGiants:true}, B => {
-    const w = B.w, h = B.h;
-    if (kind === 'climb') {
-      B.solid(0, 34, w - 1, 35); B.clear(0, 31, 0, 33); B.clear(w - 1, 13, w - 1, 15); B.solid(24, 16, w - 1, 17);
-      let side = 0; for (let y = 30; y > 17; y -= 3 + Math.floor(rnd() * 2)) { const x = side ? 15 + Math.floor(rnd() * 6) : 3 + Math.floor(rnd() * 6); B.ledge(x, x + 6 + Math.floor(rnd() * 3), y); side = 1 - side; }
-      if (rnd() < .6) B.put('a', 16, 8);
+function genRoom(key, f, i, gx, gy, kind, rnd, vault) {
+  const F = FLOORS[f], L = ROOMS[F.look], tall = kind === 'climb' || kind === 'drop', one = tall || ['start', 'rest', 'gate', 'vault'].includes(kind);
+  const cw = one ? 1 : kind === 'elite' ? 3 : 2, ch = tall ? 2 : 1, name = {gate:'The Way Up', rest:'A Quiet Room', vault:'A Hidden Room'}[kind] || DISTRICTS[F.d].name;
+  makeRoom(key, name, gx, gy, cw, ch, {indoor:L.indoor, biome:L.biome, dark:L.dark, skin:L.skin, noGiants:true}, B => {
+    const w = B.w, haz = (a, c, y) => { if (F.hz === 'slag') B.slag(a, c, y + 1); else B[F.hz](a, c, y); }, R0 = n => Math.floor(rnd() * n);
+    if (kind === 'vault') {
+      B.solid(0, 0, w - 1, 1); B.solid(0, 16, w - 1, 17); B.clear(12, 16, 15, 17); B.ledge(4, 9, 12); B.ledge(19, 26, 11);
+      B.put('R', 22, 10); B.put('O', 4, 15); B.put('O', 6, 15); B.put('O', 26, 15); return;
+    }
+    if (tall) {
+      const up = kind === 'climb', style = pickR(rnd, ['zig', 'shaft', 'crumble', 'rings']);
+      B.solid(0, 34, w - 1, 35);
+      if (up) { B.clear(0, 31, 0, 33); B.clear(w - 1, 13, w - 1, 15); B.solid(24, 16, w - 1, 17); }
+      else { B.clear(0, 13, 0, 15); B.solid(0, 16, 6, 17); B.clear(w - 1, 31, w - 1, 33); haz(11, 20, 33); }
+      let side = R0(2);
+      for (let y = up ? 30 : 20; y > 17 && y < 33; y += up ? -(3 + R0(2)) : 3 + R0(2)) {
+        const x = side ? 13 + R0(5) : 2 + R0(4), len = side ? 6 + R0(3) : 7 + R0(3);
+        if (style === 'crumble' && rnd() < .6) B.crumble(x, x + len, y); else B.ledge(x, x + len, y);
+        side = 1 - side;
+      }
+      if (style === 'shaft') { B.solid(14, 20, 16, 29); B.ledge(9, 13, 25); B.ledge(17, 21, 22); }
+      if (style === 'rings') { B.put('a', 8, 26); B.put('a', 22, 20); B.put('a', 10, 12); }
+      else if (rnd() < .6) B.put('a', 16, up ? 8 : 24);
       return;
     }
     B.solid(0, 16, w - 1, 17);
     if (i > 0) B.clear(0, 13, 0, 15);
     if (kind !== 'gate') B.clear(w - 1, 13, w - 1, 15);
-    if (kind === 'start' || kind === 'rest' || kind === 'gate') { B.ledge(10, 15, 12); B.ledge(18, 22, 9); return; }
-    let x = 8;
-    while (x < w - 10) {
-      const k = rnd(), len = 3 + Math.floor(rnd() * 6);
-      if (k < .3) B.solid(x, 16 - 1 - Math.floor(rnd() * 3), x + len - 1, 15);
-      else if (k < .45) B.stakes(x, x + Math.min(len, 4) - 1, 15);
-      else if (k < .55) { B.solid(x, 9 + Math.floor(rnd() * 3), x + 1, 15); }
-      x += len + 3 + Math.floor(rnd() * 5);
+    if (kind === 'start' || kind === 'rest' || kind === 'gate') { B.ledge(10, 15, 12); B.ledge(18, 22, 9); if (kind === 'rest') { B.put('O', 6, 15); B.put('O', 25, 15); } return; }
+    const arch = pickR(rnd, F.arch);
+    if (arch === 'roofs') {
+      let x = 7;
+      while (x < w - 10) {
+        const len = 5 + R0(8), top = pickR(rnd, [16, 14, 13, 11, 10]);
+        if (top < 16) B.solid(x, top, Math.min(w - 9, x + len - 1), 15);
+        x += len;
+        if (rnd() < .65 && x < w - 12) { const gap = 2 + R0(3); B.clear(x, 16, x + gap - 1, 16); haz(x, x + gap - 1, 16); x += gap; }
+      }
+      for (let n = 0; n < w / 14; n++) { const lx = 6 + R0(w - 16); B.ledge(lx, lx + 3 + R0(4), pickR(rnd, [7, 5])); }
+    } else if (arch === 'bridge') {
+      const a = 7, c = w - 8; B.clear(a, 16, c, 16); haz(a, c, 16);
+      for (let x = a + 3 + R0(3); x < c - 3; x += 7 + R0(5)) { const top = 12 + R0(3); if (rnd() < .5) B.solid(x, top, x + 1 + R0(2), 16); else B.ledge(x - 1, x + 3, top); }
+      for (let x = a + 5; x < c - 4; x += 11 + R0(6)) B.ledge(x, x + 4 + R0(3), 8 + R0(2));
+      for (let x = a + 10; x < c - 6; x += 14 + R0(6)) B.put('a', x, 3 + R0(2));
+    } else if (arch === 'cavern') {
+      let d = 2, fl = 0;
+      for (let x = 1; x < w - 1; x++) {
+        const edge = x < 6 || x > w - 7; d = Math.max(1, Math.min(edge ? 4 : 7, d + R0(3) - 1)); B.solid(x, 0, x, d);
+        if (!edge && x % 9 === 3 && rnd() < .5) B.solid(x, d, x + 1, Math.min(9, d + 2 + R0(3)));
+        if (!edge) { fl = Math.max(0, Math.min(2, fl + (rnd() < .2 ? R0(3) - 1 : 0))); if (fl) B.solid(x, 16 - fl, x, 15); } else fl = 0;
+      }
+      for (let n = 0; n < w / 12; n++) { const lx = 7 + R0(w - 18); const ly = 10 + R0(3); if (F.crumble && rnd() < .5) B.crumble(lx, lx + 4, ly); else B.ledge(lx, lx + 3 + R0(3), ly); }
+      for (let x = 10 + R0(6); x < w - 10; x += 12 + R0(8)) if (rnd() < .5) haz(x, x + 1 + R0(2), 15);
+    } else if (arch === 'tiers') {
+      const mid = Math.floor(w / 2), half = 6 + R0(6);
+      for (let k = 0; k < 4; k++) { const y = 15 - k * 2, a = mid - half - 3 * (3 - k), c = mid + half + 3 * (3 - k); B.solid(Math.max(6, a), y, Math.min(w - 7, c), y); }
+      B.solid(mid - half, 9, mid + half, 9); B.clear(mid - half + 1, 10, mid + half - 1, 15);
+      for (let x = mid - half + 2; x < mid + half - 2; x += 5) B.put('O', x, 15);
+      B.clear(mid - 1, 9, mid + 1, 9);
+      B.ledge(8, 13, 7); B.ledge(w - 14, w - 9, 7);
+    } else {
+      let x = 8;
+      while (x < w - 10) {
+        const k = rnd(), len = 3 + R0(6);
+        if (k < .3) B.solid(x, 16 - 1 - R0(3), x + len - 1, 15);
+        else if (k < .45) haz(x, x + Math.min(len, 4) - 1, 15);
+        else if (k < .6) B.solid(x, 8 + R0(4), x + 1, 15);
+        x += len + 3 + R0(5);
+      }
+      for (let n = 0; n < w / 9; n++) { const lx = 4 + R0(w - 14), ly = pickR(rnd, [12, 10, 7, 5]); if (F.crumble && rnd() < .4) B.crumble(lx, lx + 4, ly); else B.ledge(lx, lx + 3 + R0(5), ly); }
+      if (rnd() < .5) B.put('a', 10 + R0(w - 20), 3);
     }
-    for (let n = 0; n < w / 9; n++) { const lx = 4 + Math.floor(rnd() * (w - 14)), ly = pickR(rnd, [12, 10, 7, 5]); B.ledge(lx, lx + 3 + Math.floor(rnd() * 5), ly); }
-    if (rnd() < .5) B.put('a', 10 + Math.floor(rnd() * (w - 20)), 3);
+    if (F.vents) for (let n = 0; n < 2; n++) B.put('F', 10 + R0(w - 20), 15);
+    if (F.crush && rnd() < .6) B.put('Z', 12 + R0(w - 24), 1);
+    if (F.flowers) for (let n = 0; n < 2; n++) B.put('*', 8 + R0(w - 16), 15);
+    if (vault) { B.clear(11, 0, 16, 9); B.ledge(9, 13, 12); B.ledge(14, 18, 8); B.ledge(10, 14, 4); }
   });
-  return ROOMS[key];
+  const r = ROOMS[key];
+  if (F.vents || F.crush || F.flowers) {
+    r.ents = r.ents.filter(e => !('FZ*'.includes(e.t)) || (e.t === 'Z' ? r.grid[1][e.x] === '.' && r.grid[2][e.x] === '.' : r.grid[e.y][e.x] === '.' && r.grid[e.y + 1][e.x] === '#'));
+    REG[key] = {};
+  }
+  return r;
 }
 function genWaves(r, f, rnd, elite) {
-  const pool = FLOORS[f].pool, spots = standSpots(r, 10, r.w - 4), waves = [], nw = 2 + (f > 1 ? 1 : 0) + (elite ? 1 : 0);
+  const pool = FLOORS[f].pool, spots = standSpots(r, 10, r.w - 4).filter(([x, y]) => y > 3), waves = [], nw = 2 + (f > 1 ? 1 : 0) + (elite ? 1 : 0);
   for (let wv = 0; wv < nw; wv++) {
     const n = 2 + Math.floor(f / 2) + Math.floor(rnd() * 2) + (elite ? 1 : 0), list = [];
     for (let j = 0; j < n; j++) {
-      const t = pickR(rnd, pool);
-      if ('jlm'.includes(t)) list.push([t, 6 + Math.floor(rnd() * (r.w - 12)), 3 + Math.floor(rnd() * 4)]);
-      else if (spots.length) { const [x, y] = pickR(rnd, spots); list.push([t, x, y]); }
+      const t = pickR(rnd, pool), champ = (elite || f > 0) && rnd() < .08 + f * .04 + (elite ? .15 : 0);
+      if ('jlm'.includes(t)) list.push([t, 6 + Math.floor(rnd() * (r.w - 12)), 3 + Math.floor(rnd() * 4), champ]);
+      else if (spots.length) { const [x, y] = pickR(rnd, spots); list.push([t, x, y, champ]); }
     }
     waves.push(list);
   }
   return waves;
 }
 function genFloor(f) {
-  for (const k of run.keys) { const r = ROOMS[k]; if (r) for (let y = 0; y < r.ch; y++) for (let x = 0; x < r.cw; x++) delete BYPOS[(r.gx + x) + ',' + (r.gy + y)]; delete ROOMS[k]; delete ARENAS[k]; delete save.arenas[k]; }
+  for (const k of run.keys) { const r = ROOMS[k]; if (r) for (let y = 0; y < r.ch; y++) for (let x = 0; x < r.cw; x++) delete BYPOS[(r.gx + x) + ',' + (r.gy + y)]; delete ROOMS[k]; delete ARENAS[k]; delete REG[k]; delete save.arenas[k]; }
   run.keys = []; run.floor = f;
-  const rnd = rng(run.seed * 31 + f * 7919), plan = f === FLOORS.length - 1 ? ['start', 'rest', 'gate'] : ['start', 'fight', rnd() < .5 ? 'climb' : 'fight', 'rest', 'fight', rnd() < .5 ? 'climb' : 'fight', 'elite', 'gate'];
+  const rnd = rng(run.seed * 31 + f * 7919), mid = () => pickR(rnd, ['climb', 'drop', 'fight', 'climb']);
+  const plan = f === FLOORS.length - 1 ? ['start', 'rest', 'gate'] : ['start', 'fight', mid(), 'fight', 'rest', mid(), 'fight', 'elite', 'gate'];
+  const vaultAt = plan.findIndex((k, j) => k === 'fight' && j > 1 && rnd() < .6);
   let gx = 0, gy = 400 + f * 10;
   plan.forEach((kind, i) => {
-    const key = 'r' + f + '_' + i, ry = kind === 'climb' ? gy - 1 : gy, r = genRoom(key, f, i, gx, ry, kind, rnd);
-    run.keys.push(key); gx += r.cw; if (kind === 'climb') gy -= 1;
-    if (kind === 'fight' || kind === 'climb' || kind === 'elite') {
-      const exitRows = kind === 'climb' ? [31, 33] : [13, 15];
-      ARENAS[key] = {name:kind === 'elite' ? 'The Hard Room' : 'Ambush', quiet:kind !== 'elite', noCog:true, reward:12 + f * 8 + (kind === 'elite' ? 20 : 0), doneSub:'The way on is open.',
-        inside:() => p.x > 3 * T && p.x < room.pw - 3 * T, bars:[[0, 0, exitRows[0], exitRows[1]], [r.w - 1, r.w - 1, 13, 15]], waves:genWaves(r, f, rnd, kind === 'elite')};
+    const key = 'r' + f + '_' + i, ry = kind === 'climb' ? gy - 1 : gy, r = genRoom(key, f, i, gx, ry, kind, rnd, i === vaultAt);
+    run.keys.push(key);
+    if (i === vaultAt) { const vk = 'r' + f + '_v'; genRoom(vk, f, i, gx, gy - 1, 'vault', rnd); run.keys.push(vk); }
+    gx += r.cw; if (kind === 'climb') gy -= 1; if (kind === 'drop') gy += 1;
+    if (kind === 'fight' || kind === 'climb' || kind === 'drop' || kind === 'elite') {
+      const inRows = kind === 'climb' ? [31, 33] : [13, 15], outRows = kind === 'drop' ? [31, 33] : [13, 15];
+      ARENAS[key] = {name:kind === 'elite' ? 'The Hard Room' : 'Ambush', quiet:kind !== 'elite', sub:'Bigger ones, with embers in them.', noCog:true, reward:12 + f * 8 + (kind === 'elite' ? 20 : 0), doneSub:'The way on is open.',
+        inside:() => p.x > 3 * T && p.x < room.pw - 3 * T, bars:[[0, 0, inRows[0], inRows[1]], [r.w - 1, r.w - 1, outRows[0], outRows[1]]], waves:genWaves(r, f, rnd, kind === 'elite')};
     }
     if (kind === 'rest') r.rest = true;
     if (kind === 'gate') run.portal = {k:key, x:24, y:15};
   });
-  const sp = ROOMS[run.keys[0]]; startAt(run.keys[0]); p.x = 4 * T; p.face = 1; snapCam();
+  startAt(run.keys[0]); p.x = 4 * T; p.face = 1; snapCam();
   banner = {title:'Floor ' + (f + 1), sub:f === FLOORS.length - 1 ? 'The Ash-King is waiting.' : 'Clear the rooms. Find the way up.', color:'#ff8a3d', t:220};
+}
+/* ---------- Run enemies ---------- */
+function runFoeAI(e, F, pcx, pcy) {
+  const pdx = pcx - (e.x + e.w / 2), level = Math.abs(F.y + F.h - e.y - e.h) < 60, edge = () => { const fx = e.vx > 0 ? e.x + e.w + 1 : e.x - 1, below = tile(Math.floor(fx / T), Math.floor((e.y + e.h + 2) / T)); if (below !== '#' && below !== '-') { e.x -= e.vx; e.vx = 0; return true; } return false; };
+  e.vy = Math.min((e.vy || 0) + .45, 8);
+  if (e.t === 'L') {
+    if (e.st === 'idle') { if (e.onGround) e.vx = Math.sin(tick * .03 + e.ph) > 0 ? .5 : -.5; if (e.onGround && Math.abs(pdx) < 160 && level && --e.cd <= 0) { e.st = 'crouch'; e.stT = 24; e.face = Math.sign(pdx) || 1; e.vx = 0; } }
+    else if (e.st === 'crouch') { e.vx = 0; if (--e.stT <= 0) { e.st = 'air'; e.vy = -6.4; e.vx = e.face * Math.min(3.8, Math.abs(pdx) / 20 + 1.4); burst(e.x + e.w / 2, e.y + e.h, '#6b5d52', 6, 1.2); } }
+    else if (e.onGround && e.vy >= 0) { e.st = 'idle'; e.cd = 45 + Math.random() * 45; e.vx = 0; }
+    if (moveX(e)) e.vx = -e.vx * .3;
+    moveY(e, false);
+    if (e.st === 'idle' && e.onGround && e.vx) { edge(); if (e.vx) e.face = Math.sign(e.vx); }
+  } else if (e.t === 'D') {
+    e.vx = 0; moveY(e, false);
+    if (e.st === 'idle') { e.face = Math.sign(pdx) || e.face; if (Math.abs(pdx) < 230 && Math.abs(pcy - e.y - 8) < 70 && --e.cd <= 0) { e.st = 'charge'; e.stT = 36; } }
+    else if (--e.stT <= 0) { for (const vy of [-.7, 0, .7]) eshots.push({x:e.x + e.w / 2 + e.face * 8, y:e.y + 7, vx:e.face * 2.6, vy, life:120, r:3, dmg:1}); sfx.fire(); e.st = 'idle'; e.cd = 110 + Math.random() * 50; }
+  } else if (e.t === 'N') {
+    const near = Math.abs(pdx) < 100 && level;
+    if (e.onGround) e.vx = near ? -Math.sign(pdx) * .9 : 0;
+    if (moveX(e)) e.vx = 0;
+    moveY(e, false); if (e.onGround && e.vx) edge();
+    e.face = Math.sign(pdx) || e.face;
+    if (e.cast > 0) e.cast--;
+    if (--e.cd <= 0) {
+      e.cd = 230 + Math.random() * 60;
+      if ((e.sum || 0) < 6 && enemies.filter(o => !o.dead && o.t === 'A').length < 4) {
+        e.cast = 40; sfx.raise ? sfx.raise() : sfx.zap();
+        for (const dx of [-18, 18]) { const tx = Math.floor((e.x + e.w / 2 + dx) / T), ty = Math.floor((e.y + e.h) / T) - 1; if (!solid(tx, ty)) { enemies.push(makeEnemy('A', tx, ty, true)); e.sum = (e.sum || 0) + 1; burst(tx * T + 8, (ty + 1) * T, '#7aff9a', 10, 1.6); } }
+      }
+    }
+  }
+}
+function drawRunFoe(e, x, y, fl) {
+  const c = col => fl ? '#ffffff' : col, d = e.face || 1, X = (dx, w) => d > 0 ? x + dx : x + e.w - dx - w;
+  if (e.t === 'L') {
+    const cr = e.st === 'crouch' ? 2 : 0, air = e.st === 'air' ? -1 : 0;
+    ctx.fillStyle = c('#2a201c'); ctx.fillRect(X(1, 11), y + 4 + cr + air, 11, 5 - cr);
+    ctx.fillStyle = c('#3e322c'); ctx.fillRect(X(8, 6), y + 1 + cr, 6, 6); ctx.fillRect(X(0, 3), y + 2 + cr, 3, 2);
+    ctx.fillStyle = c('#1a1412'); ctx.fillRect(X(2, 2), y + 9 + air, 2, 3 - air); ctx.fillRect(X(9, 2), y + 9 + air, 2, 3 - air);
+    if (!fl) { ctx.fillStyle = '#ff7a2e'; ctx.fillRect(X(11, 2), y + 3 + cr, 2, 1); ctx.fillStyle = 'rgba(255,120,40,.55)'; ctx.fillRect(X(3, 6), y + 6 + cr, 6, 1); ctx.fillStyle = '#e8dcc8'; ctx.fillRect(X(12, 1), y + 5 + cr, 1, 1); }
+  } else if (e.t === 'D') {
+    const glow = e.st === 'charge' ? .4 + .6 * (1 - e.stT / 36) : .2;
+    ctx.fillStyle = c('#2e2622'); ctx.fillRect(x + 1, y + 4, 12, 12); ctx.fillStyle = c('#4a3e36'); ctx.fillRect(x + 2, y + 2, 10, 4); ctx.fillRect(x, y + 13, 14, 3);
+    ctx.fillStyle = c('#1a1412'); ctx.fillRect(X(8, 5), y + 6, 5, 4);
+    if (!fl) { ctx.fillStyle = `rgba(255,${120 + glow * 100 | 0},40,${glow})`; ctx.fillRect(X(9, 4), y + 7, 4, 2); ctx.fillStyle = '#ffcf70'; ctx.fillRect(X(4, 1), y + 4, 1, 1); ctx.fillRect(X(7, 1), y + 4, 1, 1); ctx.fillStyle = 'rgba(255,140,50,.35)'; ctx.fillRect(x + 3, y + 1, 8, 1); }
+  } else if (e.t === 'N') {
+    const lift = e.cast > 0 ? 1 : 0;
+    ctx.fillStyle = c('#1e2420'); ctx.beginPath(); ctx.moveTo(x + 6, y + 3); ctx.lineTo(x + 12, y + 22); ctx.lineTo(x, y + 22); ctx.fill();
+    ctx.fillStyle = c('#2a322c'); ctx.fillRect(x + 3, y, 6, 6); ctx.fillStyle = c('#0c100e'); ctx.fillRect(X(5, 3), y + 2, 3, 3);
+    ctx.fillStyle = c('#5a4a36'); ctx.fillRect(X(11, 1), y - 2 - lift * 3, 1, 22 + lift * 3);
+    if (!fl) { ctx.fillStyle = '#7aff9a'; ctx.fillRect(X(6, 1), y + 3, 1, 1); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(X(11, 1), y - 3 - lift * 3, 0, X(11, 1), y - 3 - lift * 3, 8 + lift * 6); g.addColorStop(0, 'rgba(120,255,150,.7)'); g.addColorStop(1, 'rgba(60,200,100,0)'); ctx.fillStyle = g; ctx.fillRect(X(11, 1) - 14, y - 17 - lift * 3, 28, 28); ctx.globalCompositeOperation = 'source-over'; }
+  }
 }
 function runSave(real) {
   return Object.assign(fresh(), {worldV:5, run:true, dash2:true, mems:99, clsChosen:true, cls:real.cls || 'warden', look:real.look, lookChosen:true, lookV2:true, seenIntro:true, dbl:true, wall:true, hook:true, diff:'normal',
